@@ -3,3 +3,33 @@
 body {
     margin: 0;
 }
+
+.logo {
+    width: 100px; /* Adjust the width to make it smaller */
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
+
+.top-banner {
+    background-color: black;
+    color: white; /* Optional: Ensure text is visible on a black background */
+}
+
+.banner {
+    background-color: black;
+    color: white; /* Ensure text is visible on a black background */
+    padding: 20px;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.banner-logo {
+    width: 50px; /* Adjust size as needed */
+    height: auto;
+}

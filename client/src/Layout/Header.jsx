@@ -28,6 +28,9 @@ const useStyles = makeStyles(theme => ({
             marginLeft: 'auto',
         },
     },
+    appBar: {
+        backgroundColor: 'black',
+    },
 }));
 
 const Header = () => {
@@ -61,7 +64,7 @@ const Header = () => {
 
     return (
         <div className={classes.root}>
-            <AppBar position="static">
+            <AppBar position="static" className={classes.appBar}>
                 <Toolbar>
                     <Link href="/" className={classes.title}>
                         <img src={logo} alt="Logo" />
