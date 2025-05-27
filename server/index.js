@@ -36,6 +36,14 @@ io.on('connection', socket => {
 
     // Upon connection - only to user 
     socket.emit('message', buildMsg(ADMIN, "Welcome to Vyb Chat!"))
+    
+    // Add handler for getRooms event
+    socket.on('getRooms', () => {
+        // Send rooms list to the requesting client
+        socket.emit('roomList', {
+            rooms: getAllActiveRooms()
+        });
+    });
 
     socket.on('enterRoom', ({ name, room }) => {
 

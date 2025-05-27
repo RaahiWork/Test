@@ -1,5 +1,5 @@
 const socket = io(window.location.origin);
- 
+
 const msgInput = document.querySelector('#message')
 const nameInput = document.querySelector('#name')
 const chatRoom = document.querySelector('#room')
@@ -23,14 +23,26 @@ function sendMessage(e) {
     msgInput.focus()
 }
 
+// Initialize display state with a variable rather than relying on style property
+let newRoomFormVisible = false;
+
+// Update the event listener to use the state variable
 newRoomBtn.addEventListener('click', () => {
-    if (newRoomForm.style.display === 'none') {
-        newRoomForm.style.display = 'block'
-        roomSelect.disabled = true
-        chatRoom.focus()
+    if (!newRoomFormVisible) {
+        newRoomForm.style.display = 'block';
+        roomSelect.disabled = true;
+        chatRoom.focus();
+        newRoomFormVisible = true;
+        
+        // When showing the text input, make it required
+        chatRoom.setAttribute('required', 'required');
     } else {
-        newRoomForm.style.display = 'none'
-        roomSelect.disabled = false
+        newRoomForm.style.display = 'none';
+        roomSelect.disabled = false;
+        newRoomFormVisible = false;
+        
+        // When hiding the text input, remove required attribute
+        chatRoom.removeAttribute('required');
     }
 })
 
@@ -122,6 +134,71 @@ function showUsers(users) {
     }
 }
 
+let currentRoom = '';
+
+// Update enterRoom function to handle form validation properly
+function enterRoom(e) {
+    e.preventDefault();
+    let roomValue;
+    
+    // Get room value either from input or dropdown
+    if (newRoomForm.style.display === 'block') {
+        roomValue = chatRoom.value;
+        
+        if (!roomValue.trim()) {
+            // If new room form is visible but empty, prevent submission and focus
+            chatRoom.focus();
+            return;
+        }
+    } else {
+        roomValue = roomSelect.value;
+        
+        if (!roomValue) {
+            // If dropdown is visible but nothing selected, show alert
+            alert("Please select a room or create a new one");
+            return;
+        }
+    }
+    
+    if (nameInput.value && roomValue) {
+        currentRoom = roomValue; // Store current room
+        
+        socket.emit('enterRoom', {
+            name: nameInput.value,
+            room: roomValue
+        });
+        
+        // Reset the new room form
+        if (newRoomForm.style.display === 'block') {
+            newRoomForm.style.display = 'none';
+            roomSelect.disabled = false;
+        }
+    }
+}
+
+// Update the toggle functionality for new room form
+newRoomBtn.addEventListener('click', () => {
+    if (newRoomForm.style.display === 'none') {
+        newRoomForm.style.display = 'block';
+        roomSelect.disabled = true;
+        
+        // Make sure room input is not required when hidden
+        if (roomSelect.disabled) {
+            // When showing the text input, make it required
+            chatRoom.setAttribute('required', 'required');
+        }
+        
+        chatRoom.focus();
+    } else {
+        newRoomForm.style.display = 'none';
+        roomSelect.disabled = false;
+        
+        // When hiding the text input, remove required attribute
+        chatRoom.removeAttribute('required');
+    }
+});
+
+// Update showRooms to select the current room
 function showRooms(rooms) {
     // First clear the existing dropdown options (except the first placeholder)
     while (roomSelect.options.length > 1) {
@@ -135,6 +212,11 @@ function showRooms(rooms) {
             option.value = room;
             option.textContent = room;
             roomSelect.appendChild(option);
+            
+            // Select current room if it matches
+            if (currentRoom && room === currentRoom) {
+                option.selected = true;
+            }
         });
         
         // Also update the rooms container for click functionality
@@ -160,34 +242,6 @@ function showRooms(rooms) {
         });
     } else {
         document.querySelector('.room-selection-container').style.display = 'flex';
-    }
-    
-    console.log('Rooms updated:', rooms); // Debug log
-}
-
-// Modify enterRoom to work with dropdown or text input
-function enterRoom(e) {
-    e.preventDefault();
-    let roomValue;
-    
-    // Get room value either from input or dropdown
-    if (newRoomForm.style.display === 'block') {
-        roomValue = chatRoom.value;
-    } else {
-        roomValue = roomSelect.value;
-    }
-    
-    if (nameInput.value && roomValue) {
-        socket.emit('enterRoom', {
-            name: nameInput.value,
-            room: roomValue
-        });
-        
-        // Reset the new room form
-        if (newRoomForm.style.display === 'block') {
-            newRoomForm.style.display = 'none';
-            roomSelect.disabled = false;
-        }
     }
 }
 
@@ -231,6 +285,11 @@ window.addEventListener('DOMContentLoaded', () => {
         main.style.pointerEvents = 'auto'
         if (logoutBtn) logoutBtn.style.display = 'block'
         chatRoom.focus()
+        
+        // Request room list if we're already logged in
+        if (socket.connected) {
+            socket.emit('getRooms');
+        }
     } else {
         main.style.opacity = '0.5'
         main.style.pointerEvents = 'none'
@@ -240,4 +299,19 @@ window.addEventListener('DOMContentLoaded', () => {
         if (logoutBtn) logoutBtn.style.display = 'none'
         loginUsername.focus()
     }
-})
+});
+
+// Add connection events to request room list immediately
+socket.on('connect', () => {
+    // Request room list immediately after connection
+    socket.emit('getRooms');
+});
+
+// Initialize the form state on page load
+window.addEventListener('DOMContentLoaded', () => {
+    // Set initial state
+    newRoomForm.style.display = 'none';
+    newRoomFormVisible = false;
+    
+    // ...existing code...
+});
