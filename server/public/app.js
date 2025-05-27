@@ -8,7 +8,7 @@ const usersList = document.querySelector('.user-list')
 const roomList = document.querySelector('.room-list')
 const chatDisplay = document.querySelector('.chat-display')
 const roomSelect = document.querySelector('#room-select')
-const newRoomBtn = document.querySelector('#new-room-btn')
+let newRoomBtn = document.querySelector('#new-room-btn')
 const newRoomForm = document.querySelector('#new-room-form')
 
 function sendMessage(e) {
@@ -175,24 +175,53 @@ function enterRoom(e) {
     }
 }
 
-// Update the toggle functionality for new room form
-newRoomBtn.addEventListener('click', () => {
-    if (newRoomForm.style.display === 'none') {
+// Update the event listener for room selection dropdown
+roomSelect.addEventListener('change', function() {
+    // If a room is selected in dropdown, remove required attribute from textbox
+    if (this.value) {
+        chatRoom.removeAttribute('required');
+    } else if (newRoomFormVisible) {
+        // Only add required back if the new room form is visible
+        chatRoom.setAttribute('required', 'required');
+    }
+});
+
+// Remove the old duplicate newRoomBtn click handler and use a single implementation
+// Create a standalone function for toggling the room form
+function toggleNewRoomForm(show) {
+    if (show) {
         newRoomForm.style.display = 'block';
         roomSelect.disabled = true;
+        newRoomFormVisible = true;
         
-        // Make sure room input is not required when hidden
-        if (roomSelect.disabled) {
-            // When showing the text input, make it required
-            chatRoom.setAttribute('required', 'required');
-        }
+        // Always make required when showing the new room form
+        chatRoom.setAttribute('required', 'required');
+        
+        // Make sure the input is enabled and focused
+        chatRoom.removeAttribute('disabled');
+        chatRoom.value = '';
+        setTimeout(() => chatRoom.focus(), 0);
     } else {
         newRoomForm.style.display = 'none';
         roomSelect.disabled = false;
+        newRoomFormVisible = false;
         
-        // When hiding the text input, remove required attribute
+        // Always remove required when hiding
         chatRoom.removeAttribute('required');
     }
+    console.log('New room form toggled:', show); // Debug log
+}
+
+// Clear any existing listeners (to avoid duplicates)
+newRoomBtn.removeEventListener('click', toggleNewRoomForm);
+const newBtnClone = newRoomBtn.cloneNode(true);
+newRoomBtn.parentNode.replaceChild(newBtnClone, newRoomBtn);
+newRoomBtn = newBtnClone;
+
+// Add the click event listener to the button
+newRoomBtn.addEventListener('click', function(e) {
+    e.preventDefault(); // Prevent any form submission
+    toggleNewRoomForm(!newRoomFormVisible);
 });
 
 // Update showRooms to select the current room
@@ -303,10 +332,17 @@ socket.on('connect', () => {
 });
 
 // Initialize the form state on page load
-window.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
     // Set initial state
     newRoomForm.style.display = 'none';
     newRoomFormVisible = false;
+    chatRoom.removeAttribute('required');
     
-    // ...existing code...
+    // Check if dropdown has a selected value initially
+    if (roomSelect.value) {
+        chatRoom.removeAttribute('required');
+    }
+    
+    // Ensure form is initialized on page load
+    toggleNewRoomForm(false);
 });
