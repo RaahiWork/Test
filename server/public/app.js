@@ -109,3 +109,54 @@ function showRooms(rooms) {
         })
     }
 }
+
+// Login overlay logic
+const loginOverlay = document.querySelector('.login-overlay')
+const loginForm = document.querySelector('.login-form')
+const loginUsername = document.querySelector('#login-username')
+const main = document.querySelector('main')
+const logoutBtn = document.querySelector('.logout-btn')
+
+loginForm.addEventListener('submit', function (e) {
+    e.preventDefault()
+    const username = loginUsername.value.trim()
+    if (username) {
+        nameInput.value = username
+        nameInput.disabled = true
+        nameInput.classList.add('disabled')
+        localStorage.setItem('vybchat-username', username)
+        loginOverlay.classList.add('hide')
+        // Hide power button when overlay is visible, show when hidden
+        if (logoutBtn) logoutBtn.style.display = 'block'
+        setTimeout(() => {
+            loginOverlay.style.display = 'none'
+            main.style.opacity = '1'
+            main.style.pointerEvents = 'auto'
+            chatRoom.focus()
+        }, 600)
+    }
+})
+
+// Prevent chat interaction before login or auto-login if username exists
+window.addEventListener('DOMContentLoaded', () => {
+    const savedUsername = localStorage.getItem('vybchat-username')
+    if (savedUsername) {
+        nameInput.value = savedUsername
+        nameInput.disabled = true
+        nameInput.classList.add('disabled')
+        loginOverlay.classList.add('hide')
+        loginOverlay.style.display = 'none'
+        main.style.opacity = '1'
+        main.style.pointerEvents = 'auto'
+        if (logoutBtn) logoutBtn.style.display = 'block'
+        chatRoom.focus()
+    } else {
+        main.style.opacity = '0.5'
+        main.style.pointerEvents = 'none'
+        nameInput.disabled = false
+        loginOverlay.classList.add('show')
+        loginOverlay.style.display = 'flex'
+        if (logoutBtn) logoutBtn.style.display = 'none'
+        loginUsername.focus()
+    }
+})

@@ -13,10 +13,26 @@
 </head>
 
 <body>
-    <main>
+    <!-- Login Overlay -->
+    <div class="login-overlay show">
+        <form class="login-form">
+            <h2>Welcome to Vyb Chat</h2>
+            <input type="text" id="login-username" maxlength="8" placeholder="Enter your name" required autofocus>
+            <button type="submit">Login</button>
+        </form>
+    </div>
+
+    <button class="logout-btn" type="button" style="position:fixed;top:24px;right:32px;z-index:1001;background:none;border:none;cursor:pointer;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ff5252" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v10"/>
+            <path d="M17.657 6.343a8 8 0 1 1-11.314 0"/>
+        </svg>
+    </button>
+
+    <main style="opacity:0.5;pointer-events:none;">
         <form class="form-join">
-            <input type="text" id="name" maxlength="8" placeholder="Your name" size="5" required>
-            <input type="text" id="room" placeholder="Chat room" size="5" required>
+            <input type="text" id="name" maxlength="8" placeholder="Enter name" size="5" required>
+            <input type="text" id="room" placeholder="Enter room name" size="5" required>
             <button id="join" type="submit">Join</button>
         </form>
 
@@ -29,10 +45,44 @@
         <p class="activity"></p>
 
         <form class="form-msg">
-            <input type="text" id="message" placeholder="Your message" required>
+            <input type="text" id="message" placeholder="Enter message" required>
             <button type="submit">Send</button>
         </form>
     </main>
+
+    <script>
+        // filepath: c:\Users\beesamollaranjithk\Downloads\mern\test\server\public\index.html
+        window.addEventListener('DOMContentLoaded', function () {
+            const logoutBtn = document.querySelector('.logout-btn');
+            logoutBtn.addEventListener('click', function () {
+                // Disconnect socket if available
+                if (window.socket && typeof window.socket.disconnect === 'function') {
+                    window.socket.disconnect();
+                }
+                // Remove username from storage
+                localStorage.removeItem('vybchat-username');
+                // Reset UI: show login overlay, hide chat
+                document.querySelector('.login-overlay').classList.remove('hide');
+                document.querySelector('.login-overlay').classList.add('show');
+                document.querySelector('.login-overlay').style.display = 'flex';
+                document.querySelector('main').style.opacity = '0.5';
+                document.querySelector('main').style.pointerEvents = 'none';
+                document.getElementById('name').value = '';
+                document.getElementById('name').disabled = false;
+                document.getElementById('room').value = '';
+                document.getElementById('message').value = '';
+                // Optionally clear chat/messages
+                document.querySelector('.chat-display').innerHTML = '';
+                document.querySelector('.user-list').textContent = '';
+                document.querySelector('.room-list').textContent = '';
+                document.querySelector('.activity').textContent = '';
+                // Focus login input
+                setTimeout(() => {
+                    document.getElementById('login-username').focus();
+                }, 100);
+            });
+        });
+    </script>
 </body>
 
 </html>

@@ -7,7 +7,7 @@
 }
 
 body {
-    background-color: #000;
+    background-color: rgb(10, 1, 18);
     color: #fff;
 }
 
@@ -21,7 +21,7 @@ main {
 form {
     width: 100%;
     margin: auto;
-    max-width: 600px;
+    max-width: 800px;
     display: flex;
     flex-flow: row nowrap;
     justify-content: center;
@@ -44,10 +44,10 @@ button {
 }
 
 .chat-display {
-    background-color: #333;
+    background-color: #a1a78a88;
     list-style-type: none;
     width: 100%;
-    max-width: 600px;
+    max-width: 800px;
     border-radius: 10px;
     margin: 1rem auto;
     padding: 0;
@@ -87,11 +87,11 @@ button {
 }
 
 .post__header--user {
-    background-color: blue;
+    background-color: rgb(95, 226, 226);
 }
 
 .post__header--reply {
-    background-color: purple;
+    background-color: pink;
 }
 
 .post__header--name {
@@ -114,10 +114,89 @@ button {
     width: 100%;
     min-height: 2.65rem;
     margin: 0 auto;
-    max-width: 600px;
+    max-width: 800px;
     padding: .75rem .25rem;
 }
 
 .activity {
     font-style: italic;
+}
+
+.login-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 1;
+    pointer-events: all;
+    transition: opacity 0.6s cubic-bezier(.4,2,.6,1);
+}
+
+.login-overlay.hide {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s cubic-bezier(.4,2,.6,1);
+}
+
+.login-form {
+    background: #222;
+    padding: 2rem 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    align-items: center;
+    animation: popin 0.7s cubic-bezier(.4,2,.6,1);
+}
+
+@keyframes popin {
+    0% { transform: scale(0.7); opacity: 0; }
+    80% { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(1); }
+}
+
+.login-form input[type="text"] {
+    padding: .7rem 1rem;
+    border-radius: 8px;
+    border: none;
+    font-size: 1.1rem;
+    width: 220px;
+    outline: none;
+    transition: box-shadow 0.3s;
+}
+
+.login-form input[type="text"]:focus {
+    box-shadow: 0 0 0 2px #6c63ff;
+}
+
+.login-form button {
+    padding: .7rem 1.5rem;
+    border-radius: 8px;
+    border: none;
+    background: linear-gradient(90deg, #6c63ff 60%, #a084ee 100%);
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.login-form button:hover {
+    background: linear-gradient(90deg, #a084ee 60%, #6c63ff 100%);
+}
+
+#name:disabled {
+    background: #444;
+    color: #bbb;
+    cursor: not-allowed;
+    animation: disableFade 0.7s cubic-bezier(.4,2,.6,1);
+}
+
+@keyframes disableFade {
+    from { background: #fff; color: #222; }
+    to { background: #444; color: #bbb; }
 }
