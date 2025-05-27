@@ -7,9 +7,9 @@
 }
 
 body {
-    background: url('../images/rain-6812.gif') center center fixed no-repeat;
-    background-size: cover;
-    color: #fff;
+  background: url('/images/rain-6812.gif') center center fixed no-repeat;
+  background-size: cover;
+  color: #fff;
 }
 
 main {
