@@ -31,7 +31,6 @@ newRoomBtn.addEventListener('click', () => {
     if (!newRoomFormVisible) {
         newRoomForm.style.display = 'block';
         roomSelect.disabled = true;
-        chatRoom.focus();
         newRoomFormVisible = true;
         
         // When showing the text input, make it required
@@ -187,8 +186,6 @@ newRoomBtn.addEventListener('click', () => {
             // When showing the text input, make it required
             chatRoom.setAttribute('required', 'required');
         }
-        
-        chatRoom.focus();
     } else {
         newRoomForm.style.display = 'none';
         roomSelect.disabled = false;
@@ -267,7 +264,6 @@ loginForm.addEventListener('submit', function (e) {
             loginOverlay.style.display = 'none'
             main.style.opacity = '1'
             main.style.pointerEvents = 'auto'
-            chatRoom.focus()
         }, 600)
     }
 })
@@ -284,7 +280,6 @@ window.addEventListener('DOMContentLoaded', () => {
         main.style.opacity = '1'
         main.style.pointerEvents = 'auto'
         if (logoutBtn) logoutBtn.style.display = 'block'
-        chatRoom.focus()
         
         // Request room list if we're already logged in
         if (socket.connected) {
