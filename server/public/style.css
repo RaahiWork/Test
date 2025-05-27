@@ -226,3 +226,29 @@ button {
     from { background: #fff; color: #222; }
     to { background: #444; color: #bbb; }
 }
+
+.side-pane ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+    width: 100%;
+}
+
+.side-pane ul li {
+    background: rgba(160, 132, 238, 0.13);
+    color: #fff;
+    border-radius: 7px;
+    margin-bottom: 0.7em;
+    padding: 0.7em 1em;
+    font-size: 1.08rem;
+    letter-spacing: 0.5px;
+    transition: background 0.2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+}
+
+.side-pane ul li:last-child {
+    margin-bottom: 0;
+}

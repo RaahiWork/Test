@@ -87,8 +87,13 @@ socket.on('roomList', ({ rooms }) => {
 function showUsers(users) {
     usersList.innerHTML = '';
     if (users && users.length) {
-        usersList.innerHTML = `<ul style="list-style:none;padding-left:0;margin:0;">` +
-            users.map(user => `<li style="margin-bottom:0.3em;">${user.name}</li>`).join('') +
+        usersList.innerHTML = `<ul>` +
+            users.map(user =>
+                `<li class="user-list-item">
+                    <span style="display:inline-block;width:1.3em;text-align:center;margin-right:0.5em;opacity:0.7;">👤</span>
+                    <span>${user.name}</span>
+                </li>`
+            ).join('') +
             `</ul>`;
     } else {
         usersList.innerHTML = `<em>No users in room</em>`;
