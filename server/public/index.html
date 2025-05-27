@@ -29,25 +29,30 @@
         </svg>
     </button>
 
-    <main style="opacity:0.5;pointer-events:none;">
-        <form class="form-join">
-            <input type="text" id="name" maxlength="8" placeholder="Enter name" size="5" required>
-            <input type="text" id="room" placeholder="Enter room name" size="5" required>
-            <button id="join" type="submit">Join</button>
-        </form>
+    <main style="opacity:0.5;pointer-events:none;display:flex;flex-direction:row;">
+        <!-- Side pane for users -->
+        <aside class="side-pane">
+            <h3>Room Users</h3>
+            <p class="user-list"></p>
+        </aside>
+        <section class="main-chat-area" style="flex:1;display:flex;flex-direction:column;">
+            <form class="form-join">
+                <input type="text" id="name" maxlength="8" placeholder="Enter name" size="5" required>
+                <input type="text" id="room" placeholder="Enter room name" size="5" required>
+                <button id="join" type="submit">Join</button>
+            </form>
 
-        <ul class="chat-display"></ul>
+            <ul class="chat-display"></ul>
 
-        <p class="user-list"></p>
+            <p class="room-list"></p>
 
-        <p class="room-list"></p>
+            <p class="activity"></p>
 
-        <p class="activity"></p>
-
-        <form class="form-msg">
-            <input type="text" id="message" placeholder="Enter message" required>
-            <button type="submit">Send</button>
-        </form>
+            <form class="form-msg">
+                <input type="text" id="message" placeholder="Enter message" required>
+                <button type="submit">Send</button>
+            </form>
+        </section>
     </main>
 
     <script>

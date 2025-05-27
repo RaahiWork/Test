@@ -85,15 +85,13 @@ socket.on('roomList', ({ rooms }) => {
 })
 
 function showUsers(users) {
-    usersList.textContent = ''
-    if (users) {
-        usersList.innerHTML = `<em>Users in ${chatRoom.value}:</em>`
-        users.forEach((user, i) => {
-            usersList.textContent += ` ${user.name}`
-            if (users.length > 1 && i !== users.length - 1) {
-                usersList.textContent += ","
-            }
-        })
+    usersList.innerHTML = '';
+    if (users && users.length) {
+        usersList.innerHTML = `<ul style="list-style:none;padding-left:0;margin:0;">` +
+            users.map(user => `<li style="margin-bottom:0.3em;">${user.name}</li>`).join('') +
+            `</ul>`;
+    } else {
+        usersList.innerHTML = `<em>No users in room</em>`;
     }
 }
 
