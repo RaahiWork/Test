@@ -7,7 +7,8 @@
 }
 
 body {
-    background-color: rgb(10, 1, 18);
+    background: url('../images/rain-6812.gif') center center fixed no-repeat;
+    background-size: cover;
     color: #fff;
 }
 
@@ -44,7 +45,7 @@ button {
 }
 
 .chat-display {
-    background-color: #493b1a88;
+    background-color: #a79e8a88;
     list-style-type: none;
     width: 100%;
     max-width: 800px;
