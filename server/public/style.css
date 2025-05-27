@@ -17,7 +17,7 @@ main {
     padding: 1rem;
     display: flex;
     flex-flow: row nowrap;
-    /* changed from column to row for sidebar */
+    gap: 0; /* Remove gap between side pane and main content */
 }
 
 .side-pane {
@@ -27,7 +27,7 @@ main {
     background: rgba(34,34,34,0.85);
     color: #fff;
     border-radius: 12px;
-    margin-right: 1.5rem;
+    margin-right: 0.5rem; /* Reduced from 1.5rem to 0.5rem */
     padding: 1rem 0.75rem;
     display: flex;
     flex-direction: column;
@@ -47,7 +47,7 @@ main {
 form {
     width: 100%;
     margin: auto;
-    max-width: 800px;
+    max-width: 1000px; /* Increased from 800px */
     display: flex;
     flex-flow: row nowrap;
     justify-content: center;
@@ -73,7 +73,7 @@ button {
     background-color: #a79e8a88;
     list-style-type: none;
     width: 100%;
-    max-width: 800px;
+    max-width: 1000px; /* Increased from 800px */
     border-radius: 10px;
     margin: 1rem auto;
     padding: 0;
@@ -140,11 +140,8 @@ button {
     width: 100%;
     min-height: 2.65rem;
     margin: 0 auto;
-    max-width: 800px;
+    max-width: 1000px; /* Increased from 800px */
     padding: .75rem .25rem;
-}
-
-.activity {
     font-style: italic;
 }
 
@@ -251,4 +248,101 @@ button {
 
 .side-pane ul li:last-child {
     margin-bottom: 0;
+}
+
+.rooms-header {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    color: #a084ee;
+    font-size: 1.05rem;
+}
+
+.rooms-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.room-item {
+    background: rgba(108, 99, 255, 0.25);
+    border-radius: 6px;
+    padding: 0.4rem 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(160, 132, 238, 0.2);
+}
+
+.room-item:hover {
+    background: rgba(108, 99, 255, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+}
+
+.room-icon {
+    opacity: 0.8;
+    font-size: 0.9rem;
+}
+
+.room-name {
+    font-weight: 500;
+}
+
+.rooms-hint {
+    font-size: 0.85rem;
+    font-style: italic;
+    opacity: 0.8;
+    margin-top: 0.4rem;
+}
+
+.room-selection-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 0.5rem;
+}
+
+.room-dropdown {
+    width: 100%;
+    padding: 0.5rem;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    background-color: white;
+    cursor: pointer;
+}
+
+.room-dropdown:disabled {
+    background-color: #f0f0f0;
+    opacity: 0.7;
+}
+
+.new-room-toggle {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+#new-room-btn {
+    align-self: flex-start;
+    background: #6c63ff;
+    color: white;
+    padding: 0.3rem 0.8rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    width: auto;
+    border: none;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+
+#new-room-btn:hover {
+    background: #5650d8;
+}
+
+.new-room-form {
+    width: 100%;
 }

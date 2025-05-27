@@ -22,14 +22,14 @@
         </form>
     </div>
 
-    <button class="logout-btn" type="button" style="position:fixed;top:24px;right:32px;z-index:1001;background:none;border:none;cursor:pointer;">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ff5252" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <button class="logout-btn" type="button" style="position:fixed;top:10px;right:10px;z-index:1001;background:none;border:none;cursor:pointer;padding:5px;width:auto;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff5252" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 2v10"/>
             <path d="M17.657 6.343a8 8 0 1 1-11.314 0"/>
         </svg>
     </button>
 
-    <main style="opacity:0.5;pointer-events:none;display:flex;flex-direction:row;">
+    <main style="opacity:0.5;pointer-events:none;position:relative;">
         <!-- Side pane for users -->
         <aside class="side-pane">
             <h3>Room Users</h3>
@@ -38,13 +38,22 @@
         <section class="main-chat-area" style="flex:1;display:flex;flex-direction:column;">
             <form class="form-join">
                 <input type="text" id="name" maxlength="8" placeholder="Enter name" size="5" required>
-                <input type="text" id="room" placeholder="Enter room name" size="5" required>
+                <div class="room-selection-container">
+                    <select id="room-select" class="room-dropdown">
+                        <option value="" disabled selected>Select a room</option>
+                        <!-- Will be populated with active rooms -->
+                    </select>
+                    <div class="new-room-toggle">
+                        <button type="button" id="new-room-btn">+ New</button>
+                        <div id="new-room-form" class="new-room-form" style="display:none;">
+                            <input type="text" id="room" placeholder="Enter new room name" required>
+                        </div>
+                    </div>
+                </div>
                 <button id="join" type="submit">Join</button>
             </form>
 
             <ul class="chat-display"></ul>
-
-            <p class="room-list"></p>
 
             <p class="activity"></p>
 
@@ -79,7 +88,6 @@
                 // Optionally clear chat/messages
                 document.querySelector('.chat-display').innerHTML = '';
                 document.querySelector('.user-list').textContent = '';
-                document.querySelector('.room-list').textContent = '';
                 document.querySelector('.activity').textContent = '';
                 // Focus login input
                 setTimeout(() => {
