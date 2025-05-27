@@ -346,3 +346,45 @@ button {
 .new-room-form {
     width: 100%;
 }
+
+.message-input-container {
+    position: relative;
+    flex-grow: 1;
+    max-width: calc(80% - .25rem);
+    display: flex;
+    align-items: center;
+}
+
+.message-input-container input {
+    width: 100%;
+    padding-right: 40px; /* Make room for the image button */
+}
+
+.image-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #6c63ff;
+    padding: 0;
+    transition: background-color 0.2s;
+    z-index: 5;
+}
+
+.image-btn:hover {
+    background-color: rgba(108, 99, 255, 0.1);
+}
+
+.image-btn svg {
+    width: 20px;
+    height: 20px;
+}

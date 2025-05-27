@@ -112,6 +112,20 @@ io.on('connection', socket => {
         }
     })
 
+    // Add handler for image messages
+    socket.on('imageMessage', ({ name, image }) => {
+        const room = getUser(socket.id)?.room;
+        if (room) {
+            console.log(`Received image from ${name} in room ${room}`);
+            // Send to everyone in the room including sender
+            io.to(room).emit('message', buildMsg(name, null, image));
+        } else {
+            console.log(`User ${name} tried to send image but is not in a room`);
+            // Send error back to sender
+            socket.emit('message', buildMsg(ADMIN, "You must join a room before sending images"));
+        }
+    });
+
     // Listen for activity 
     socket.on('activity', (name) => {
         const room = getUser(socket.id)?.room
@@ -121,10 +135,11 @@ io.on('connection', socket => {
     })
 })
 
-function buildMsg(name, text) {
+function buildMsg(name, text, image = null) {
     return {
         name,
         text,
+        image, // Add image to the message object
         time: new Intl.DateTimeFormat('default', {
             hour: 'numeric',
             minute: 'numeric',

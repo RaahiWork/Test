@@ -76,22 +76,30 @@ msgInput.addEventListener('keypress', () => {
 // Listen for messages 
 socket.on("message", (data) => {
     activity.textContent = ""
-    const { name, text, time } = data
+    const { name, text, time, image } = data
     const li = document.createElement('li')
     li.className = 'post'
     if (name === nameInput.value) li.className = 'post post--left'
     if (name !== nameInput.value && name !== 'Admin') li.className = 'post post--right'
     if (name !== 'Admin') {
-        li.innerHTML = `<div class="post__header ${name === nameInput.value
+        let contentHtml = `<div class="post__header ${name === nameInput.value
             ? 'post__header--user'
             : 'post__header--reply'
             }">
         <span class="post__header--name">${name}</span> 
         <span class="post__header--time">${time}</span> 
-        </div>
-        <div class="post__text">${text}</div>`
+        </div>`
+        
+        // Add text or image based on what's available
+        if (image) {
+            contentHtml += `<div class="post__image"><img src="${image}" alt="Shared image"></div>`;
+        } else if (text) {
+            contentHtml += `<div class="post__text">${text}</div>`
+        }
+        
+        li.innerHTML = contentHtml
     } else {
-        li.innerHTML = `<div class="post__text">${text}</div>`
+        li.innerHTML = `<div class="post__text">${text || ''}</div>`
     }
     document.querySelector('.chat-display').appendChild(li)
 
@@ -345,4 +353,96 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Ensure form is initialized on page load
     toggleNewRoomForm(false);
+});
+
+// Add image upload functionality
+const imageUploadBtn = document.getElementById('image-upload-btn');
+const imageFileInput = document.getElementById('image-file');
+
+// Trigger file input when image button is clicked
+imageUploadBtn.addEventListener('click', () => {
+    imageFileInput.click();
+});
+
+// Fix image upload functionality
+imageFileInput.addEventListener('change', function() {
+    if (this.files && this.files[0]) {
+        const file = this.files[0];
+        console.log("File selected:", file.name, file.type); // Debug log
+        
+        // Check if the file is an image
+        if (file.type.match('image.*')) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                // Get image data
+                const imageData = e.target.result;
+                console.log("Image loaded, size:", Math.round(imageData.length/1024), "KB"); // Debug log
+                
+                // Check if we have a username and current room
+                console.log("Current room:", currentRoom, "Username:", nameInput.value);
+                
+                if (nameInput.value && currentRoom) {
+                    // Send image message
+                    console.log("Sending image message");
+                    socket.emit('imageMessage', {
+                        name: nameInput.value,
+                        image: imageData
+                    });
+                    
+                    // Clear the file input for future uploads
+                    imageFileInput.value = '';
+                } else {
+                    alert('Please join a room before sending images');
+                }
+            };
+            
+            reader.readAsDataURL(file);
+        } else {
+            alert('Please select an image file');
+            imageFileInput.value = '';
+        }
+    }
+});
+
+// Also improve paste functionality with error handling
+document.addEventListener('paste', function(e) {
+    // Only process paste if focused on message input
+    if (document.activeElement === msgInput) {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        let foundImage = false;
+        
+        for (const item of items) {
+            if (item.type.indexOf('image') === 0) {
+                foundImage = true;
+                e.preventDefault();
+                
+                const blob = item.getAsFile();
+                console.log("Image pasted, size:", Math.round(blob.size/1024), "KB"); // Debug log
+                
+                const reader = new FileReader();
+                
+                reader.onload = function(event) {
+                    if (nameInput.value && currentRoom) {
+                        // Send image message
+                        console.log("Sending pasted image");
+                        socket.emit('imageMessage', {
+                            name: nameInput.value,
+                            image: event.target.result
+                        });
+                    } else {
+                        alert('Please join a room before sending images');
+                    }
+                };
+                
+                reader.onerror = function() {
+                    console.error("Error reading pasted image");
+                    alert("Error reading image data. Please try again.");
+                };
+                
+                reader.readAsDataURL(blob);
+                break;
+            }
+        }
+    }
 });
