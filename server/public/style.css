@@ -658,6 +658,119 @@ button {
     transform: rotate(90deg);
 }
 
+/* Current room header styling */
+.current-room-header {
+    background: rgba(108, 99, 255, 0.12);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 12px;
+    padding: 0.8rem 1.2rem;
+    margin-bottom: 0.5rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.current-room-header::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(108, 99, 255, 0.2) 0%, rgba(0, 0, 0, 0) 80%);
+    opacity: 0.6;
+    z-index: 0;
+}
+
+.room-info-container {
+    position: relative;
+    z-index: 1;
+}
+
+.current-room-name {
+    color: #fff;
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0 0 0.2rem 0;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+}
+
+.current-room-name::before {
+    content: "🚪";
+    margin-right: 0.5rem;
+    font-size: 1.2rem;
+    opacity: 0.85;
+}
+
+.current-room-description {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+    margin: 0;
+    font-style: italic;
+    max-width: 90%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Room-specific header styling */
+.current-room-header[data-room="Vibe Room"] {
+    background: linear-gradient(to right, rgba(128, 112, 255, 0.2), rgba(108, 99, 255, 0.05));
+}
+
+.current-room-header[data-room="Vibe Room"] .current-room-name::before {
+    content: "🎵";
+}
+
+.current-room-header[data-room="Lounge 404"] .current-room-name::before {
+    content: "🛋️";
+}
+
+.current-room-header[data-room="The Hive"] .current-room-name::before {
+    content: "🐝";
+}
+
+.current-room-header[data-room="Code & Coffee"] .current-room-name::before {
+    content: "☕";
+}
+
+.current-room-header[data-room="Midnight Rant Club"] .current-room-name::before {
+    content: "🌙";
+}
+
+.current-room-header[data-room="MemeStream"] .current-room-name::before {
+    content: "😂";
+}
+
+.current-room-header[data-room="The Think Tank"] .current-room-name::before {
+    content: "🧠";
+}
+
+.current-room-header[data-room="AFK Café"] .current-room-name::before {
+    content: "💤";
+}
+
+.current-room-header[data-room="Spoiler Zone"] .current-room-name::before {
+    content: "🎬";
+}
+
+.current-room-header[data-room="Echo Base"] .current-room-name::before {
+    content: "📢";
+}
+
+/* Adjust activity section to make room for header */
+.activity {
+    min-height: 1.5rem;
+    padding: 0.4rem 0.25rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+}
+
 /* Mobile responsiveness */
 @media (max-width: 1024px) {
     .main-content {

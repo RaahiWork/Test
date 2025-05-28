@@ -113,6 +113,9 @@ function joinRoom(roomName) {
     // Store current room
     currentRoom = roomName;
     
+    // Update room header with name and description
+    updateRoomHeader(roomName);
+    
     // Update UI to show we're joining with a more compact indicator
     document.querySelectorAll('.room-item').forEach(item => {
         const roomBtn = item.querySelector('.join-room-btn');
@@ -142,6 +145,34 @@ function joinRoom(roomName) {
     
     // Clear chat history when changing rooms
     chatDisplay.innerHTML = '';
+}
+
+// Add a function to update the room header
+function updateRoomHeader(roomName) {
+    const header = document.querySelector('.current-room-header');
+    const nameElement = document.querySelector('.current-room-name');
+    const descriptionElement = document.querySelector('.current-room-description');
+    
+    if (header && nameElement && descriptionElement) {
+        // Find room description from predefined rooms
+        const roomData = predefinedRooms.find(room => room.name === roomName) || {
+            name: roomName,
+            description: "Chat room"
+        };
+        
+        // Update the header content
+        nameElement.textContent = roomData.name;
+        descriptionElement.textContent = roomData.description;
+        
+        // Set data attribute for room-specific styling
+        header.setAttribute('data-room', roomName);
+        
+        // Add animation effect
+        header.classList.add('room-changed');
+        setTimeout(() => {
+            header.classList.remove('room-changed');
+        }, 700);
+    }
 }
 
 // Room selection display function
@@ -885,3 +916,16 @@ function debugEvents() {
 
 // Call this at the end of the file to ensure it runs
 setTimeout(debugEvents, 1000);
+
+// Add CSS animation for room change
+const style = document.createElement('style');
+style.textContent = `
+@keyframes roomChanged {
+    0% { transform: translateY(-10px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+.room-changed {
+    animation: roomChanged 0.5s ease forwards;
+}
+`;
+document.head.appendChild(style);
