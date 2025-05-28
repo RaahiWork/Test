@@ -549,7 +549,25 @@ function handleLogout() {
 
 // Update DOMContentLoaded to set up the logout button
 document.addEventListener('DOMContentLoaded', function() {
+    // Set up favicon
+    const setFavicon = () => {
+        // Check if a favicon already exists
+        let favicon = document.querySelector('link[rel="icon"]');
+        
+        if (!favicon) {
+            // Create a new favicon link element if it doesn't exist
+            favicon = document.createElement('link');
+            favicon.rel = 'icon';
+            document.head.appendChild(favicon);
+        }
+        
+        // Set the favicon to our logo image
+        favicon.href = '/images/logo.png';
+        favicon.type = 'image/png';
+    };
     
+    // Set favicon immediately
+    setFavicon();
     
     // Add direct event handler to form
     const messageForm = document.querySelector('.form-msg');
