@@ -86,51 +86,48 @@ msgInput.addEventListener('keypress', () => {
 
 // Listen for messages 
 socket.on("message", (data) => {
-    console.log('Received message:', data);
+
     activity.textContent = "";
     const { name, text, time, image } = data;
     
     const li = document.createElement('li');
     li.className = 'post';
     if (name === nameInput.value) li.className = 'post post--left';
-    if (name !== nameInput.value && name !== 'Admin') li.className = 'post post--right';
+    if (name !== nameInput.value) li.className = 'post post--right';
     
-    if (name !== 'Admin') {
-        let contentHtml = `<div class="post__header ${name === nameInput.value
-            ? 'post__header--user'
-            : 'post__header--reply'
-            }">
-        <span class="post__header--name">${name}</span> 
-        <span class="post__header--time">${time}</span> 
+    let contentHtml = `<div class="post__header ${name === nameInput.value
+        ? 'post__header--user'
+        : 'post__header--reply'
+        }">
+    <span class="post__header--name">${name}</span> 
+    <span class="post__header--time">${time}</span> 
+    </div>`;
+    
+    // Add text or image based on what's available
+    if (image) {
+        // Ensure image is properly escaped and set with correct styling
+        contentHtml += `<div class="post__image">
+            <img src="${image}" alt="Shared image" 
+                onerror="this.onerror=null; this.src=''; this.alt='Failed to load image'; this.parentNode.classList.add('image-error');" 
+                style="max-width:100%; max-height:300px; border-radius:5px; margin-top:5px;">
         </div>`;
+    } else if (text) {
+        // Process emoji markers in text with improved regex and error handling
+        let processedText = text;
+        const emojiRegex = /\[emoji:([^\]]+)\]/g;
         
-        // Add text or image based on what's available
-        if (image) {
-            // Ensure image is properly escaped and set with correct styling
-            contentHtml += `<div class="post__image">
-                <img src="${image}" alt="Shared image" 
-                    onerror="this.onerror=null; this.src=''; this.alt='Failed to load image'; this.parentNode.classList.add('image-error');" 
-                    style="max-width:100%; max-height:300px; border-radius:5px; margin-top:5px;">
-            </div>`;
-        } else if (text) {
-            // Process emoji markers in text with improved regex and error handling
-            let processedText = text;
-            const emojiRegex = /\[emoji:([^\]]+)\]/g;
-            
-            processedText = processedText.replace(emojiRegex, (match, emojiFile) => {
-                // Create direct relative URL to ensure consistent rendering across environments
-                return `<img class="emoji" src="/emojis/${emojiFile}" alt="emoji" 
-                    data-emoji="${emojiFile}"
-                    onerror="console.error('Failed to load emoji in message:', this.getAttribute('data-emoji')); this.style.display='none'; this.insertAdjacentText('afterend', '😊');">`;
-            });
-            
-            contentHtml += `<div class="post__text">${processedText}</div>`;
-        }
+        processedText = processedText.replace(emojiRegex, (match, emojiFile) => {
+            // Create direct relative URL to ensure consistent rendering across environments
+            return `<img class="emoji" src="/emojis/${emojiFile}" alt="emoji" 
+                data-emoji="${emojiFile}"
+                onerror="console.error('Failed to load emoji in message:', this.getAttribute('data-emoji')); this.style.display='none'; this.insertAdjacentText('afterend', '😊');">`;
+        });
         
-        li.innerHTML = contentHtml;
-    } else {
-        li.innerHTML = `<div class="post__text">${text || ''}</div>`;
+        contentHtml += `<div class="post__text">${processedText}</div>`;
     }
+    
+    li.innerHTML = contentHtml;
+    
     
     document.querySelector('.chat-display').appendChild(li);
     chatDisplay.scrollTop = chatDisplay.scrollHeight;
@@ -559,7 +556,6 @@ function loadEmojis() {
     
     // Convert WebSocket URL to HTTP URL for fetch API - ensure it works in production
     const apiUrl = serverUrl.replace('ws://', 'http://').replace('wss://', 'https://');
-    console.log('Loading emojis from:', apiUrl);
     
     // Fetch list of emojis from the server
     fetch(`${apiUrl}/api/emojis`, {
@@ -583,7 +579,6 @@ function loadEmojis() {
         }
         
         emojiContainer.innerHTML = ''; // Clear loading message
-        console.log(`Found ${emojis.length} emojis:`, emojis);
         
         // Add each emoji to the picker with consistent URL structure
         emojis.forEach((emoji, index) => {
@@ -616,7 +611,7 @@ function loadEmojis() {
             emojiItem.addEventListener('click', () => {
                 insertEmoji(emoji);
                 // Log success for debugging
-                console.log(`Selected emoji: ${emoji} - this will be rendered as [emoji:${emoji}]`);
+               
             });
         });
     })
