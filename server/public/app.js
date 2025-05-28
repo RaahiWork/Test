@@ -655,6 +655,24 @@ function setupEmojiAndImageHandlers() {
                 emojiPicker.style.display = 'none';
             }
         });
+        
+        // Add close button functionality
+        const closeEmojiPickerBtn = document.getElementById('close-emoji-picker');
+        if (closeEmojiPickerBtn) {
+            closeEmojiPickerBtn.addEventListener('click', () => {
+                emojiPicker.style.display = 'none';
+            });
+        }
+        
+        // Close emoji picker when clicking outside
+        document.addEventListener('click', (e) => {
+            if (emojiPicker.style.display !== 'none' && 
+                !emojiPicker.contains(e.target) && 
+                e.target !== emojiBtn && 
+                !emojiBtn.contains(e.target)) {
+                emojiPicker.style.display = 'none';
+            }
+        });
     }
     
     // Fix image upload functionality
