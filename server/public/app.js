@@ -20,7 +20,7 @@ try {
         autoConnect: true
     });
     
-    console.log('Socket.io initialized with server URL:', serverUrl);
+    
     
     // Add error handler for socket connection
     socket.on('connect_error', (error) => {
@@ -69,7 +69,7 @@ let currentRoom = '';
 // Expose sendMessage function globally to ensure it's accessible
 window.sendMessage = function(e) {
     if (e) e.preventDefault();
-    console.log("Global sendMessage called");
+    
     
     if (!currentRoom) {
         alert('Please join a room before sending messages');
@@ -81,7 +81,7 @@ window.sendMessage = function(e) {
     }
     
     // Send the message
-    console.log("Emitting message:", {name: nameInput.value, text: msgInput.value});
+    
     socket.emit('message', {
         name: nameInput.value,
         text: msgInput.value
@@ -238,14 +238,14 @@ const processedMessages = new Set();
 
 // Only keep one socket.on('message') handler
 socket.on("message", (data) => {
-    console.log('Message received:', data);
+    
     
     // Create a unique identifier for this message
     const messageId = `${data.name}-${data.time}-${data.text?.substring(0, 20) || 'image'}`;
     
     // Check if we've already processed this message
     if (processedMessages.has(messageId)) {
-        console.log('Duplicate message detected, skipping:', messageId);
+        
         return;
     }
     
@@ -368,7 +368,7 @@ socket.on("activity", (name) => {
 
 // Connection handling
 socket.on('connect', () => {
-    console.log('Socket connected!');
+
     
     // Request room list immediately after connection
     socket.emit('getRooms');
@@ -513,13 +513,13 @@ function handleLogout() {
             socket.emit('leaveRoom');
         }
         
-        console.log('User logged out');
+        
     }
 }
 
 // Update DOMContentLoaded to set up the logout button
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("Setting up message form");
+    
     
     // Add direct event handler to form
     const messageForm = document.querySelector('.form-msg');
@@ -724,7 +724,7 @@ function setupEmojiAndImageHandlers() {
                         image: imageData
                     });
                     
-                    console.log('Image sent to server');
+                    
                     
                     // Clear file input for next upload
                     imageFileInput.value = '';
@@ -775,7 +775,7 @@ function setupEmojiAndImageHandlers() {
                             image: e.target.result
                         });
                         
-                        console.log('Pasted image sent to server');
+                        
                     };
                     
                     reader.onerror = function(err) {
@@ -871,15 +871,14 @@ function debugEvents() {
     const formMsg = document.querySelector('.form-msg');
     const sendButton = document.querySelector('.form-msg button[type="submit"]');
     
-    console.log("Form:", formMsg);
-    console.log("Send button:", sendButton);
+    
     
     // Check for duplicate socket handlers
     // This is just for debugging and won't fix the issue directly
     if (socket._callbacks) {
-        console.log("Socket event handlers:");
+        
         for (const eventType in socket._callbacks) {
-            console.log(`- ${eventType}: ${socket._callbacks[eventType].length} handler(s)`);
+            
         }
     }
 }

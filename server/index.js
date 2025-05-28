@@ -82,7 +82,7 @@ app.get('/api/emojis', async (req, res) => {
 });
 
 const expressServer = app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    
 })
 
 // state 

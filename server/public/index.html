@@ -91,10 +91,10 @@
         document.addEventListener('DOMContentLoaded', function() {
             const messageForm = document.getElementById('message-form');
             if (messageForm) {
-                console.log("Adding direct event listener to message form");
+                
                 messageForm.addEventListener('submit', function(e) {
                     e.preventDefault();
-                    console.log("Form submitted directly");
+                    
                     if (window.sendMessage) {
                         window.sendMessage(e);
                     }
@@ -106,14 +106,14 @@
         (function() {
             // Function to set up message form
             function setupDirectMessageHandler() {
-                console.log("Setting up direct message handler");
+                
                 
                 // Handle form submit
                 const messageForm = document.getElementById('message-form');
                 if (messageForm) {
                     messageForm.onsubmit = function(e) {
                         e.preventDefault();
-                        console.log("Form submitted directly");
+                        
                         
                         if (window.sendMessage) {
                             window.sendMessage(e);
@@ -130,7 +130,7 @@
                 if (sendButton) {
                     sendButton.onclick = function(e) {
                         e.preventDefault();
-                        console.log("Send button clicked directly");
+                        
                         
                         if (window.sendMessage) {
                             window.sendMessage(e);
