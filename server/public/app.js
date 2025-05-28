@@ -81,12 +81,15 @@ msgInput.addEventListener('keypress', () => {
 
 // Listen for messages 
 socket.on("message", (data) => {
-    activity.textContent = ""
-    const { name, text, time, image } = data
-    const li = document.createElement('li')
-    li.className = 'post'
-    if (name === nameInput.value) li.className = 'post post--left'
-    if (name !== nameInput.value && name !== 'Admin') li.className = 'post post--right'
+    activity.textContent = "";
+    const { name, text, time, image } = data;
+    console.log(`Received message from ${name}:`, image ? "Image message" : text);
+    
+    const li = document.createElement('li');
+    li.className = 'post';
+    if (name === nameInput.value) li.className = 'post post--left';
+    if (name !== nameInput.value && name !== 'Admin') li.className = 'post post--right';
+    
     if (name !== 'Admin') {
         let contentHtml = `<div class="post__header ${name === nameInput.value
             ? 'post__header--user'
@@ -94,23 +97,31 @@ socket.on("message", (data) => {
             }">
         <span class="post__header--name">${name}</span> 
         <span class="post__header--time">${time}</span> 
-        </div>`
+        </div>`;
         
         // Add text or image based on what's available
         if (image) {
-            contentHtml += `<div class="post__image"><img src="${image}" alt="Shared image"></div>`;
+            console.log("Rendering image in message");
+            contentHtml += `<div class="post__image"><img src="${image}" alt="Shared image" style="max-width:100%; max-height:300px; border-radius:5px; margin-top:5px;"></div>`;
         } else if (text) {
-            contentHtml += `<div class="post__text">${text}</div>`
+            // Process text to render emojis if present
+            let processedText = text;
+            const emojiRegex = /\[emoji:([^\]]+)\]/g;
+            processedText = processedText.replace(emojiRegex, (match, emoji) => {
+                return `<img class="emoji" src="/emojis/${emoji}" alt="emoji">`;
+            });
+            
+            contentHtml += `<div class="post__text">${processedText}</div>`;
         }
         
-        li.innerHTML = contentHtml
+        li.innerHTML = contentHtml;
     } else {
-        li.innerHTML = `<div class="post__text">${text || ''}</div>`
+        li.innerHTML = `<div class="post__text">${text || ''}</div>`;
     }
-    document.querySelector('.chat-display').appendChild(li)
-
-    chatDisplay.scrollTop = chatDisplay.scrollHeight
-})
+    
+    document.querySelector('.chat-display').appendChild(li);
+    chatDisplay.scrollTop = chatDisplay.scrollHeight;
+});
 
 let activityTimer
 socket.on("activity", (name) => {
@@ -406,40 +417,41 @@ imageUploadBtn.addEventListener('click', () => {
 imageFileInput.addEventListener('change', function() {
     if (this.files && this.files[0]) {
         const file = this.files[0];
-
+        console.log("Selected file:", file.name, file.type, `${Math.round(file.size/1024)} KB`);
         
-        // Check if the file is an image
-        if (file.type.match('image.*')) {
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                // Get image data
-                const imageData = e.target.result;
-               
-                
-                // Check if we have a username and current room
-                
-                
-                if (nameInput.value && currentRoom) {
-                    // Send image message
-
-                    socket.emit('imageMessage', {
-                        name: nameInput.value,
-                        image: imageData
-                    });
-                    
-                    // Clear the file input for future uploads
-                    imageFileInput.value = '';
-                } else {
-                    alert('Please join a room before sending images');
-                }
-            };
-            
-            reader.readAsDataURL(file);
-        } else {
-            alert('Please select an image file');
-            imageFileInput.value = '';
+        // Validate file size (max 2MB to avoid socket limitations)
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Image too large (max 2MB). Please select a smaller image.');
+            this.value = '';
+            return;
         }
+        
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const imageData = e.target.result;
+            console.log(`Image loaded (${Math.round(imageData.length/1024)} KB)`, imageData.substring(0, 50) + "...");
+            
+            // Show sending indicator
+            const activityEl = document.querySelector('.activity');
+            if (activityEl) activityEl.textContent = 'Sending image...';
+            
+            // Send image message to the server
+            socket.emit('imageMessage', {
+                name: nameInput.value,
+                image: imageData
+            });
+            
+            // Clear the file input for future uploads
+            imageFileInput.value = '';
+        };
+        
+        reader.onerror = function(error) {
+            console.error('Error reading file:', error);
+            alert('Error reading image file. Please try again.');
+        };
+        
+        reader.readAsDataURL(file);
     }
 });
 
@@ -484,3 +496,130 @@ document.addEventListener('paste', function(e) {
         }
     }
 });
+
+// Add emoji picker functionality
+const emojiBtn = document.getElementById('emoji-btn');
+const emojiPicker = document.getElementById('emoji-picker');
+const emojiContainer = document.getElementById('emoji-container');
+const closeEmojiPickerBtn = document.getElementById('close-emoji-picker');
+
+// Toggle emoji picker visibility
+emojiBtn?.addEventListener('click', () => {
+    if (emojiPicker.style.display === 'none' || !emojiPicker.style.display) {
+        emojiPicker.style.display = 'flex';
+        loadEmojis();
+    } else {
+        emojiPicker.style.display = 'none';
+    }
+});
+
+// Close emoji picker
+closeEmojiPickerBtn?.addEventListener('click', () => {
+    emojiPicker.style.display = 'none';
+});
+
+// Load emojis from server
+function loadEmojis() {
+    // Clear previous emojis except loading indicator
+    emojiContainer.innerHTML = '<div class="emoji-loading">Loading emojis...</div>';
+    
+    // Ensure we use HTTP protocol for the fetch API, not ws:// from socket.io
+    const serverUrl = 'http://localhost:3500';
+    console.log('Fetching emojis from:', serverUrl + '/api/emojis');
+    
+    // Fetch list of emojis from the server with explicit CORS mode
+    fetch(`${serverUrl}/api/emojis`, {
+        method: 'GET',
+        mode: 'cors',
+        headers: {
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(emojis => {
+        console.log('Emojis loaded:', emojis);
+        if (!Array.isArray(emojis) || emojis.length === 0) {
+            emojiContainer.innerHTML = '<div class="emoji-loading">No emojis available.</div>';
+            return;
+        }
+        
+        emojiContainer.innerHTML = ''; // Clear loading message
+        
+        // Add each emoji to the picker
+        emojis.forEach(emoji => {
+            const emojiItem = document.createElement('div');
+            emojiItem.className = 'emoji-item';
+            emojiItem.title = emoji.replace('.png', '').replace('.jpg', '').replace('.gif', '');
+            
+            const img = document.createElement('img');
+            img.src = `/emojis/${emoji}`;
+            img.alt = emojiItem.title;
+            
+            emojiItem.appendChild(img);
+            emojiContainer.appendChild(emojiItem);
+            
+            // Add click event to insert emoji into message
+            emojiItem.addEventListener('click', () => {
+                insertEmoji(emoji);
+            });
+        });
+    })
+    .catch(error => {
+        console.error('Error loading emojis:', error);
+        
+        // Provide a more helpful error message and fallback
+        emojiContainer.innerHTML = `
+            <div class="emoji-loading">
+                <p>Error loading emojis: ${error.message}</p>
+                <p>Try placing emoji images in server/emojis folder</p>
+            </div>`;
+    });
+}
+
+// Insert emoji into message input
+function insertEmoji(emoji) {
+    // Insert emoji image reference in text input
+    const emojiText = `[emoji:${emoji}]`;
+    const cursorPos = msgInput.selectionStart;
+    const textBefore = msgInput.value.substring(0, cursorPos);
+    const textAfter = msgInput.value.substring(cursorPos);
+    
+    msgInput.value = textBefore + emojiText + textAfter;
+    msgInput.focus();
+    
+    // Place cursor after inserted emoji
+    const newCursorPos = cursorPos + emojiText.length;
+    msgInput.setSelectionRange(newCursorPos, newCursorPos);
+    
+    // Close emoji picker
+    emojiPicker.style.display = 'none';
+}
+
+// Modify sendMessage to handle emoji markers
+const originalSendMessage = sendMessage;
+
+sendMessage = function(e) {
+    e.preventDefault();
+    
+    if (nameInput.value && msgInput.value && currentRoom) {
+        let messageText = msgInput.value;
+        
+        // Process emoji markers in message
+        socket.emit('message', {
+            name: nameInput.value,
+            text: messageText
+        });
+        
+        msgInput.value = "";
+    } else if (!currentRoom) {
+        alert('Please join a room before sending messages');
+    }
+    
+    msgInput.focus();
+};

@@ -2,6 +2,7 @@ import express from 'express'
 import { Server } from "socket.io"
 import path from 'path'
 import { fileURLToPath } from 'url'
+import fs from 'fs/promises'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -11,9 +12,77 @@ const ADMIN = "Admin"
 
 const app = express()
 
-app.use(express.static(path.join(__dirname, "public")))
+// Add CORS middleware before other routes - hardcode the specific origin
+app.use((req, res, next) => {
+    // Hardcode the origin for the specific client
+    res.header('Access-Control-Allow-Origin', 'http://127.0.0.1:5500');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
+    
+    next();
+});
+
+// Use platform-independent path resolution with __dirname
+const publicPath = path.join(__dirname, "public");
+const emojisPath = path.join(publicPath, 'emojis');
+const imagesPath = path.join(publicPath, 'images');
+
+// Remove console logs for normal operations - only keep error logs
+
+// Ensure both emojis and images directories exist
+try {
+    // Create the emojis directory if it doesn't exist
+    await fs.mkdir(emojisPath, { recursive: true });
+    
+    // Create the images directory if it doesn't exist
+    await fs.mkdir(imagesPath, { recursive: true });
+    
+    // Check if emojis directory is empty
+    const files = await fs.readdir(emojisPath);
+    if (files.length === 0) {
+        console.warn('No emojis found. Add emoji images to:', emojisPath);
+    }
+} catch (error) {
+    console.error('Error ensuring directories exist:', error);
+}
+
+// Expose the public directory
+app.use(express.static(publicPath));
+
+// Add endpoint to list available emojis with minimal logging
+app.get('/api/emojis', async (req, res) => {
+    try {
+        // Check if directory exists, if not create it
+        try {
+            await fs.access(emojisPath);
+        } catch (error) {
+            await fs.mkdir(emojisPath, { recursive: true });
+            return res.json([]);
+        }
+        
+        // Read directory contents
+        const files = await fs.readdir(emojisPath);
+        
+        // Filter to include only image files
+        const imageFiles = files.filter(file => {
+            const extension = path.extname(file).toLowerCase();
+            return ['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes(extension);
+        });
+        
+        res.json(imageFiles);
+    } catch (error) {
+        console.error('Error reading emoji directory:', error);
+        res.status(500).json({ error: 'Failed to load emojis', details: error.message });
+    }
+});
 
 const expressServer = app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 })
 
 // state 
@@ -33,7 +102,6 @@ const io = new Server(expressServer, {
 })
 
 io.on('connection', socket => {
-
     // Upon connection - only to user 
     socket.emit('message', buildMsg(ADMIN, "Welcome to Vyb Chat!"))
     
@@ -51,7 +119,6 @@ io.on('connection', socket => {
     });
 
     socket.on('enterRoom', ({ name, room }) => {
-
         // leave previous room 
         const prevRoom = getUser(socket.id)?.room
 
@@ -87,7 +154,7 @@ io.on('connection', socket => {
         io.emit('roomList', {
             rooms: getAllActiveRooms()
         })
-    })
+    });
 
     // When user disconnects - to all others 
     socket.on('disconnect', () => {
@@ -105,8 +172,7 @@ io.on('connection', socket => {
                 rooms: getAllActiveRooms()
             })
         }
-
-    })
+    });
 
     // Listening for a message event 
     socket.on('message', ({ name, text }) => {
@@ -114,28 +180,39 @@ io.on('connection', socket => {
         if (room) {
             io.to(room).emit('message', buildMsg(name, text))
         }
-    })
+    });
 
     // Add handler for image messages
     socket.on('imageMessage', ({ name, image }) => {
         const room = getUser(socket.id)?.room;
         if (room) {
-            // Send to everyone in the room including sender
-            io.to(room).emit('message', buildMsg(name, null, image));
+            // Validate image data format
+            if (!image || !image.startsWith('data:image/')) {
+                console.error('Invalid image data format');
+                socket.emit('message', buildMsg(ADMIN, "Invalid image format. Please try again."));
+                return;
+            }
+            
+            try {
+                // Send to everyone in the room including sender
+                io.to(room).emit('message', buildMsg(name, null, image));
+            } catch (error) {
+                console.error('Error sending image message:', error);
+                socket.emit('message', buildMsg(ADMIN, `Error sending image: ${error.message}`));
+            }
         } else {
-            // Send error back to sender
             socket.emit('message', buildMsg(ADMIN, "You must join a room before sending images"));
         }
     });
-
+    
     // Listen for activity 
     socket.on('activity', (name) => {
         const room = getUser(socket.id)?.room
         if (room) {
             socket.broadcast.to(room).emit('activity', name)
         }
-    })
-})
+    });
+});
 
 function buildMsg(name, text, image = null) {
     return {
@@ -145,7 +222,7 @@ function buildMsg(name, text, image = null) {
         time: new Intl.DateTimeFormat('default', {
             hour: 'numeric',
             minute: 'numeric',
-            second: 'numeric'
+            second: 'numeric',
         }).format(new Date())
     }
 }
@@ -154,8 +231,8 @@ function buildMsg(name, text, image = null) {
 function activateUser(id, name, room) {
     const user = { id, name, room }
     UsersState.setUsers([
+        user,
         ...UsersState.users.filter(user => user.id !== id),
-        user
     ])
     return user
 }
@@ -163,17 +240,17 @@ function activateUser(id, name, room) {
 function userLeavesApp(id) {
     UsersState.setUsers(
         UsersState.users.filter(user => user.id !== id)
-    )
+    );
 }
 
 function getUser(id) {
-    return UsersState.users.find(user => user.id === id)
+    return UsersState.users.find(user => user.id === id);
 }
 
 function getUsersInRoom(room) {
-    return UsersState.users.filter(user => user.room === room)
+    return UsersState.users.filter(user => user.room === room);
 }
 
 function getAllActiveRooms() {
-    return Array.from(new Set(UsersState.users.map(user => user.room)))
+    return Array.from(new Set(UsersState.users.map(user => user.room)));
 }
