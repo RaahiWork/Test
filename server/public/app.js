@@ -1,4 +1,7 @@
-const serverUrl = window.location.origin;
+// Replace the hard-coded localhost URL with a dynamic detection
+const serverUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'ws://localhost:3500'
+    : window.location.origin;
 
 const socket = io(serverUrl, {
     reconnectionAttempts: 10,
@@ -109,11 +112,14 @@ socket.on("message", (data) => {
                     style="max-width:100%; max-height:300px; border-radius:5px; margin-top:5px;">
             </div>`;
         } else if (text) {
-            // Process emoji markers in text
+            // Process emoji markers in text with improved regex and error handling
             let processedText = text;
             const emojiRegex = /\[emoji:([^\]]+)\]/g;
-            processedText = processedText.replace(emojiRegex, (match, emoji) => {
-                return `<img class="emoji" src="/emojis/${emoji}" alt="emoji" onerror="this.style.display='none';">`;
+            
+            processedText = processedText.replace(emojiRegex, (match, emojiFile) => {
+                // Create full URL to emoji image - use server URL for consistent access
+                const emojiUrl = `${serverUrl.replace('ws://', 'http://')}/emojis/${emojiFile}`;
+                return `<img class="emoji" src="${emojiUrl}" alt="emoji" onerror="this.style.display='none'; this.insertAdjacentText('afterend', '[emoji]');">`;
             });
             
             contentHtml += `<div class="post__text">${processedText}</div>`;
@@ -544,13 +550,16 @@ closeEmojiPickerBtn?.addEventListener('click', () => {
     emojiPicker.style.display = 'none';
 });
 
-// Load emojis from server
+// Load emojis from server - update URL structure
 function loadEmojis() {
     // Clear previous emojis except loading indicator
     emojiContainer.innerHTML = '<div class="emoji-loading">Loading emojis...</div>';
     
-    // Fetch list of emojis from the server with explicit CORS mode
-    fetch(`${serverUrl}/api/emojis`, {
+    // Convert WebSocket URL to HTTP URL for fetch API
+    const apiUrl = serverUrl.replace('ws://', 'http://');
+    
+    // Fetch list of emojis from the server
+    fetch(`${apiUrl}/api/emojis`, {
         method: 'GET',
         headers: {
             'Accept': 'application/json'
