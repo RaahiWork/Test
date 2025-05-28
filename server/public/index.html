@@ -3,127 +3,153 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vyb Chat</title>
-    <link href="style.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"
-        integrity="sha512-Xm9qbB6Pu06k3PUwPj785dyTl6oHxgsv9nHp7ej7nCpAqGZT3OZpsELuCYX05DdonFpTlBpXMOxjavIAIUwr0w=="
-        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script defer src="app.js"></script>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <!-- Login Overlay -->
-    <div class="login-overlay show">
-        <form class="login-form">
-            <h2>Welcome to Vyb Chat</h2>
-            <input type="text" id="login-username" maxlength="8" placeholder="Enter your name" required autofocus>
-            <button type="submit">Login</button>
-        </form>
-    </div>
 
-    <button class="logout-btn" type="button" style="position:fixed;top:10px;right:10px;z-index:1001;background:none;border:none;cursor:pointer;padding:5px;width:auto;">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff5252" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2v10"/>
-            <path d="M17.657 6.343a8 8 0 1 1-11.314 0"/>
-        </svg>
-    </button>
-
-    <main style="opacity:0.5;pointer-events:none;position:relative;">
-        <!-- Side pane for users -->
-        <aside class="side-pane">
-            <h3>Room Users</h3>
-            <p class="user-list"></p>
-            
-            <!-- Add connection status indicator -->
-            <div class="connection-status" style="margin-top: auto; padding: 10px 0; font-size: 0.8rem; text-align: center; border-top: 1px solid rgba(255,255,255,0.1);">
-                Connecting...
-            </div>
+    <main>
+        <aside class="side-pane left-pane">
+            <h3>Chat Rooms</h3>
+            <!-- Room list will be inserted here -->
+            <div id="rooms-list-container"></div>
+            <div class="connection-status">Connecting...</div>
         </aside>
-        <section class="main-chat-area" style="flex:1;display:flex;flex-direction:column;">
-            <form class="form-join">
-                <input type="text" id="name" maxlength="8" placeholder="Enter name" size="5" required>
-                <div class="room-selection-container">
-                    <select id="room-select" class="room-dropdown">
-                        <option value="" disabled selected>Select a room</option>
-                        <!-- Will be populated with active rooms -->
-                    </select>
-                    <div class="new-room-toggle">
-                        <button type="button" id="new-room-btn">+ New</button>
-                        <div id="new-room-form" class="new-room-form" style="display:none;">
-                            <input type="text" id="room" placeholder="Enter new room name" required>
-                        </div>
-                    </div>
-                </div>
-                <button id="join" type="submit">Join</button>
-            </form>
+
+        <!-- Add toggle button for mobile -->
+        <div class="side-pane-toggle left-toggle">☰</div>
+        
+        <!-- Wrap the main content in a container -->
+        <div class="main-content">
+            <section class="activity"></section>
 
             <ul class="chat-display"></ul>
 
-            <p class="activity"></p>
-
-            <form class="form-msg">
+            <!-- Replace the form with an updated version -->
+            <form class="form-msg" id="message-form" onsubmit="return window.sendMessage(event)">
                 <div class="message-input-container">
-                    <input type="text" id="message" placeholder="Enter message" required>
-                    <button type="button" id="emoji-btn" class="emoji-btn" title="Add emoji">
-                        <span style="font-size: 18px;">😊</span>
-                    </button>
-                    <button type="button" id="image-upload-btn" class="image-btn" title="Send an image">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                            <polyline points="21 15 16 10 5 21"></polyline>
+                    <input type="text" id="message" placeholder="Message" autocomplete="off">
+                    <button type="button" id="emoji-btn" class="emoji-btn">😊</button>
+                    <button type="button" id="image-upload-btn" class="image-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                     </button>
                     <input type="file" id="image-file" accept="image/*" style="display:none">
                 </div>
-                <button type="submit">Send</button>
+                <button type="submit" id="send-button">Send</button>
             </form>
-            
-            <!-- Emoji Picker -->
-            <div id="emoji-picker" class="emoji-picker" style="display:none;">
+
+            <div id="emoji-picker" class="emoji-picker" style="display: none;">
                 <div class="emoji-picker-header">
                     <span>Emojis</span>
-                    <button type="button" id="close-emoji-picker" class="close-btn">&times;</button>
+                    <button id="close-emoji-picker" class="close-btn">×</button>
                 </div>
-                <div class="emoji-container" id="emoji-container">
-                    <!-- Emojis will be loaded here -->
-                </div>
+                <div id="emoji-container" class="emoji-container"></div>
             </div>
-        </section>
+        </div>
+        
+        <!-- Add new right side panel for users with logout button -->
+        <aside class="side-pane right-pane">
+            <div class="pane-header">
+                <h3>Online Users</h3>
+                <button id="logout-btn" class="power-logout-btn" title="Logout">
+                    <span class="power-icon">⏻</span>
+                </button>
+            </div>
+            <section class="user-list"></section>
+        </aside>
+        
+        <!-- Add toggle button for right panel on mobile -->
+        <div class="side-pane-toggle right-toggle">👤</div>
+
     </main>
 
+    <!-- Login overlay -->
+    <div class="login-overlay">
+        <form class="login-form">
+            <h2>Welcome to Vyb Chat!</h2>
+            <input type="text" id="login-username" name="name" placeholder="Your username" required autocomplete="off">
+            <button type="submit">Enter Chat</button>
+        </form>
+    </div>
+
+    <form class="form-join" style="display:none;">
+        <!-- Hidden form for joining rooms - needed for initial room joining via socket -->
+        <input type="hidden" name="room-join" id="room-join">
+        <input type="hidden" name="name" id="name">
+    </form>
+
+    <!-- Use the CDN version of Socket.io instead of relying on the server-provided one -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="app.js"></script>
     <script>
-        // filepath: c:\Users\beesamollaranjithk\Downloads\mern\test\server\public\index.html
-        window.addEventListener('DOMContentLoaded', function () {
-            const logoutBtn = document.querySelector('.logout-btn');
-            logoutBtn.addEventListener('click', function () {
-                // Disconnect socket if available
-                if (window.socket && typeof window.socket.disconnect === 'function') {
-                    window.socket.disconnect();
-                }
-                // Remove username from storage
-                localStorage.removeItem('vybchat-username');
-                // Reset UI: show login overlay, hide chat
-                document.querySelector('.login-overlay').classList.remove('hide');
-                document.querySelector('.login-overlay').classList.add('show');
-                document.querySelector('.login-overlay').style.display = 'flex';
-                document.querySelector('main').style.opacity = '0.5';
-                document.querySelector('main').style.pointerEvents = 'none';
-                document.getElementById('name').value = '';
-                document.getElementById('name').disabled = false;
-                document.getElementById('room').value = '';
-                document.getElementById('message').value = '';
-                // Optionally clear chat/messages
-                document.querySelector('.chat-display').innerHTML = '';
-                document.querySelector('.user-list').textContent = '';
-                document.querySelector('.activity').textContent = '';
-                // Focus login input
-                setTimeout(() => {
-                    document.getElementById('login-username').focus();
-                }, 100);
-            });
+        // Direct script in HTML to add submit handler
+        document.addEventListener('DOMContentLoaded', function() {
+            const messageForm = document.getElementById('message-form');
+            if (messageForm) {
+                console.log("Adding direct event listener to message form");
+                messageForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    console.log("Form submitted directly");
+                    if (window.sendMessage) {
+                        window.sendMessage(e);
+                    }
+                });
+            }
         });
+
+        // Add a direct script that will run immediately
+        (function() {
+            // Function to set up message form
+            function setupDirectMessageHandler() {
+                console.log("Setting up direct message handler");
+                
+                // Handle form submit
+                const messageForm = document.getElementById('message-form');
+                if (messageForm) {
+                    messageForm.onsubmit = function(e) {
+                        e.preventDefault();
+                        console.log("Form submitted directly");
+                        
+                        if (window.sendMessage) {
+                            window.sendMessage(e);
+                        } else {
+                            console.error("sendMessage function not available");
+                        }
+                        
+                        return false;
+                    };
+                }
+                
+                // Handle button click
+                const sendButton = document.getElementById('send-button');
+                if (sendButton) {
+                    sendButton.onclick = function(e) {
+                        e.preventDefault();
+                        console.log("Send button clicked directly");
+                        
+                        if (window.sendMessage) {
+                            window.sendMessage(e);
+                        } else {
+                            console.error("sendMessage function not available");
+                        }
+                        
+                        return false;
+                    };
+                }
+            }
+            
+            // Run immediately and also when the page loads
+            if (document.readyState === 'complete') {
+                setupDirectMessageHandler();
+            } else {
+                window.addEventListener('load', setupDirectMessageHandler);
+            }
+        })();
     </script>
 </body>
 

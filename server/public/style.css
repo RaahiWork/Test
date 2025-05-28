@@ -21,17 +21,19 @@ main {
     gap: 0;
     position: relative;
     overflow: hidden;
+    width: 100%; /* Ensure main takes full width */
 }
 
 .side-pane {
     width: 220px;
     min-width: 180px;
-    max-width: 260px;
+    max-width: 220px; /* Make this more strict to prevent expansion */
+    flex-shrink: 0;
     background: rgba(34,34,34,0.85);
     color: #fff;
     border-radius: 12px;
     margin-right: 0.5rem;
-    padding: 1rem 0.75rem;
+    padding: 0.9rem 0.65rem; /* Make padding more consistent */
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -41,18 +43,45 @@ main {
     transition: transform 0.3s ease;
     position: relative;
     z-index: 10;
+    overflow: hidden; /* Prevent content overflow */
+}
+
+/* Left pane specific styling */
+.left-pane {
+    margin-right: 0.5rem;
+    width: 220px;
+    min-width: 180px;
+    max-width: 220px;
+}
+
+/* Right pane specific styling */
+.right-pane {
+    margin-left: 0.5rem;
+    width: 220px;
+    min-width: 180px;
+    max-width: 220px;
+}
+
+/* Update main content to be in the middle */
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: calc(100% - 460px); /* Adjust width for two side panes */
+    position: relative;
+    padding: 0 0.5rem;
+    overflow: hidden;
 }
 
 /* Add toggle button for side panel */
 .side-pane-toggle {
     position: absolute;
     top: 50%;
-    right: -15px;
     transform: translateY(-50%);
     width: 30px;
     height: 60px;
     background: rgba(34,34,34,0.85);
-    border-radius: 0 8px 8px 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -60,6 +89,17 @@ main {
     color: #fff;
     font-size: 14px;
     z-index: 11;
+}
+
+.left-toggle {
+    right: -15px;
+    border-radius: 0 8px 8px 0;
+}
+
+.right-toggle {
+    left: -15px;
+    border-radius: 8px 0 0 8px;
+    display: none; /* Hide by default, show only on mobile */
 }
 
 .side-pane h3 {
@@ -72,7 +112,7 @@ main {
 form {
     width: 100%;
     margin: auto;
-    max-width: 1000px;
+    max-width: none; /* Remove max-width limitation */
     display: flex;
     flex-flow: row nowrap;
     justify-content: center;
@@ -98,9 +138,9 @@ button {
     background-color: #a79e8a88;
     list-style-type: none;
     width: 100%;
-    max-width: 1000px;
+    max-width: none; /* Remove max-width limitation */
     border-radius: 10px;
-    margin: 1rem auto;
+    margin: 1rem 0; /* Adjust margins */
     padding: 0;
     display: flex;
     flex-flow: column;
@@ -186,12 +226,23 @@ button {
     border-top-right-radius: 0;
 }
 
+/* Add CSS for image loading and error states */
 .image-loading, .image-error {
-    color: #777;
     padding: 10px;
-    text-align: center;
-    font-style: italic;
+    border-radius: 5px;
     font-size: 0.9rem;
+    text-align: center;
+    margin: 5px 0;
+}
+
+.image-loading {
+    background: rgba(100, 100, 100, 0.1);
+    color: #777;
+}
+
+.image-error {
+    background: rgba(255, 0, 0, 0.1);
+    color: #d44;
 }
 
 .user-list,
@@ -200,7 +251,7 @@ button {
     width: 100%;
     min-height: 2.65rem;
     margin: 0 auto;
-    max-width: 1000px;
+    max-width: none; /* Remove max-width limitation */
     padding: .75rem .25rem;
     font-style: italic;
 }
@@ -317,377 +368,410 @@ button {
     font-size: 1.05rem;
 }
 
+/* Enhanced room list styling */
 .rooms-container {
+    width: 100%;
+    box-sizing: border-box; /* Ensure padding is included in width calculation */
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin: 0;
+    max-height: 70vh;
+    overflow-y: auto;
+    padding: 0.4rem;
+    scrollbar-width: thin;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.1);
 }
 
+/* Set consistent width for rooms list container */
+#rooms-list-container {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0; 
+    margin: 0.5rem 0;
+}
+
+/* Ensure room items fit within the container */
 .room-item {
-    background: rgba(108, 99, 255, 0.25);
-    border-radius: 6px;
-    padding: 0.4rem 0.8rem;
+    width: 100%;
+    box-sizing: border-box;
+    background: rgba(108, 99, 255, 0.15);
+    border-radius: 8px;
+    padding: 0.6rem 0.5rem; /* Slightly reduce horizontal padding */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.25rem; /* Reduce gap to allow more room */
+    transition: all 0.2s ease;
+    border: 1px solid rgba(160, 132, 238, 0.1);
+    cursor: pointer;
+    margin: 0 0 0.35rem 0;
+}
+
+/* Add special styling for default room to make it stand out */
+.room-item[data-room="Vibe Room"] {
+    background: rgba(128, 112, 255, 0.25);
+    border-left: 3px solid #a084ee;
+}
+
+.room-item[data-room="Vibe Room"]:not(.active-room):hover {
+    background: rgba(128, 112, 255, 0.3);
+}
+
+.room-item[data-room="Vibe Room"].active-room {
+    background: rgba(128, 112, 255, 0.4);
+    border-color: #8c75ea;
+}
+
+/* Make room info take up appropriate space */
+.room-info {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border: 1px solid rgba(160, 132, 238, 0.2);
-}
-
-.room-item:hover {
-    background: rgba(108, 99, 255, 0.4);
-    transform: translateY(-2px);
-    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+    gap: 0.4rem; /* Reduce gap between icon and name */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 1;
+    cursor: inherit;
+    min-width: 0; /* Allow text truncation */
 }
 
 .room-icon {
+    font-size: 0.95rem; /* Slightly smaller icon */
     opacity: 0.8;
-    font-size: 0.9rem;
+    flex-shrink: 0;
 }
 
 .room-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     font-weight: 500;
+    font-size: 0.9rem; /* Slightly smaller font size */
+    letter-spacing: 0.01em;
+    color: #fff;
+    max-width: calc(100% - 25px); /* Ensure text can be truncated */
 }
 
-.rooms-hint {
-    font-size: 0.85rem;
-    font-style: italic;
-    opacity: 0.8;
-    margin-top: 0.4rem;
-}
-
-.room-selection-container {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    gap: 0.5rem;
-}
-
-.room-dropdown {
-    width: 100%;
-    padding: 0.5rem;
-    border-radius: 10px;
-    border: 1px solid #ddd;
-    background-color: white;
-    cursor: pointer;
-}
-
-.room-dropdown:disabled {
-    background-color: #f0f0f0;
-    opacity: 0.7;
-}
-
-.new-room-toggle {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-}
-
-#new-room-btn {
-    align-self: flex-start;
-    background: #6c63ff;
-    color: white;
-    padding: 0.3rem 0.8rem;
-    margin-bottom: 0.5rem;
-    font-size: 0.85rem;
-    width: auto;
+.join-room-btn {
     border: none;
-    cursor: pointer;
+    background: rgba(108, 99, 255, 0.7);
+    color: white;
+    padding: 0.2rem 0.35rem;
     border-radius: 6px;
-    transition: background 0.2s;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: bold;
+    transition: background-color 0.2s;
+    flex-shrink: 0;
+    white-space: nowrap;
+    min-width: 35px; /* Smaller minimum width for the button */
+    max-width: 40px; /* Add maximum width as well */
 }
 
-#new-room-btn:hover {
-    background: #5650d8;
+/* Remove dropdown-related styles */
+.room-dropdown-container,
+.room-dropdown {
+    display: none; /* Hide these elements */
 }
 
-.new-room-form {
-    width: 100%;
+/* Custom scrollbar styling */
+.rooms-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.rooms-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+}
+
+.rooms-container::-webkit-scrollbar-thumb {
+    background: rgba(160, 132, 238, 0.3);
+    border-radius: 8px;
+}
+
+.rooms-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(160, 132, 238, 0.5);
+}
+
+/* Chat box styles */
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: calc(100% - 460px); /* Adjust width for two side panes */
+    position: relative;
+    padding: 0 0.5rem;
+    overflow: hidden;
 }
 
 .message-input-container {
-    position: relative;
-    flex-grow: 1;
-    max-width: calc(80% - .25rem);
     display: flex;
     align-items: center;
+    gap: 0.5rem;
+    background: #fff;
+    border-radius: 10px;
+    padding: 0.25rem 0.5rem;
+    flex-grow: 1;
+    border: 1px solid #ddd;
 }
 
 .message-input-container input {
-    width: 100%;
-    padding-right: 40px; /* Make room for the image button */
+    flex-grow: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    padding: 0.5rem;
+    font-size: 0.95rem;
 }
 
-.image-btn {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
+.form-msg {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    margin-top: 0.75rem;
+    width: 100%;
+}
+
+.form-msg button[type="submit"] {
+    background: #6c63ff;
+    color: white;
     border: none;
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
+    border-radius: 10px;
+    padding: 0.6rem 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+    min-width: 80px;
+    flex-shrink: 0;
+}
+
+.form-msg button[type="submit"]:hover {
+    background: #5650d8;
+}
+
+.form-msg button[type="submit"]:active {
+    background: #4842c9;
+    transform: scale(0.98);
+}
+
+.emoji-btn, .image-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #777;
+    font-size: 1.2rem;
+    padding: 0.25rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
-    color: #6c63ff;
-    padding: 0;
-    transition: background-color 0.2s;
-    z-index: 5;
+    transition: color 0.2s;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
 }
 
-.image-btn:hover {
-    background-color: rgba(108, 99, 255, 0.1);
+.emoji-btn:hover, .image-btn:hover {
+    color: #6c63ff;
+    background: rgba(108, 99, 255, 0.1);
 }
 
 .image-btn svg {
-    width: 20px;
-    height: 20px;
+    width: 1.2rem;
+    height: 1.2rem;
 }
 
-.emoji-btn {
-    position: absolute;
-    right: 50px;
-    top: 50%;
-    transform: translateY(-50%);
+.chat-display {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 0.5rem 0;
+    margin: 0 0 0.5rem;
+    scrollbar-width: thin;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Add pane header styling for title and logout button */
+.pane-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 0.75rem;
+}
+
+.pane-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+/* Power logout button styling */
+.power-logout-btn {
     background: none;
     border: none;
-    width: 34px;
-    height: 34px;
+    color: #ff6b6b;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0.25rem;
     border-radius: 50%;
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
-    padding: 0;
-    transition: background-color 0.2s;
-    z-index: 5;
+    transition: all 0.2s ease;
 }
 
-.emoji-btn:hover {
-    background-color: rgba(108, 99, 255, 0.1);
+.power-logout-btn:hover {
+    background-color: rgba(255, 107, 107, 0.2);
+    transform: scale(1.1);
 }
 
+.power-logout-btn:active {
+    transform: scale(0.95);
+}
+
+.power-icon {
+    display: inline-block;
+    transform: rotate(90deg);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 1024px) {
+    .main-content {
+        width: calc(100% - 230px); /* Only account for left sidebar by default */
+    }
+    
+    .right-pane {
+        position: absolute;
+        right: -100%;
+        z-index: 100;
+        transition: right 0.3s ease;
+    }
+    
+    .right-pane.active {
+        right: 0;
+    }
+    
+    .right-toggle {
+        display: flex; /* Show the right toggle on mobile */
+        right: 15px;
+        left: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        width: 100%; /* Full width on small screens */
+    }
+    
+    .left-pane {
+        position: absolute;
+        left: -100%;
+        z-index: 100;
+        transition: left 0.3s ease;
+    }
+    
+    .left-pane.active {
+        left: 0;
+    }
+    
+    .left-toggle {
+        left: 15px;
+        right: auto;
+    }
+    
+    .right-toggle {
+        right: 15px;
+    }
+}
+
+/* Style emoji picker */
 .emoji-picker {
     position: absolute;
-    bottom: 70px;
-    right: 20px;
+    bottom: 60px;
+    left: 0;
     width: 300px;
-    height: 300px;
-    background-color: #fff;
+    max-width: 90%;
+    background: #fff;
     border-radius: 10px;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
-    z-index: 100;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
     display: flex;
     flex-direction: column;
+    max-height: 300px;
+    z-index: 100;
     overflow: hidden;
-    color: #333;
 }
 
 .emoji-picker-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 15px;
-    background-color: #f5f5f5;
+    padding: 8px 12px;
+    background: #f5f5f5;
     border-bottom: 1px solid #eee;
-    font-weight: bold;
-}
-
-.close-btn {
-    border: none;
-    background: none;
-    font-size: 20px;
-    cursor: pointer;
-    color: #555;
 }
 
 .emoji-container {
-    flex: 1;
-    padding: 10px;
-    overflow-y: auto;
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    justify-content: space-between;
+    padding: 10px;
+    overflow-y: auto;
+    gap: 5px;
 }
 
 .emoji-item {
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
     display: flex;
-    justify-content: center;
     align-items: center;
-    border-radius: 5px;
+    justify-content: center;
     cursor: pointer;
-    transition: background-color 0.2s;
-    padding: 5px;
-    position: relative;
+    border-radius: 5px;
+    transition: background 0.2s;
 }
 
 .emoji-item:hover {
-    background-color: #f0f0f0;
+    background: #f0f0f0;
 }
 
 .emoji-item img {
-    max-width: 100%;
-    max-height: 100%;
-    image-rendering: -webkit-optimize-contrast;
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
 }
 
-.emoji-loading {
+.emoji-loading, .emoji-message, .emoji-error {
     width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: #777;
-    font-style: italic;
+    padding: 20px;
+    text-align: center;
+    color: #666;
 }
 
-.post__text img.emoji {
-    display: inline-block;
-    vertical-align: middle;
-    width: 26px;
-    height: 26px;
-    margin: 0 2px;
-    image-rendering: -webkit-optimize-contrast;
-    transform: translateY(-1px);
+.emoji-error {
+    color: #d44;
 }
 
-.connection-status {
+.retry-btn {
+    margin-top: 10px;
     padding: 5px 10px;
+    border: none;
     border-radius: 4px;
-    transition: all 0.3s ease;
-    margin-top: auto;
-    font-size: 0.8rem;
-}
-
-.connection-status.connected {
-    color: #4CAF50;
-}
-
-.connection-status.disconnected {
-    color: #F44336;
-    animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-    0% { opacity: 0.6; }
-    50% { opacity: 1; }
-    100% { opacity: 0.6; }
-}
-
-.emoji-fallback {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 30px;
-    height: 30px;
-    background-color: #f0f0f0;
-    border-radius: 4px;
-    font-weight: bold;
-    color: #555;
-    font-size: 14px;
-}
-
-.emoji-item img.loaded {
-    border: 1px solid transparent;
-}
-
-.emoji-item::after {
-    content: attr(title);
-    position: absolute;
-    bottom: -20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0,0,0,0.7);
+    background: #6c63ff;
     color: white;
-    padding: 2px 5px;
-    border-radius: 3px;
-    font-size: 10px;
-    opacity: 0;
-    transition: opacity 0.2s;
-    pointer-events: none;
-    white-space: nowrap;
-    z-index: 10;
+    cursor: pointer;
 }
 
-.emoji-item:hover::after {
-    opacity: 1;
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    color: #888;
 }
 
-/* Animation overrides from JavaScript also added here for consistency */
-@keyframes slideInLeft {
-    from {
-        transform: translateX(-100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-@keyframes slideInRight {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.post {
-    animation-duration: 0.3s;
-    animation-fill-mode: both;
-    animation-timing-function: ease-out;
-}
-
-.post--left {
-    animation-name: slideInLeft;
-}
-
-.post--right {
-    animation-name: slideInRight;
-}
-
-.post--admin {
-    animation-name: fadeIn;
-}
-
-/* Responsive adjustments for mobile */
-@media (max-width: 768px) {
-    .side-pane {
-        min-width: 150px;
-    }
-    
-    .post--left, .post--right {
-        width: 85%;
-    }
-    
-    input {
-        max-width: calc(70% - .25rem);
-    }
-    
-    button {
-        width: 30%;
-    }
+.close-btn:hover {
+    color: #444;
 }
