@@ -92,11 +92,17 @@ socket.on("message", (data) => {
     
     const li = document.createElement('li');
     li.className = 'post';
-    if (name === nameInput.value) li.className = 'post post--left';
-    if (name !== nameInput.value) li.className = 'post post--right';
     
-if (name !== 'System') {
-    let contentHtml = `<div class="post__header ${name === nameInput.value
+    if (name === nameInput.value) {
+        li.className = 'post post--left';
+    } else if (name !== 'System') {
+        li.className = 'post post--right';
+    } else {
+        li.className = 'post post--admin'; // Add special class for System/Admin messages
+    }
+    
+    if (name !== 'System') {
+        let contentHtml = `<div class="post__header ${name === nameInput.value
         ? 'post__header--user'
         : 'post__header--reply'
         }">
@@ -677,7 +683,7 @@ sendMessage = function(e) {
     msgInput.focus();
 };
 
-// Add CSS for emoji fallbacks directly in JavaScript to ensure it's applied
+// Add CSS for emoji fallbacks and animations directly in JavaScript
 (function() {
     const style = document.createElement('style');
     style.textContent = `
@@ -702,6 +708,66 @@ sendMessage = function(e) {
             border-radius: 4px;
             cursor: pointer;
             margin-top: 10px;
+        }
+        
+        /* Animation definitions */
+        @keyframes slideInLeft {
+            from {
+                transform: translateX(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Apply animations to message types */
+        .post {
+            animation-duration: 0.3s;
+            animation-fill-mode: both;
+            animation-timing-function: ease-out;
+        }
+        
+        .post--left {
+            animation-name: slideInLeft;
+        }
+        
+        .post--right {
+            animation-name: slideInRight;
+        }
+        
+        .post:has(.post__text:only-child) {
+            animation-name: fadeIn;
+        }
+        
+        /* Fix for Firefox which doesn't support :has */
+        @supports not (selector(:has(*))) {
+            .post--admin {
+                animation-name: fadeIn;
+            }
         }
     `;
     document.head.appendChild(style);

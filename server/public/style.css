@@ -18,7 +18,9 @@ main {
     padding: 1rem;
     display: flex;
     flex-flow: row nowrap;
-    gap: 0; /* Remove gap between side pane and main content */
+    gap: 0;
+    position: relative;
+    overflow: hidden;
 }
 
 .side-pane {
@@ -28,7 +30,7 @@ main {
     background: rgba(34,34,34,0.85);
     color: #fff;
     border-radius: 12px;
-    margin-right: 0.5rem; /* Reduced from 1.5rem to 0.5rem */
+    margin-right: 0.5rem;
     padding: 1rem 0.75rem;
     display: flex;
     flex-direction: column;
@@ -36,6 +38,28 @@ main {
     box-shadow: 0 2px 12px rgba(0,0,0,0.12);
     height: 100%;
     min-height: 500px;
+    transition: transform 0.3s ease;
+    position: relative;
+    z-index: 10;
+}
+
+/* Add toggle button for side panel */
+.side-pane-toggle {
+    position: absolute;
+    top: 50%;
+    right: -15px;
+    transform: translateY(-50%);
+    width: 30px;
+    height: 60px;
+    background: rgba(34,34,34,0.85);
+    border-radius: 0 8px 8px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #fff;
+    font-size: 14px;
+    z-index: 11;
 }
 
 .side-pane h3 {
@@ -48,7 +72,7 @@ main {
 form {
     width: 100%;
     margin: auto;
-    max-width: 1000px; /* Increased from 800px */
+    max-width: 1000px;
     display: flex;
     flex-flow: row nowrap;
     justify-content: center;
@@ -74,7 +98,7 @@ button {
     background-color: #a79e8a88;
     list-style-type: none;
     width: 100%;
-    max-width: 1000px; /* Increased from 800px */
+    max-width: 1000px;
     border-radius: 10px;
     margin: 1rem auto;
     padding: 0;
@@ -137,8 +161,11 @@ button {
 
 .post__image {
     text-align: center;
-    margin: 5px 0;
+    margin: 10px 0;
     line-height: 0;
+    background-color: rgba(0, 0, 0, 0.03);
+    padding: 5px;
+    border-radius: 8px;
 }
 
 .post__image img {
@@ -148,6 +175,7 @@ button {
     margin: 0 auto;
     object-fit: contain;
     display: block;
+    image-rendering: -webkit-optimize-contrast;
 }
 
 .post--left .post__image img {
@@ -172,7 +200,7 @@ button {
     width: 100%;
     min-height: 2.65rem;
     margin: 0 auto;
-    max-width: 1000px; /* Increased from 800px */
+    max-width: 1000px;
     padding: .75rem .25rem;
     font-style: italic;
 }
@@ -498,6 +526,7 @@ button {
     cursor: pointer;
     transition: background-color 0.2s;
     padding: 5px;
+    position: relative;
 }
 
 .emoji-item:hover {
@@ -507,6 +536,7 @@ button {
 .emoji-item img {
     max-width: 100%;
     max-height: 100%;
+    image-rendering: -webkit-optimize-contrast;
 }
 
 .emoji-loading {
@@ -522,9 +552,11 @@ button {
 .post__text img.emoji {
     display: inline-block;
     vertical-align: middle;
-    width: 22px;
-    height: 22px;
+    width: 26px;
+    height: 26px;
     margin: 0 2px;
+    image-rendering: -webkit-optimize-contrast;
+    transform: translateY(-1px);
 }
 
 .connection-status {
@@ -567,10 +599,6 @@ button {
     border: 1px solid transparent;
 }
 
-.emoji-item {
-    position: relative;
-}
-
 .emoji-item::after {
     content: attr(title);
     position: absolute;
@@ -591,4 +619,75 @@ button {
 
 .emoji-item:hover::after {
     opacity: 1;
+}
+
+/* Animation overrides from JavaScript also added here for consistency */
+@keyframes slideInLeft {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.post {
+    animation-duration: 0.3s;
+    animation-fill-mode: both;
+    animation-timing-function: ease-out;
+}
+
+.post--left {
+    animation-name: slideInLeft;
+}
+
+.post--right {
+    animation-name: slideInRight;
+}
+
+.post--admin {
+    animation-name: fadeIn;
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 768px) {
+    .side-pane {
+        min-width: 150px;
+    }
+    
+    .post--left, .post--right {
+        width: 85%;
+    }
+    
+    input {
+        max-width: calc(70% - .25rem);
+    }
+    
+    button {
+        width: 30%;
+    }
 }
