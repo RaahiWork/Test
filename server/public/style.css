@@ -388,3 +388,26 @@ button {
     width: 20px;
     height: 20px;
 }
+
+.connection-status {
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    margin-top: auto;
+    font-size: 0.8rem;
+}
+
+.connection-status.connected {
+    color: #4CAF50;
+}
+
+.connection-status.disconnected {
+    color: #F44336;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}

@@ -14,7 +14,6 @@ const app = express()
 app.use(express.static(path.join(__dirname, "public")))
 
 const expressServer = app.listen(PORT, () => {
-    console.log(`listening on port ${PORT}`)
 })
 
 // state 
@@ -28,14 +27,20 @@ const UsersState = {
 const io = new Server(expressServer, {
     cors: {
         origin: process.env.NODE_ENV === "production" ? false : ["http://localhost:5500", "http://127.0.0.1:5500"]
-    }
+    },
+    pingTimeout: 60000, // Increase ping timeout to 60 seconds
+    pingInterval: 25000 // Check connection every 25 seconds
 })
 
 io.on('connection', socket => {
-    console.log(`User ${socket.id} connected`)
 
     // Upon connection - only to user 
     socket.emit('message', buildMsg(ADMIN, "Welcome to Vyb Chat!"))
+    
+    // Handle keepalive pings from clients
+    socket.on('keepalive', () => {
+        // No response needed, just keeps the connection active
+    });
     
     // Add handler for getRooms event
     socket.on('getRooms', () => {
@@ -101,7 +106,6 @@ io.on('connection', socket => {
             })
         }
 
-        console.log(`User ${socket.id} disconnected`)
     })
 
     // Listening for a message event 
@@ -116,11 +120,9 @@ io.on('connection', socket => {
     socket.on('imageMessage', ({ name, image }) => {
         const room = getUser(socket.id)?.room;
         if (room) {
-            console.log(`Received image from ${name} in room ${room}`);
             // Send to everyone in the room including sender
             io.to(room).emit('message', buildMsg(name, null, image));
         } else {
-            console.log(`User ${name} tried to send image but is not in a room`);
             // Send error back to sender
             socket.emit('message', buildMsg(ADMIN, "You must join a room before sending images"));
         }

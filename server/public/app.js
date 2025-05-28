@@ -1,4 +1,10 @@
-const socket = io(window.location.origin);
+const socket = io(window.location.origin, {
+    reconnectionAttempts: 10,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    timeout: 20000,
+    autoConnect: true
+})
 
 const msgInput = document.querySelector('#message')
 const nameInput = document.querySelector('#name')
@@ -217,7 +223,7 @@ function toggleNewRoomForm(show) {
         // Always remove required when hiding
         chatRoom.removeAttribute('required');
     }
-    console.log('New room form toggled:', show); // Debug log
+
 }
 
 // Clear any existing listeners (to avoid duplicates)
@@ -337,23 +343,55 @@ window.addEventListener('DOMContentLoaded', () => {
 socket.on('connect', () => {
     // Request room list immediately after connection
     socket.emit('getRooms');
-});
-
-// Initialize the form state on page load
-document.addEventListener('DOMContentLoaded', () => {
-    // Set initial state
-    newRoomForm.style.display = 'none';
-    newRoomFormVisible = false;
-    chatRoom.removeAttribute('required');
     
-    // Check if dropdown has a selected value initially
-    if (roomSelect.value) {
-        chatRoom.removeAttribute('required');
+    // If we were in a room before disconnection, try to rejoin it
+    if (currentRoom && nameInput.value) {
+        socket.emit('enterRoom', {
+            name: nameInput.value,
+            room: currentRoom
+        });
     }
     
-    // Ensure form is initialized on page load
-    toggleNewRoomForm(false);
+    // Update UI for connected state
+    if (document.querySelector('.connection-status')) {
+        document.querySelector('.connection-status').classList.remove('disconnected');
+        document.querySelector('.connection-status').classList.add('connected');
+        document.querySelector('.connection-status').textContent = 'Connected';
+    }
 });
+
+socket.on('disconnect', (reason) => {
+    
+    // Update UI for disconnected state
+    if (document.querySelector('.connection-status')) {
+        document.querySelector('.connection-status').classList.remove('connected');
+        document.querySelector('.connection-status').classList.add('disconnected');
+        document.querySelector('.connection-status').textContent = 'Disconnected';
+    }
+});
+
+socket.on('reconnecting', (attemptNumber) => {
+    
+    // Update UI for reconnecting state
+    if (document.querySelector('.connection-status')) {
+        document.querySelector('.connection-status').textContent = `Reconnecting (${attemptNumber})...`;
+    }
+});
+
+socket.on('reconnect_failed', () => {
+    alert('Connection to server lost. Please refresh the page.');
+});
+
+socket.on('error', (error) => {
+
+});
+
+// Add a keepalive ping to prevent timeout disconnections
+setInterval(() => {
+    if (socket.connected) {
+        socket.emit('keepalive');
+    }
+}, 30000); // Send keepalive every 30 seconds
 
 // Add image upload functionality
 const imageUploadBtn = document.getElementById('image-upload-btn');
@@ -368,7 +406,7 @@ imageUploadBtn.addEventListener('click', () => {
 imageFileInput.addEventListener('change', function() {
     if (this.files && this.files[0]) {
         const file = this.files[0];
-        console.log("File selected:", file.name, file.type); // Debug log
+
         
         // Check if the file is an image
         if (file.type.match('image.*')) {
@@ -377,14 +415,14 @@ imageFileInput.addEventListener('change', function() {
             reader.onload = function(e) {
                 // Get image data
                 const imageData = e.target.result;
-                console.log("Image loaded, size:", Math.round(imageData.length/1024), "KB"); // Debug log
+               
                 
                 // Check if we have a username and current room
-                console.log("Current room:", currentRoom, "Username:", nameInput.value);
+                
                 
                 if (nameInput.value && currentRoom) {
                     // Send image message
-                    console.log("Sending image message");
+
                     socket.emit('imageMessage', {
                         name: nameInput.value,
                         image: imageData
@@ -418,14 +456,14 @@ document.addEventListener('paste', function(e) {
                 e.preventDefault();
                 
                 const blob = item.getAsFile();
-                console.log("Image pasted, size:", Math.round(blob.size/1024), "KB"); // Debug log
+                
                 
                 const reader = new FileReader();
                 
                 reader.onload = function(event) {
                     if (nameInput.value && currentRoom) {
                         // Send image message
-                        console.log("Sending pasted image");
+
                         socket.emit('imageMessage', {
                             name: nameInput.value,
                             image: event.target.result
@@ -436,7 +474,7 @@ document.addEventListener('paste', function(e) {
                 };
                 
                 reader.onerror = function() {
-                    console.error("Error reading pasted image");
+
                     alert("Error reading image data. Please try again.");
                 };
                 
