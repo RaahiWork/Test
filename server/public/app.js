@@ -95,6 +95,7 @@ socket.on("message", (data) => {
     if (name === nameInput.value) li.className = 'post post--left';
     if (name !== nameInput.value) li.className = 'post post--right';
     
+if (name !== 'System') {
     let contentHtml = `<div class="post__header ${name === nameInput.value
         ? 'post__header--user'
         : 'post__header--reply'
@@ -127,6 +128,9 @@ socket.on("message", (data) => {
     }
     
     li.innerHTML = contentHtml;
+} else {
+    li.innerHTML = `<div class="post__text">${text || ''}</div>`;
+}
     
     
     document.querySelector('.chat-display').appendChild(li);
