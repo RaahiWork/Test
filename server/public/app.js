@@ -83,7 +83,6 @@ msgInput.addEventListener('keypress', () => {
 socket.on("message", (data) => {
     activity.textContent = "";
     const { name, text, time, image } = data;
-    console.log(`Received message from ${name}:`, image ? "Image message" : text);
     
     const li = document.createElement('li');
     li.className = 'post';
@@ -101,14 +100,18 @@ socket.on("message", (data) => {
         
         // Add text or image based on what's available
         if (image) {
-            console.log("Rendering image in message");
-            contentHtml += `<div class="post__image"><img src="${image}" alt="Shared image" style="max-width:100%; max-height:300px; border-radius:5px; margin-top:5px;"></div>`;
+            // Ensure image is properly escaped and set with correct styling
+            contentHtml += `<div class="post__image">
+                <img src="${image}" alt="Shared image" 
+                    onerror="this.onerror=null; this.src=''; this.alt='Failed to load image'; this.parentNode.classList.add('image-error');" 
+                    style="max-width:100%; max-height:300px; border-radius:5px; margin-top:5px;">
+            </div>`;
         } else if (text) {
-            // Process text to render emojis if present
+            // Process emoji markers in text
             let processedText = text;
             const emojiRegex = /\[emoji:([^\]]+)\]/g;
             processedText = processedText.replace(emojiRegex, (match, emoji) => {
-                return `<img class="emoji" src="/emojis/${emoji}" alt="emoji">`;
+                return `<img class="emoji" src="/emojis/${emoji}" alt="emoji" onerror="this.style.display='none';">`;
             });
             
             contentHtml += `<div class="post__text">${processedText}</div>`;
@@ -417,24 +420,37 @@ imageUploadBtn.addEventListener('click', () => {
 imageFileInput.addEventListener('change', function() {
     if (this.files && this.files[0]) {
         const file = this.files[0];
-        console.log("Selected file:", file.name, file.type, `${Math.round(file.size/1024)} KB`);
         
-        // Validate file size (max 2MB to avoid socket limitations)
+        // Validate file size and type
         if (file.size > 2 * 1024 * 1024) {
             alert('Image too large (max 2MB). Please select a smaller image.');
             this.value = '';
             return;
         }
         
+        if (!file.type.match('image.*')) {
+            alert('Please select a valid image file.');
+            this.value = '';
+            return;
+        }
+        
         const reader = new FileReader();
+        
+        // Show sending indicator
+        const activityEl = document.querySelector('.activity');
+        if (activityEl) activityEl.textContent = 'Processing image...';
         
         reader.onload = function(e) {
             const imageData = e.target.result;
-            console.log(`Image loaded (${Math.round(imageData.length/1024)} KB)`, imageData.substring(0, 50) + "...");
             
-            // Show sending indicator
-            const activityEl = document.querySelector('.activity');
             if (activityEl) activityEl.textContent = 'Sending image...';
+            
+            // Validate current room
+            if (!currentRoom) {
+                alert('Please join a room before sending images');
+                if (activityEl) activityEl.textContent = '';
+                return;
+            }
             
             // Send image message to the server
             socket.emit('imageMessage', {
@@ -444,11 +460,19 @@ imageFileInput.addEventListener('change', function() {
             
             // Clear the file input for future uploads
             imageFileInput.value = '';
+            
+            // Clear activity message after short delay
+            setTimeout(() => {
+                if (activityEl && activityEl.textContent === 'Sending image...') {
+                    activityEl.textContent = '';
+                }
+            }, 3000);
         };
         
         reader.onerror = function(error) {
             console.error('Error reading file:', error);
             alert('Error reading image file. Please try again.');
+            if (activityEl) activityEl.textContent = '';
         };
         
         reader.readAsDataURL(file);
