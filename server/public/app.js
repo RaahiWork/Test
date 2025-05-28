@@ -99,10 +99,15 @@ function joinRoom(roomName) {
     // Don't join if already in this room
     if (roomName === currentRoom) return;
     
-    // Show joining indicator
-    const statusEl = document.querySelector('.connection-status');
-    const originalStatus = statusEl ? statusEl.textContent : '';
-    if (statusEl) statusEl.textContent = `Joining ${roomName}...`;
+    // Clear any previous joining indicators first
+    document.querySelectorAll('.room-item').forEach(item => {
+        const roomBtn = item.querySelector('.join-room-btn');
+        if (roomBtn && roomBtn.textContent === 'Joining...') {
+            roomBtn.textContent = 'Join';
+        }
+    });
+    
+    // No need to update connection status text since it's now an indicator dot
     
     // Emit room join event
     socket.emit('enterRoom', {
@@ -130,18 +135,14 @@ function joinRoom(roomName) {
             if (roomBtn) {
                 roomBtn.textContent = 'Joining...';
                 setTimeout(() => {
-                    roomBtn.textContent = '✓';
+                    // Only update this specific button
+                    if (item.dataset.room === currentRoom && roomBtn) {
+                        roomBtn.textContent = '✓';
+                    }
                 }, 1000);
             }
         }
     });
-    
-    // Reset status after a delay
-    setTimeout(() => {
-        if (statusEl && statusEl.textContent === `Joining ${roomName}...`) {
-            statusEl.textContent = originalStatus || 'Connected';
-        }
-    }, 2000);
     
     // Clear chat history when changing rooms
     chatDisplay.innerHTML = '';
@@ -399,8 +400,6 @@ socket.on("activity", (name) => {
 
 // Connection handling
 socket.on('connect', () => {
-
-    
     // Request room list immediately after connection
     socket.emit('getRooms');
     
@@ -418,27 +417,27 @@ socket.on('connect', () => {
         currentRoom = roomToJoin;
     }
     
-    // Update UI for connected state
+    // Update UI for connected state - replace text with indicator dot
     if (document.querySelector('.connection-status')) {
         document.querySelector('.connection-status').classList.remove('disconnected');
         document.querySelector('.connection-status').classList.add('connected');
-        document.querySelector('.connection-status').textContent = 'Connected';
+        document.querySelector('.connection-status').innerHTML = '<span class="status-dot"></span>';
     }
 });
 
 socket.on('disconnect', (reason) => {
-    // Update UI for disconnected state
+    // Update UI for disconnected state - replace text with indicator dot
     if (document.querySelector('.connection-status')) {
         document.querySelector('.connection-status').classList.remove('connected');
         document.querySelector('.connection-status').classList.add('disconnected');
-        document.querySelector('.connection-status').textContent = 'Disconnected';
+        document.querySelector('.connection-status').innerHTML = '<span class="status-dot"></span>';
     }
 });
 
 socket.on('reconnecting', (attemptNumber) => {
-    // Update UI for reconnecting state
+    // Update UI for reconnecting state - replace text with indicator dot and attempt number
     if (document.querySelector('.connection-status')) {
-        document.querySelector('.connection-status').textContent = `Reconnecting (${attemptNumber})...`;
+        document.querySelector('.connection-status').innerHTML = '<span class="status-dot reconnecting"></span>';
     }
 });
 
@@ -728,7 +727,8 @@ function setupEmojiAndImageHandlers() {
                     return;
                 }
                 
-                if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                if (file.size > 5 * 1024 * 1024) // 5MB limit
+                {
                     alert('Image file is too large. Please select an image less than 5MB.');
                     this.value = '';
                     return;
@@ -917,7 +917,7 @@ function debugEvents() {
 // Call this at the end of the file to ensure it runs
 setTimeout(debugEvents, 1000);
 
-// Add CSS animation for room change
+// Add CSS animation for room change and connection status indicators
 const style = document.createElement('style');
 style.textContent = `
 @keyframes roomChanged {
@@ -926,6 +926,32 @@ style.textContent = `
 }
 .room-changed {
     animation: roomChanged 0.5s ease forwards;
+}
+
+/* Connection status indicator styles */
+.status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+.connected .status-dot {
+    background-color: #2ecc71; /* Green color for connected */
+    box-shadow: 0 0 5px #2ecc71; /* Small glow effect */
+}
+.disconnected .status-dot {
+    background-color: #e74c3c; /* Red color for disconnected */
+}
+.reconnecting .status-dot {
+    background-color: #f39c12; /* Orange color for reconnecting */
+    animation: pulse 1.5s infinite; /* Pulsing animation */
+}
+
+@keyframes pulse {
+    0% { opacity: 0.4; }
+    50% { opacity: 1; }
+    100% { opacity: 0.4; }
 }
 `;
 document.head.appendChild(style);
