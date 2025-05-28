@@ -117,14 +117,10 @@ socket.on("message", (data) => {
             const emojiRegex = /\[emoji:([^\]]+)\]/g;
             
             processedText = processedText.replace(emojiRegex, (match, emojiFile) => {
-                // Create absolute URL to emoji image for reliable loading
-                const emojiUrl = (serverUrl.startsWith('ws:') ? 
-                    serverUrl.replace('ws://', 'http://') : 
-                    serverUrl) + '/emojis/' + emojiFile;
-                
-                return `<img class="emoji" src="${emojiUrl}" alt="emoji" 
+                // Create direct relative URL to ensure consistent rendering across environments
+                return `<img class="emoji" src="/emojis/${emojiFile}" alt="emoji" 
                     data-emoji="${emojiFile}"
-                    onerror="console.error('Failed to load emoji in message:', this.src); this.style.display='none'; this.insertAdjacentText('afterend', '😊');">`;
+                    onerror="console.error('Failed to load emoji in message:', this.getAttribute('data-emoji')); this.style.display='none'; this.insertAdjacentText('afterend', '😊');">`;
             });
             
             contentHtml += `<div class="post__text">${processedText}</div>`;
@@ -555,14 +551,14 @@ closeEmojiPickerBtn?.addEventListener('click', () => {
     emojiPicker.style.display = 'none';
 });
 
-// Load emojis from server with better error handling and caching control
+// Load emojis from server with better error handling
 function loadEmojis() {
     // Clear previous emojis except loading indicator
     emojiContainer.innerHTML = '<div class="emoji-loading">Loading emojis...</div>';
     
-    // Convert WebSocket URL to HTTP URL for fetch API
-    const apiUrl = serverUrl.replace('ws://', 'http://');
-    console.log('API URL for emoji fetch:', apiUrl);
+    // Convert WebSocket URL to HTTP URL for fetch API - ensure it works in production
+    const apiUrl = serverUrl.replace('ws://', 'http://').replace('wss://', 'https://');
+    console.log('Loading emojis from:', apiUrl);
     
     // Fetch list of emojis from the server
     fetch(`${apiUrl}/api/emojis`, {
@@ -574,7 +570,6 @@ function loadEmojis() {
         cache: 'no-cache' // Force fresh fetch
     })
     .then(response => {
-        console.log('Emoji API response status:', response.status);
         if (!response.ok) {
             throw new Error(`Server returned ${response.status}: ${response.statusText}`);
         }
@@ -587,32 +582,30 @@ function loadEmojis() {
         }
         
         emojiContainer.innerHTML = ''; // Clear loading message
-        console.log(`Found ${emojis.length} emojis on server`);
+        console.log(`Found ${emojis.length} emojis:`, emojis);
         
-        // Add each emoji to the picker with unique tracking and proper error handling
+        // Add each emoji to the picker with consistent URL structure
         emojis.forEach((emoji, index) => {
             const emojiItem = document.createElement('div');
             emojiItem.className = 'emoji-item';
             emojiItem.title = emoji.replace(/\.[^.]+$/, ''); // Remove file extension for title
             
             const img = document.createElement('img');
-            // Generate absolute URL with timestamp to prevent caching
-            const imgUrl = `${apiUrl}/emojis/${emoji}?v=${new Date().getTime()}&idx=${index}`;
-            img.src = imgUrl;
+            // Use relative URL for consistent rendering across environments
+            img.src = `/emojis/${emoji}`;
             img.alt = emojiItem.title;
             img.setAttribute('data-emoji', emoji);
-            img.setAttribute('loading', 'eager'); // Prioritize loading
+            img.setAttribute('loading', 'eager'); 
             
             // Test that the emoji loads properly
             img.onerror = function() {
-                console.error(`Failed to load emoji: ${emoji} from ${imgUrl}`);
+                console.error(`Failed to load emoji: ${emoji}`);
                 this.parentElement.innerHTML = `<span class="emoji-fallback">${emoji.charAt(0).toUpperCase()}</span>`;
             };
             
             // Add "loaded" class when the image loads correctly
             img.onload = function() {
                 this.classList.add('loaded');
-                // Remove debug log to avoid console spam
             };
             
             emojiItem.appendChild(img);
@@ -621,6 +614,7 @@ function loadEmojis() {
             // Add click event to insert emoji into message
             emojiItem.addEventListener('click', () => {
                 insertEmoji(emoji);
+                // Log success for debugging
                 console.log(`Selected emoji: ${emoji} - this will be rendered as [emoji:${emoji}]`);
             });
         });
