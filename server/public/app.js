@@ -1,4 +1,6 @@
-const socket = io(window.location.origin, {
+const serverUrl = window.location.origin;
+
+const socket = io(serverUrl, {
     reconnectionAttempts: 10,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
@@ -546,9 +548,6 @@ closeEmojiPickerBtn?.addEventListener('click', () => {
 function loadEmojis() {
     // Clear previous emojis except loading indicator
     emojiContainer.innerHTML = '<div class="emoji-loading">Loading emojis...</div>';
-    
-    // Use window.location.origin to determine server URL dynamically
-    const serverUrl = window.location.origin;
     
     // Fetch list of emojis from the server with explicit CORS mode
     fetch(`${serverUrl}/api/emojis`, {
