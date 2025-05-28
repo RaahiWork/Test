@@ -547,20 +547,17 @@ function loadEmojis() {
     // Clear previous emojis except loading indicator
     emojiContainer.innerHTML = '<div class="emoji-loading">Loading emojis...</div>';
     
-    // Ensure we use HTTP protocol for the fetch API, not ws:// from socket.io
-    const serverUrl = 'http://localhost:3500';
-    console.log('Fetching emojis from:', serverUrl + '/api/emojis');
+    // Use window.location.origin to determine server URL dynamically
+    const serverUrl = window.location.origin;
     
     // Fetch list of emojis from the server with explicit CORS mode
     fetch(`${serverUrl}/api/emojis`, {
         method: 'GET',
-        mode: 'cors',
         headers: {
             'Accept': 'application/json'
         }
     })
     .then(response => {
-        console.log('Response status:', response.status);
         if (!response.ok) {
             throw new Error(`Server returned ${response.status}: ${response.statusText}`);
         }
@@ -601,7 +598,7 @@ function loadEmojis() {
         emojiContainer.innerHTML = `
             <div class="emoji-loading">
                 <p>Error loading emojis: ${error.message}</p>
-                <p>Try placing emoji images in server/emojis folder</p>
+                <p>Try placing emoji images in server/public/emojis folder</p>
             </div>`;
     });
 }
