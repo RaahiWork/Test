@@ -46,9 +46,9 @@ const usersList = document.querySelector('.user-list');
 const chatDisplay = document.querySelector('.chat-display');
 const roomSelect = document.querySelector('#room-select');
 
-// Predefined rooms with descriptions - reordered to put Vibe Room first
+// Predefined rooms with descriptions - reordered to put Vibe first
 const predefinedRooms = [
-    { name: "Vibe Room", description: "A mellow space to hang out, vibe, and relax with others." },
+    { name: "Vibe", description: "A mellow space to hang out, vibe, and relax with others." },
     { name: "Lounge 404", description: "Where lost thoughts find a home – chat about anything and everything." },
     { name: "The Hive", description: "Buzz with ideas, energy, and conversation – perfect for group discussions." },
     { name: "Code & Coffee", description: "Developers unite! Share code, debug, and caffeinate together." },
@@ -61,7 +61,7 @@ const predefinedRooms = [
 ];
 
 // Default room to join
-const DEFAULT_ROOM = "Vibe Room";
+const DEFAULT_ROOM = "Vibe";
 
 // Use a single currentRoom variable
 let currentRoom = '';
@@ -192,11 +192,13 @@ function showRooms() {
         const roomItem = document.createElement('div');
         roomItem.className = 'room-item' + (room.name === currentRoom ? ' active-room' : '');
         roomItem.dataset.room = room.name;
-        roomItem.title = room.description;
+        
+        // Use standard title attribute for tooltip - browsers handle this natively
+        roomItem.title = `${room.name} - ${room.description}`;
         
         // Create a more compact room item layout
         roomItem.innerHTML = `
-            <div class="room-info" title="${room.description}">
+            <div class="room-info">
                 <span class="room-icon">🚪</span>
                 <span class="room-name">${room.name}</span>
             </div>
@@ -935,7 +937,7 @@ function debugEvents() {
 // Call this at the end of the file to ensure it runs
 setTimeout(debugEvents, 1000);
 
-// Add CSS animation for room change and connection status indicators
+// Add CSS for custom tooltip styling if needed
 const style = document.createElement('style');
 style.textContent = `
 @keyframes roomChanged {
@@ -970,6 +972,21 @@ style.textContent = `
     0% { opacity: 0.4; }
     50% { opacity: 1; }
     100% { opacity: 0.4; }
+}
+
+/* Improved tooltip appearance - uses browser's native tooltip but improves styling */
+.room-item {
+    position: relative;
+}
+
+/* This ensures the entire room item gets the tooltip */
+.room-item .room-info {
+    cursor: pointer;
+}
+
+/* Style for visually indicating hoverable elements */
+.room-item:hover {
+    background-color: rgba(255,255,255,0.05);
 }
 `;
 document.head.appendChild(style);
