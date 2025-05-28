@@ -86,6 +86,7 @@ msgInput.addEventListener('keypress', () => {
 
 // Listen for messages 
 socket.on("message", (data) => {
+    console.log('Received message:', data);
     activity.textContent = "";
     const { name, text, time, image } = data;
     
