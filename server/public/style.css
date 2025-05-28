@@ -549,3 +549,46 @@ button {
     50% { opacity: 1; }
     100% { opacity: 0.6; }
 }
+
+.emoji-fallback {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 30px;
+    height: 30px;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+    font-weight: bold;
+    color: #555;
+    font-size: 14px;
+}
+
+.emoji-item img.loaded {
+    border: 1px solid transparent;
+}
+
+.emoji-item {
+    position: relative;
+}
+
+.emoji-item::after {
+    content: attr(title);
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.7);
+    color: white;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 10px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 10;
+}
+
+.emoji-item:hover::after {
+    opacity: 1;
+}

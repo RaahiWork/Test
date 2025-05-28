@@ -117,9 +117,14 @@ socket.on("message", (data) => {
             const emojiRegex = /\[emoji:([^\]]+)\]/g;
             
             processedText = processedText.replace(emojiRegex, (match, emojiFile) => {
-                // Create full URL to emoji image - use server URL for consistent access
-                const emojiUrl = `${serverUrl.replace('ws://', 'http://')}/emojis/${emojiFile}`;
-                return `<img class="emoji" src="${emojiUrl}" alt="emoji" onerror="this.style.display='none'; this.insertAdjacentText('afterend', '[emoji]');">`;
+                // Create absolute URL to emoji image for reliable loading
+                const emojiUrl = (serverUrl.startsWith('ws:') ? 
+                    serverUrl.replace('ws://', 'http://') : 
+                    serverUrl) + '/emojis/' + emojiFile;
+                
+                return `<img class="emoji" src="${emojiUrl}" alt="emoji" 
+                    data-emoji="${emojiFile}"
+                    onerror="console.error('Failed to load emoji in message:', this.src); this.style.display='none'; this.insertAdjacentText('afterend', '😊');">`;
             });
             
             contentHtml += `<div class="post__text">${processedText}</div>`;
@@ -550,45 +555,65 @@ closeEmojiPickerBtn?.addEventListener('click', () => {
     emojiPicker.style.display = 'none';
 });
 
-// Load emojis from server - update URL structure
+// Load emojis from server with better error handling and caching control
 function loadEmojis() {
     // Clear previous emojis except loading indicator
     emojiContainer.innerHTML = '<div class="emoji-loading">Loading emojis...</div>';
     
     // Convert WebSocket URL to HTTP URL for fetch API
     const apiUrl = serverUrl.replace('ws://', 'http://');
+    console.log('API URL for emoji fetch:', apiUrl);
     
     // Fetch list of emojis from the server
     fetch(`${apiUrl}/api/emojis`, {
         method: 'GET',
         headers: {
-            'Accept': 'application/json'
-        }
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache'
+        },
+        cache: 'no-cache' // Force fresh fetch
     })
     .then(response => {
+        console.log('Emoji API response status:', response.status);
         if (!response.ok) {
             throw new Error(`Server returned ${response.status}: ${response.statusText}`);
         }
         return response.json();
     })
     .then(emojis => {
-        console.log('Emojis loaded:', emojis);
         if (!Array.isArray(emojis) || emojis.length === 0) {
             emojiContainer.innerHTML = '<div class="emoji-loading">No emojis available.</div>';
             return;
         }
         
         emojiContainer.innerHTML = ''; // Clear loading message
+        console.log(`Found ${emojis.length} emojis on server`);
         
-        // Add each emoji to the picker
-        emojis.forEach(emoji => {
+        // Add each emoji to the picker with unique tracking and proper error handling
+        emojis.forEach((emoji, index) => {
             const emojiItem = document.createElement('div');
             emojiItem.className = 'emoji-item';
-            emojiItem.title = emoji.replace('.png', '').replace('.jpg', '').replace('.gif', '');
+            emojiItem.title = emoji.replace(/\.[^.]+$/, ''); // Remove file extension for title
             
             const img = document.createElement('img');
-            img.src = `/emojis/${emoji}`;
+            // Generate absolute URL with timestamp to prevent caching
+            const imgUrl = `${apiUrl}/emojis/${emoji}?v=${new Date().getTime()}&idx=${index}`;
+            img.src = imgUrl;
             img.alt = emojiItem.title;
+            img.setAttribute('data-emoji', emoji);
+            img.setAttribute('loading', 'eager'); // Prioritize loading
+            
+            // Test that the emoji loads properly
+            img.onerror = function() {
+                console.error(`Failed to load emoji: ${emoji} from ${imgUrl}`);
+                this.parentElement.innerHTML = `<span class="emoji-fallback">${emoji.charAt(0).toUpperCase()}</span>`;
+            };
+            
+            // Add "loaded" class when the image loads correctly
+            img.onload = function() {
+                this.classList.add('loaded');
+                // Remove debug log to avoid console spam
+            };
             
             emojiItem.appendChild(img);
             emojiContainer.appendChild(emojiItem);
@@ -596,6 +621,7 @@ function loadEmojis() {
             // Add click event to insert emoji into message
             emojiItem.addEventListener('click', () => {
                 insertEmoji(emoji);
+                console.log(`Selected emoji: ${emoji} - this will be rendered as [emoji:${emoji}]`);
             });
         });
     })
@@ -606,8 +632,12 @@ function loadEmojis() {
         emojiContainer.innerHTML = `
             <div class="emoji-loading">
                 <p>Error loading emojis: ${error.message}</p>
-                <p>Try placing emoji images in server/public/emojis folder</p>
+                <p>Try placing emoji images in server/emojis folder</p>
+                <p><button id="retry-emojis-btn" class="emoji-retry-btn">Retry</button></p>
             </div>`;
+            
+        // Add retry button event listener
+        document.getElementById('retry-emojis-btn')?.addEventListener('click', () => loadEmojis());
     });
 }
 
@@ -652,3 +682,33 @@ sendMessage = function(e) {
     
     msgInput.focus();
 };
+
+// Add CSS for emoji fallbacks directly in JavaScript to ensure it's applied
+(function() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .emoji-fallback {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 30px;
+            height: 30px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            font-weight: bold;
+            color: #555;
+            font-size: 14px;
+        }
+        
+        .emoji-retry-btn {
+            padding: 5px 10px;
+            background: #6c63ff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+    `;
+    document.head.appendChild(style);
+})();
