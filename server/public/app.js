@@ -309,12 +309,15 @@ socket.on("message", (data) => {
     }
     
     if (name !== 'System') {
+        // Convert server time to local time
+        const localTime = formatLocalTime(time);
+        
         let contentHtml = `<div class="post__header ${name === nameInput.value
         ? 'post__header--user'
         : 'post__header--reply'
         }">
     <span class="post__header--name">${name}</span> 
-    <span class="post__header--time">${time}</span> 
+    <span class="post__header--time">${localTime}</span> 
     </div>`;
     
     // Add text or image based on what's available
@@ -1177,3 +1180,23 @@ style.textContent = `
 }
 `;
 document.head.appendChild(style);
+
+// Add a utility function to format time in local timezone
+function formatLocalTime(timestamp) {
+    try {
+        const date = new Date(timestamp);
+        // Check if the date is valid
+        if (isNaN(date.getTime())) {
+            return timestamp; // Return the original timestamp if parsing fails
+        }
+        
+        // Format the time according to the browser's locale
+        return date.toLocaleTimeString([], {
+            hour: 'numeric',
+            minute: 'numeric'
+        });
+    } catch (error) {
+        console.error('Error formatting time:', error);
+        return timestamp; // Return original on error
+    }
+}
