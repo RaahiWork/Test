@@ -242,7 +242,7 @@ button {
     display: block;
     image-rendering: -webkit-optimize-contrast; /* Better rendering */
     transition: transform 0.3s ease;
-    background-color: transparent; /* Ensure transparency */
+    background: none !important; /* Force no background */
 }
 
 .post__image img:hover {
@@ -1134,7 +1134,7 @@ button {
     left: auto;
     right: auto;
     top: auto;
-    background: rgba(255, 255, 255, 0.9); /* More transparent background for emoji picker */
+    background: transparent; /* Completely transparent background */
     border-radius: 10px;
     box-shadow: 0 5px 25px rgba(0,0,0,0.2);
     width: 300px;
@@ -1145,101 +1145,51 @@ button {
     overflow: hidden;
     opacity: 0;
     transition: opacity 0.2s ease;
-    backdrop-filter: blur(5px); /* Apply subtle blur for better reading */
-    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: none; /* Remove blur effect */
+    -webkit-backdrop-filter: none; /* Remove blur effect */
 }
 
-/* Update emoji container background to be transparent */
-.emoji-container {
-    display: grid;
-    grid-template-columns: repeat(8, 1fr); /* Show more emojis per row */
-    gap: 5px;
-    padding: 12px;
-    max-height: 200px;
-    overflow-y: auto;
-    background-color: transparent; /* Make background transparent */
-}
-
-.emoji-item {
-    font-size: 1.5rem;
-    text-align: center;
-    cursor: pointer;
-    transition: transform 0.15s, background-color 0.15s;
-    user-select: none;
-    padding: 6px;
-    border-radius: 4px;
+/* Only keep minimal styling for the header */
+.emoji-picker-header {
+    padding: 8px 12px;
+    background: rgba(108, 99, 255, 0.6); /* Semi-transparent header */
+    color: #fff;
+    font-weight: bold;
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    justify-content: center;
-    background-color: transparent; /* Default transparent background */
+}
+
+/* Ensure chat display has no background affecting images */
+.post__image img {
+    /* ...existing code... */
+    background: none !important; /* Force no background */
+}
+
+/* Ensure emoji items have no backgrounds */
+.emoji-item {
+    /* ...existing code... */
+    background-color: transparent !important; /* Force transparent background */
 }
 
 .emoji-item:hover {
     transform: scale(1.2);
-    background-color: rgba(240, 240, 240, 0.5); /* Semi-transparent hover state */
+    background-color: transparent !important; /* Maintain transparency even on hover */
+    filter: drop-shadow(0 0 3px rgba(108, 99, 255, 0.6)); /* Use drop shadow instead for hover effect */
 }
 
-/* Update styles for emoji images to ensure transparency */
-.emoji-item img {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
-    background-color: transparent; /* Ensure transparency */
-    image-rendering: -webkit-optimize-contrast; /* Better rendering */
-}
-
-/* Update post image styling for proper transparency */
-.post__image {
-    text-align: center;
-    margin: 0;
-    line-height: 0;
-    background-color: transparent; /* Use transparent background */
-    padding: 8px;
-    border-radius: 0;
-}
-
-.post__image img {
-    max-width: 100%;
-    max-height: 300px;
-    border-radius: 8px;
-    margin: 0 auto;
-    object-fit: contain;
-    display: block;
-    image-rendering: -webkit-optimize-contrast; /* Better rendering */
-    transition: transform 0.3s ease;
-    background-color: transparent; /* Ensure transparency */
+/* Make emoji containers fully transparent */
+.emoji-container {
+    /* ...existing code... */
+    background: none !important;
 }
 
 /* Fix emoji loading/message backgrounds */
 .emoji-loading, 
-.emoji-message {
-    padding: 20px;
-    text-align: center;
-    color: #666;
-    background-color: rgba(255, 255, 255, 0.3); /* Semi-transparent background */
-}
-
+.emoji-message,
 .emoji-error {
-    padding: 15px;
-    text-align: center;
-    color: #e74c3c;
-    background-color: rgba(255, 107, 107, 0.1); /* Semi-transparent error background */
-    border-radius: 5px;
-    margin: 10px;
-}
-
-.emoji-message {
-    padding: 20px;
-    text-align: center;
-    color: #666;
-}
-
-.retry-btn {
-    padding: 5px 15px;
-    background-color: #6c63ff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    margin-top: 5px;
-    cursor: pointer;
+    /* ...existing code... */
+    background: none !important;
+    color: #ffffff; /* Light text for visibility */
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5); /* Add shadow for readability */
 }
