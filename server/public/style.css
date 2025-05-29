@@ -228,7 +228,7 @@ button {
     text-align: center;
     margin: 0;
     line-height: 0;
-    background-color: rgba(0, 0, 0, 0.02);
+    background-color: transparent; /* Use transparent background */
     padding: 8px;
     border-radius: 0;
 }
@@ -240,8 +240,9 @@ button {
     margin: 0 auto;
     object-fit: contain;
     display: block;
-    image-rendering: -webkit-optimize-contrast;
+    image-rendering: -webkit-optimize-contrast; /* Better rendering */
     transition: transform 0.3s ease;
+    background-color: transparent; /* Ensure transparency */
 }
 
 .post__image img:hover {
@@ -1133,7 +1134,7 @@ button {
     left: auto;
     right: auto;
     top: auto;
-    background: #fff;
+    background: rgba(255, 255, 255, 0.9); /* More transparent background for emoji picker */
     border-radius: 10px;
     box-shadow: 0 5px 25px rgba(0,0,0,0.2);
     width: 300px;
@@ -1144,35 +1145,11 @@ button {
     overflow: hidden;
     opacity: 0;
     transition: opacity 0.2s ease;
+    backdrop-filter: blur(5px); /* Apply subtle blur for better reading */
+    -webkit-backdrop-filter: blur(5px);
 }
 
-/* Add custom positioning class that will be set via JavaScript */
-.emoji-picker.positioned {
-    /* This class will be applied after JavaScript positions the element */
-    transition: opacity 0.2s ease-out;
-    opacity: 1;
-}
-
-.emoji-picker-header {
-    padding: 8px 12px;
-    background: linear-gradient(135deg, #6c63ff, #a084ee);
-    color: #fff;
-    font-weight: bold;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.close-btn {
-    background: transparent;
-    border: none;
-    color: #fff;
-    font-size: 1.5rem;
-    cursor: pointer;
-    line-height: 1;
-    padding: 0 5px;
-}
-
+/* Update emoji container background to be transparent */
 .emoji-container {
     display: grid;
     grid-template-columns: repeat(8, 1fr); /* Show more emojis per row */
@@ -1180,7 +1157,7 @@ button {
     padding: 12px;
     max-height: 200px;
     overflow-y: auto;
-    background-color: #f9f9f9;
+    background-color: transparent; /* Make background transparent */
 }
 
 .emoji-item {
@@ -1194,24 +1171,59 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
+    background-color: transparent; /* Default transparent background */
 }
 
 .emoji-item:hover {
     transform: scale(1.2);
-    background-color: #f0f0f0;
+    background-color: rgba(240, 240, 240, 0.5); /* Semi-transparent hover state */
 }
 
-.emoji-loading {
+/* Update styles for emoji images to ensure transparency */
+.emoji-item img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    background-color: transparent; /* Ensure transparency */
+    image-rendering: -webkit-optimize-contrast; /* Better rendering */
+}
+
+/* Update post image styling for proper transparency */
+.post__image {
+    text-align: center;
+    margin: 0;
+    line-height: 0;
+    background-color: transparent; /* Use transparent background */
+    padding: 8px;
+    border-radius: 0;
+}
+
+.post__image img {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 8px;
+    margin: 0 auto;
+    object-fit: contain;
+    display: block;
+    image-rendering: -webkit-optimize-contrast; /* Better rendering */
+    transition: transform 0.3s ease;
+    background-color: transparent; /* Ensure transparency */
+}
+
+/* Fix emoji loading/message backgrounds */
+.emoji-loading, 
+.emoji-message {
     padding: 20px;
     text-align: center;
     color: #666;
+    background-color: rgba(255, 255, 255, 0.3); /* Semi-transparent background */
 }
 
 .emoji-error {
     padding: 15px;
     text-align: center;
     color: #e74c3c;
-    background-color: #fdeaea;
+    background-color: rgba(255, 107, 107, 0.1); /* Semi-transparent error background */
     border-radius: 5px;
     margin: 10px;
 }
@@ -1230,69 +1242,4 @@ button {
     border-radius: 4px;
     margin-top: 5px;
     cursor: pointer;
-}
-
-/* Style for emoji images in the picker */
-.emoji-item img {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
-}
-
-@media (max-width: 480px) {
-    /* ...existing code... */
-    
-    .emoji-picker {
-        position: fixed; /* Use fixed position on mobile */
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%); /* Center in screen on mobile */
-        width: 90%;
-        max-width: 320px;
-        margin-bottom: 0;
-    }
-    
-    .emoji-container {
-        grid-template-columns: repeat(6, 1fr);
-        max-height: 150px;
-        gap: 3px;
-        padding: 5px;
-    }
-    
-    .emoji-item {
-        font-size: 1.3rem;
-        padding: 3px;
-    }
-    
-    .emoji-item img {
-        width: 20px;
-        height: 20px;
-    }
-    
-    .emoji-loading, .emoji-message, .emoji-error {
-        padding: 10px;
-        font-size: 0.9rem;
-    }
-}
-
-@media (max-width: 375px) {
-    /* ...existing code... */
-    
-    .emoji-picker {
-        bottom: 100px;
-    }
-    
-    .emoji-container {
-        grid-template-columns: repeat(5, 1fr);
-        max-height: 120px;
-    }
-    
-    .emoji-item {
-        font-size: 1.2rem;
-    }
-    
-    .emoji-item img {
-        width: 18px;
-        height: 18px;
-    }
 }
