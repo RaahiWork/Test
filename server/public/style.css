@@ -1168,144 +1168,236 @@ button {
     text-shadow: 0 1px 2px rgba(0,0,0,0.5); /* Add shadow for readability */
 }
 
-/* Additional responsive adjustments for emoji picker */
-@media (max-width: 480px) {
-    .emoji-picker {
-        width: 260px;
-        max-width: 280px;
-    }
-    
-    .emoji-item {
-        width: 32px;
-        height: 32px;
-        margin: 3px;
-    }
-    
-    .emoji-item img {
-        max-width: 22px;
-        max-height: 22px;
-    }
-}
+/* Enhanced Mobile Responsive Styles and Slidable Panels */
 
-/* Development banner styling */
-.dev-banner {
-    width: 100%;
-    background: linear-gradient(135deg, #6c63ff 0%, #a084ee 100%);
+/* Swipe indicators */
+.swipe-indicator {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(108, 99, 255, 0.2);
+    border-radius: 8px;
+    padding: 12px 8px;
     color: white;
-    padding: 8px 10px;
-    margin-bottom: 10px;
-    border-radius: 10px;
-    box-shadow: 0 3px 15px rgba(108, 99, 255, 0.2);
-    overflow: hidden;
-    position: relative;
-    animation: banner-glow 3s infinite alternate;
-    z-index: 5;
+    font-size: 0.9rem;
+    z-index: 15;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
 }
 
-@keyframes banner-glow {
-    0% { box-shadow: 0 3px 15px rgba(108, 99, 255, 0.2); }
-    100% { box-shadow: 0 5px 20px rgba(108, 99, 255, 0.4); }
+.left-indicator {
+    left: 10px;
+    transform: translateY(-50%) translateX(-100%);
 }
 
-.banner-content {
+.right-indicator {
+    right: 10px;
+    transform: translateY(-50%) translateX(100%);
+}
+
+.indicator-content {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
-    animation: banner-slide 20s linear infinite;
-    white-space: nowrap;
-    padding: 0 10px;
+    gap: 5px;
 }
 
-@keyframes banner-slide {
-    0% { transform: translateX(100%); }
-    100% { transform: translateX(-100%); }
+.indicator-content span:first-child {
+    font-size: 1.3rem;
 }
 
-.dev-banner p {
-    font-weight: 600;
-    font-size: 0.95rem;
-    letter-spacing: 0.02em;
-    margin: 0;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.15);
+/* Swipe guide animation */
+.show-swipe-guide .left-indicator {
+    opacity: 0.9;
+    transform: translateY(-50%) translateX(0);
+    animation: pulse-left 2s ease;
 }
 
-.banner-icon {
-    font-size: 1.2rem;
-    animation: icon-bounce 2s infinite alternate;
-    display: inline-block;
+.show-swipe-guide .right-indicator {
+    opacity: 0.9;
+    transform: translateY(-50%) translateX(0);
+    animation: pulse-right 2s ease 1s;
 }
 
-.banner-icon:nth-child(1) {
-    animation-delay: 0s;
+@keyframes pulse-left {
+    0%, 100% { transform: translateY(-50%) translateX(0); }
+    50% { transform: translateY(-50%) translateX(10px); }
 }
 
-.banner-icon:nth-child(3) {
-    animation-delay: 1s;
+@keyframes pulse-right {
+    0%, 100% { transform: translateY(-50%) translateX(0); }
+    50% { transform: translateY(-50%) translateX(-10px); }
 }
 
-@keyframes icon-bounce {
-    0%, 80%, 100% { transform: scale(1); }
-    40% { transform: scale(1.2) rotate(10deg); }
-}
-
-/* Add a hint that the banner is clickable */
-.dev-banner::after {
-    content: "";
-    position: absolute;
+/* Visual feedback for swipe gestures */
+body.swiping-right::after,
+body.swiping-left::after {
+    content: '';
+    position: fixed;
     top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, 
-        rgba(255,255,255,0) 0%, 
-        rgba(255,255,255,0.1) 50%, 
-        rgba(255,255,255,0) 100%);
-    transform: translateX(-100%);
-    animation: banner-shine 5s infinite;
+    bottom: 0;
+    width: 20px;
+    z-index: 20;
+    opacity: 0.5;
     pointer-events: none;
 }
 
-@keyframes banner-shine {
-    0% { transform: translateX(-100%); }
-    20%, 100% { transform: translateX(100%); }
+body.swiping-right::after {
+    left: 0;
+    background: linear-gradient(90deg, rgba(160, 132, 238, 0.5), transparent);
 }
 
-/* Responsive styles for dev banner */
+body.swiping-left::after {
+    right: 0;
+    background: linear-gradient(-90deg, rgba(160, 132, 238, 0.5), transparent);
+}
+
+/* Enhance side panes for better sliding */
+.side-pane {
+    /* ... existing code ... */
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+                left 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+                right 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Improve mobile responsiveness */
 @media (max-width: 768px) {
-    .dev-banner {
-        padding: 6px 8px;
-        margin-bottom: 8px;
+    .left-pane {
+        position: fixed;
+        left: -100%;
+        top: 0;
+        bottom: 0;
+        margin: 0;
+        height: 100%;
+        border-radius: 0 12px 12px 0;
+        z-index: 1000;
+        padding-top: 1.5rem;
+        transition: left 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
     
-    .banner-content {
-        gap: 6px;
+    .right-pane {
+        position: fixed;
+        right: -100%;
+        top: 0;
+        bottom: 0;
+        margin: 0;
+        height: 100%;
+        border-radius: 12px 0 0 12px;
+        z-index: 1000;
+        padding-top: 1.5rem;
+        transition: right 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    
+    .left-pane.active {
+        left: 0;
+        box-shadow: 5px 0 25px rgba(0,0,0,0.3);
+    }
+    
+    .right-pane.active {
+        right: 0;
+        box-shadow: -5px 0 25px rgba(0,0,0,0.3);
+    }
+    
+    .main-content {
+        width: 100% !important;
+        padding: 0 0.25rem;
+    }
+    
+    /* Enhance toggle buttons */
+    .side-pane-toggle {
+        display: flex;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(108, 99, 255, 0.2);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+        color: white;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        z-index: 99;
+        transition: all 0.3s ease;
+    }
+    
+    .side-pane-toggle:active {
+        transform: translateY(-50%) scale(0.9);
+    }
+    
+    .left-toggle {
+        left: 15px;
+        right: auto;
+    }
+    
+    .right-toggle {
+        right: 15px;
+        left: auto;
+        display: flex;
+    }
+    
+    /* Compact development banner */
+    .dev-banner {
+        padding: 5px;
+        border-radius: 8px;
+        margin-bottom: 5px;
     }
     
     .dev-banner p {
-        font-size: 0.85rem;
+        font-size: 0.75rem;
+        max-width: 90%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
     
     .banner-icon {
-        font-size: 1.1rem;
+        font-size: 0.9rem;
     }
 }
 
+/* Specific styles for smaller screens */
 @media (max-width: 480px) {
-    .dev-banner {
-        padding: 5px 6px;
-        margin-bottom: 6px;
+    /* Make sidebars wider on small screens for better touch targets */
+    .side-pane {
+        width: 80%;
+        max-width: 280px;
     }
     
-    .banner-content {
-        gap: 4px;
+    /* Adjust toggle buttons */
+    .side-pane-toggle {
+        width: 36px;
+        height: 36px;
+        font-size: 0.9rem;
+    }
+    
+    /* Further compact development banner */
+    .dev-banner {
+        padding: 4px;
     }
     
     .dev-banner p {
+        font-size: 0.7rem;
+    }
+    
+    .banner-icon {
         font-size: 0.8rem;
     }
     
-    .banner-icon {
-        font-size: 1rem;
+    /* More compact room header */
+    .current-room-header {
+        padding: 0.6rem 0.8rem;
+    }
+    
+    /* Ensure typing indicator matches room box */
+    .activity {
+        padding: 5px 15px;
+        font-size: 0.75rem;
+    }
+}
+
+/* Ensure chat display takes remaining height */
+@media (max-height: 600px) {
+    .chat-display {
+        max-height: calc(100vh - 180px);
     }
 }
