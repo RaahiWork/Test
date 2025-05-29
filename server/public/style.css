@@ -1401,3 +1401,130 @@ body.swiping-left::after {
         max-height: calc(100vh - 180px);
     }
 }
+
+/* Enhanced development banner styling */
+.dev-banner {
+    width: 100%;
+    background: linear-gradient(135deg, #6c63ff 0%, #a084ee 100%);
+    color: white;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    box-shadow: 0 3px 15px rgba(108, 99, 255, 0.3);
+    overflow: hidden;
+    position: relative;
+    animation: banner-pulse 3s infinite alternate;
+    z-index: 10;
+}
+
+@keyframes banner-pulse {
+    0% { box-shadow: 0 3px 15px rgba(108, 99, 255, 0.2); }
+    100% { box-shadow: 0 5px 20px rgba(108, 99, 255, 0.5); }
+}
+
+.banner-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-align: center;
+    white-space: nowrap;
+    padding: 0 5px;
+    animation: banner-shimmer 30s linear infinite;
+}
+
+@keyframes banner-shimmer {
+    0%, 10%, 90%, 100% { transform: translateX(0); }
+    45%, 55% { transform: translateX(-15px); }
+}
+
+.dev-banner p {
+    font-weight: 600;
+    font-size: 0.95rem;
+    letter-spacing: 0.02em;
+    margin: 0;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.banner-icon {
+    font-size: 1.2rem;
+    animation: icon-pulse 2s infinite alternate;
+    display: inline-block;
+}
+
+.banner-icon:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.banner-icon:nth-child(3) {
+    animation-delay: 1s;
+}
+
+@keyframes icon-pulse {
+    0% { transform: scale(1); opacity: 0.8; }
+    100% { transform: scale(1.2); opacity: 1; }
+}
+
+/* Add a glow effect to the banner */
+.dev-banner::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, 
+        rgba(255,255,255,0) 0%, 
+        rgba(255,255,255,0.2) 50%, 
+        rgba(255,255,255,0) 100%);
+    transform: translateX(-100%);
+    animation: banner-shine 5s infinite;
+    pointer-events: none;
+}
+
+@keyframes banner-shine {
+    0% { transform: translateX(-100%); }
+    20%, 100% { transform: translateX(100%); }
+}
+
+/* Responsive styles for the banner */
+@media (max-width: 768px) {
+    .dev-banner {
+        padding: 6px 10px;
+        margin-bottom: 8px;
+    }
+    
+    .banner-content {
+        gap: 8px;
+    }
+    
+    .dev-banner p {
+        font-size: 0.85rem;
+    }
+    
+    .banner-icon {
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .dev-banner {
+        padding: 5px 8px;
+        margin-bottom: 6px;
+    }
+    
+    .banner-content {
+        gap: 6px;
+    }
+    
+    .dev-banner p {
+        font-size: 0.75rem;
+    }
+    
+    .banner-icon {
+        font-size: 1rem;
+    }
+}

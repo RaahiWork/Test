@@ -781,25 +781,31 @@ document.addEventListener('DOMContentLoaded', function() {
     // Also initialize emoji and image buttons
     setupEmojiAndImageHandlers();
     
-    // Make development banner interactive
+    // Make the banner interactive
     const devBanner = document.querySelector('.dev-banner');
     if (devBanner) {
+        // List of upcoming features
+        const upcomingFeatures = [
+            "🔊 Voice messages and audio chat",
+            "📁 File sharing and collaboration",
+            "🎨 Custom themes and personalization",
+            "🔍 Advanced search functionality",
+            "📱 Push notifications",
+            "👥 User profiles and status updates"
+        ];
+        
+        // Add click event to show details
         devBanner.addEventListener('click', function() {
-            // Create a more detailed modal or tooltip with upcoming features
-            const features = [
-                "Private messaging",
-                "File sharing",
-                "Voice messages",
-                "Custom themes",
-                "And much more!"
-            ];
+            // Create formatted feature list
+            const featureList = upcomingFeatures.join('\n');
             
-            alert(`🚀 Upcoming Features:\n\n${features.map(f => "• " + f).join('\n')}`);
+            // Show alert with upcoming features
+            alert(`✨ Coming Soon ✨\n\n${featureList}`);
         });
         
-        // Add hover effect
+        // Add visual indication it's clickable
         devBanner.style.cursor = 'pointer';
-        devBanner.title = 'Click for upcoming features';
+        devBanner.title = 'Click to see all upcoming features';
     }
 });
 
