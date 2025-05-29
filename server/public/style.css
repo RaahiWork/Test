@@ -801,166 +801,134 @@ button {
     font-size: 0.9rem;
 }
 
-/* Mobile responsiveness */
-@media (max-width: 1024px) {
-    .main-content {
-        width: calc(100% - 230px); /* Only account for left sidebar by default */
-    }
-    
-    .right-pane {
-        position: absolute;
-        right: -100%;
-        z-index: 100;
-        transition: right 0.3s ease;
-    }
-    
-    .right-pane.active {
-        right: 0;
-    }
-    
-    .right-toggle {
-        display: flex; /* Show the right toggle on mobile */
-        right: 15px;
-        left: auto;
-    }
+/* Create a dedicated container for typing indicator with improved visibility */
+.typing-container {
+    width: 100%;
+    min-height: 32px;
+    margin-bottom: 6px;
+    position: relative;
+    z-index: 10;
 }
 
+/* Typing indicator styling with improved visibility */
+.activity {
+    position: absolute;
+    left: 10px;
+    bottom: 2px;
+    padding: 6px 14px;
+    background-color: rgba(108, 99, 255, 0.25); /* More visible background */
+    border-radius: 16px;
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 500; /* Makes text more visible */
+    font-style: italic;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    display: inline-flex;
+    align-items: center;
+    max-width: 80%;
+    z-index: 15;
+    pointer-events: none;
+    border-left: 3px solid rgba(160, 132, 238, 0.8); /* More visible border */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25); /* Stronger shadow for depth */
+}
+
+/* Make active typing indicator fully visible */
+.activity.typing {
+    opacity: 1;
+    transform: translateY(0);
+    animation: pulse-glow 2s infinite alternate;
+}
+
+@keyframes pulse-glow {
+    0% { box-shadow: 0 2px 8px rgba(108, 99, 255, 0.2); }
+    100% { box-shadow: 0 4px 12px rgba(108, 99, 255, 0.4); }
+}
+
+/* Improved typing indicator dots */
+.typing-indicator {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 8px;
+    height: 1em;
+}
+
+.typing-indicator span {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    background: #a084ee;
+    border-radius: 50%;
+    margin: 0 2px;
+    opacity: 1; /* Full opacity for visibility */
+    animation: typingDot 1.4s infinite ease-in-out;
+}
+
+.typing-indicator span:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.typing-indicator span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes typingDot {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-5px); }
+}
+
+/* Hide activity area when empty but preserve space */
+.activity:empty {
+    opacity: 0 !important;
+    transform: translateY(10px);
+    pointer-events: none;
+}
+
+/* Responsive adjustments for typing indicator */
 @media (max-width: 768px) {
-    .main-content {
-        width: 100%; /* Full width on small screens */
-    }
-    
-    .left-pane {
-        position: absolute;
-        left: -100%;
-        z-index: 100;
-        transition: left 0.3s ease;
-    }
-    
-    .left-pane.active {
-        left: 0;
-    }
-    
-    .left-toggle {
-        left: 15px;
-        right: auto;
-    }
-    
-    .right-toggle {
-        right: 15px;
-    }
-    
-    /* Room header styles */
-    .current-room-header {
-        padding: 0.6rem 0.8rem;
-        border-radius: 6px 6px 0 0;
-    }
-    
-    .current-room-name {
-        font-size: 1.1rem;
-        margin-bottom: 0.2rem;
-    }
-    
-    .current-room-description {
+    .activity {
         font-size: 0.8rem;
+        padding: 4px 10px;
+        left: 8px;
     }
     
-    .form-msg {
-        flex-direction: column;
+    .typing-container {
+        min-height: 26px;
+        margin-bottom: 4px;
     }
     
-    .message-input-container {
-        margin-right: 0;
-        margin-bottom: 0.5rem;
-        width: 100%;
-    }
-    
-    #send-button {
-        width: 100%;
-        padding: 0.7rem;
-    }
-    
-    .chat-display {
-        max-height: calc(100vh - 220px);
+    .typing-indicator span {
+        width: 5px;
+        height: 5px;
     }
 }
 
 @media (max-width: 480px) {
-    /* ...existing code... */
-    
-    .current-room-header {
-        padding: 0.5rem 0.6rem;
-    }
-    
-    .current-room-name {
-        font-size: 0.9rem;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 100%;
-    }
-    
-    .current-room-description {
-        font-size: 0.7rem;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 100%;
-    }
-    
-    #message {
-        padding: 0.5rem;
-        font-size: 0.92rem;
-    }
-    
-    #send-button {
-        font-size: 0.9rem;
-    }
-    
-    .emoji-btn {
-        font-size: 1.1rem;
-    }
-    
-    .image-btn svg {
-        width: 1.1rem;
-        height: 1.1rem;
-    }
-    
-    .post__header {
-        padding: 0.25rem 0.5rem;
+    .activity {
         font-size: 0.75rem;
+        padding: 3px 8px;
+        left: 5px;
+        max-width: 90%;
     }
     
-    .post__header--name {
-        font-size: 0.75rem;
+    .typing-indicator {
+        margin-left: 4px;
     }
     
-    .post__header--time {
-        font-size: 0.6rem;
+    .typing-container {
+        min-height: 22px;
+        margin-bottom: 3px;
     }
     
-    .post__text {
-        font-size: 0.85rem;
-        padding: 0.4rem 0.5rem;
-        line-height: 1.25;
-    }
-    
-    /* Make emoji picker smaller */
-    .emoji-picker {
-        max-width: 280px;
-    }
-    
-    .emoji-container {
-        font-size: 1.2rem;
-    }
-    
-    /* Make current room text smaller */
-    .current-room-name {
-        font-size: 0.9rem;
-    }
-    
-    .current-room-description {
-        font-size: 0.7rem;
+    .typing-indicator span {
+        width: 4px;
+        height: 4px;
+        margin: 0 1px;
     }
 }
 

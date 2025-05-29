@@ -32,9 +32,12 @@
                 </div>
             </div>
 
-            <section class="activity"></section>
-
             <ul class="chat-display"></ul>
+
+            <!-- Add a dedicated typing indicator container just above the message form -->
+            <div class="typing-container">
+                <div class="activity"></div>
+            </div>
 
             <!-- Replace the form with an updated version that's mobile-friendly -->
             <form class="form-msg" id="message-form" onsubmit="return window.sendMessage(event)">
