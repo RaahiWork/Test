@@ -1128,22 +1128,22 @@ button {
 
 /* Fixed Emoji Picker Styles - Updated positioning */
 .emoji-picker {
-    position: absolute;
+    position: fixed; /* Use fixed instead of absolute for better positioning */
     bottom: auto;
     left: auto;
     right: auto;
     top: auto;
-    transform: translateY(-100%); /* Position above the button */
-    margin-bottom: 10px; /* Add small gap between picker and button */
     background: #fff;
     border-radius: 10px;
     box-shadow: 0 5px 25px rgba(0,0,0,0.2);
     width: 300px;
     max-width: 320px;
     z-index: 100;
-    display: flex;
+    display: none; /* Hide by default */
     flex-direction: column;
     overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.2s ease;
 }
 
 /* Add custom positioning class that will be set via JavaScript */
@@ -1175,9 +1175,9 @@ button {
 
 .emoji-container {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(8, 1fr); /* Show more emojis per row */
     gap: 5px;
-    padding: 10px;
+    padding: 12px;
     max-height: 200px;
     overflow-y: auto;
     background-color: #f9f9f9;
@@ -1187,10 +1187,13 @@ button {
     font-size: 1.5rem;
     text-align: center;
     cursor: pointer;
-    transition: transform 0.2s, background-color 0.2s;
+    transition: transform 0.15s, background-color 0.15s;
     user-select: none;
-    padding: 5px;
+    padding: 6px;
     border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .emoji-item:hover {
