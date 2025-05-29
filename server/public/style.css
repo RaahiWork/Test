@@ -346,22 +346,55 @@ button {
     font-weight: bold;
     cursor: pointer;
     transition: background 0.3s;
+    width: 100%;  /* Use full width */
+    max-width: 250px;  /* Limit maximum width */
+    -webkit-appearance: none; /* Fix for iOS */
+    -moz-appearance: none;
+    appearance: none;
+    height: auto; /* Fix height issues on mobile */
+    min-height: 44px; /* Ensure touch target size */
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.login-form button:hover {
-    background: linear-gradient(90deg, #a084ee 60%, #6c63ff 100%);
+/* Add hover effect only for non-touch devices */
+@media (hover: hover) {
+    .login-form button:hover {
+        background: linear-gradient(90deg, #5a52e5 60%, #9173e0 100%);
+    }
 }
 
-#name:disabled {
-    background: #444;
-    color: #bbb;
-    cursor: not-allowed;
-    animation: disableFade 0.7s cubic-bezier(.4,2,.6,1);
+/* Mobile-specific enhancements */
+@media (max-width: 768px) {
+    /* ...existing code... */
+    
+    .login-form button {
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
 }
 
-@keyframes disableFade {
-    from { background: #fff; color: #222; }
-    to { background: #444; color: #bbb; }
+@media (max-width: 480px) {
+    /* ...existing code... */
+    
+    .login-form {
+        padding: 1.5rem 1.2rem;
+    }
+    
+    .login-form button {
+        padding: 0.8rem 1rem;
+        font-size: 1.1rem;
+        min-width: 200px;
+        margin-top: 0.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    
+    .login-form button:active {
+        transform: translateY(1px);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
 }
 
 .side-pane ul {

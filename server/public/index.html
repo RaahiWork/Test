@@ -78,10 +78,10 @@
 
     <!-- Login overlay -->
     <div class="login-overlay">
-        <form class="login-form">
+        <form class="login-form" id="login-form">
             <h2>Welcome to Vyb Chat!</h2>
             <input type="text" id="login-username" name="name" placeholder="Your username" required autocomplete="off">
-            <button type="submit">Enter Chat</button>
+            <button type="submit" id="login-button" class="login-button">Enter Chat</button>
         </form>
     </div>
 
@@ -94,70 +94,32 @@
     <!-- Use the CDN version of Socket.io instead of relying on the server-provided one -->
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="app.js"></script>
+    
+    <!-- Add mobile-specific fix for the login button -->
     <script>
-        // Direct script in HTML to add submit handler
         document.addEventListener('DOMContentLoaded', function() {
-            const messageForm = document.getElementById('message-form');
-            if (messageForm) {
+            // Fix for mobile button styling issues
+            const loginButton = document.getElementById('login-button');
+            
+            // Add specific class for mobile 
+            if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                loginButton.classList.add('mobile-button');
                 
-                messageForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    
-                    if (window.sendMessage) {
-                        window.sendMessage(e);
-                    }
-                });
-            }
-        });
-
-        // Add a direct script that will run immediately
-        (function() {
-            // Function to set up message form
-            function setupDirectMessageHandler() {
-                
-                
-                // Handle form submit
-                const messageForm = document.getElementById('message-form');
-                if (messageForm) {
-                    messageForm.onsubmit = function(e) {
-                        e.preventDefault();
-                        
-                        
-                        if (window.sendMessage) {
-                            window.sendMessage(e);
-                        } else {
-                            console.error("sendMessage function not available");
-                        }
-                        
-                        return false;
-                    };
-                }
-                
-                // Handle button click
-                const sendButton = document.getElementById('send-button');
-                if (sendButton) {
-                    sendButton.onclick = function(e) {
-                        e.preventDefault();
-                        
-                        
-                        if (window.sendMessage) {
-                            window.sendMessage(e);
-                        } else {
-                            console.error("sendMessage function not available");
-                        }
-                        
-                        return false;
-                    };
-                }
+                // Prevent default touch action to avoid delay
+                loginButton.addEventListener('touchstart', function(e) {
+                    // Only style change for visual feedback
+                }, { passive: true });
             }
             
-            // Run immediately and also when the page loads
-            if (document.readyState === 'complete') {
-                setupDirectMessageHandler();
-            } else {
-                window.addEventListener('load', setupDirectMessageHandler);
-            }
-        })();
+            // Fix iOS focus issues
+            const usernameInput = document.getElementById('login-username');
+            usernameInput.addEventListener('focus', function() {
+                // Slight delay to ensure iOS keyboard is fully shown
+                setTimeout(function() {
+                    window.scrollTo(0, 0);
+                }, 50);
+            });
+        });
     </script>
 </body>
 
