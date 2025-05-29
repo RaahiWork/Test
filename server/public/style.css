@@ -1186,3 +1186,126 @@ button {
         max-height: 22px;
     }
 }
+
+/* Development banner styling */
+.dev-banner {
+    width: 100%;
+    background: linear-gradient(135deg, #6c63ff 0%, #a084ee 100%);
+    color: white;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    box-shadow: 0 3px 15px rgba(108, 99, 255, 0.2);
+    overflow: hidden;
+    position: relative;
+    animation: banner-glow 3s infinite alternate;
+    z-index: 5;
+}
+
+@keyframes banner-glow {
+    0% { box-shadow: 0 3px 15px rgba(108, 99, 255, 0.2); }
+    100% { box-shadow: 0 5px 20px rgba(108, 99, 255, 0.4); }
+}
+
+.banner-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    animation: banner-slide 20s linear infinite;
+    white-space: nowrap;
+    padding: 0 10px;
+}
+
+@keyframes banner-slide {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
+}
+
+.dev-banner p {
+    font-weight: 600;
+    font-size: 0.95rem;
+    letter-spacing: 0.02em;
+    margin: 0;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+.banner-icon {
+    font-size: 1.2rem;
+    animation: icon-bounce 2s infinite alternate;
+    display: inline-block;
+}
+
+.banner-icon:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.banner-icon:nth-child(3) {
+    animation-delay: 1s;
+}
+
+@keyframes icon-bounce {
+    0%, 80%, 100% { transform: scale(1); }
+    40% { transform: scale(1.2) rotate(10deg); }
+}
+
+/* Add a hint that the banner is clickable */
+.dev-banner::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        rgba(255,255,255,0) 0%, 
+        rgba(255,255,255,0.1) 50%, 
+        rgba(255,255,255,0) 100%);
+    transform: translateX(-100%);
+    animation: banner-shine 5s infinite;
+    pointer-events: none;
+}
+
+@keyframes banner-shine {
+    0% { transform: translateX(-100%); }
+    20%, 100% { transform: translateX(100%); }
+}
+
+/* Responsive styles for dev banner */
+@media (max-width: 768px) {
+    .dev-banner {
+        padding: 6px 8px;
+        margin-bottom: 8px;
+    }
+    
+    .banner-content {
+        gap: 6px;
+    }
+    
+    .dev-banner p {
+        font-size: 0.85rem;
+    }
+    
+    .banner-icon {
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .dev-banner {
+        padding: 5px 6px;
+        margin-bottom: 6px;
+    }
+    
+    .banner-content {
+        gap: 4px;
+    }
+    
+    .dev-banner p {
+        font-size: 0.8rem;
+    }
+    
+    .banner-icon {
+        font-size: 1rem;
+    }
+}
