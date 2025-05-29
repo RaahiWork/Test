@@ -11,17 +11,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
-    // Array of default emoji characters that will always work
-    const defaultEmojis = [
-        '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃',
-        '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '☺️', '😚',
-        '😙', '🥲', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭',
-        '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄',
-        '😬', '🤥', '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕',
-        '🤢', '🤮', '🤧', '🥵', '🥶', '🥴', '😵', '🤯', '🤠', '🥳',
-        '👍', '👎', '👌', '🤌', '👋', '🙌', '🫶', '❤️', '🔥', '💯'
-    ];
-    
     // Function to position the emoji picker properly
     function positionEmojiPicker() {
         const isMobile = window.innerWidth <= 768;
@@ -40,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             emojiPicker.style.position = 'fixed';
             emojiPicker.style.bottom = (window.innerHeight - btnRect.top + 10) + 'px';
-            emojiPicker.style.left = (btnRect.left - 250 + btnRect.width/2) + 'px';
+            emojiPicker.style.left = (btnRect.left - 150 + btnRect.width/2) + 'px';
             emojiPicker.style.transform = 'none';
             emojiPicker.style.width = '300px';
         }
@@ -63,10 +52,8 @@ document.addEventListener('DOMContentLoaded', function() {
             emojiPicker.style.opacity = '1';
         }, 10);
         
-        // Load emojis if not already loaded
-        if (!emojiContainer.innerHTML || emojiContainer.querySelectorAll('.emoji-item').length === 0) {
-            renderDefaultEmojis();
-        }
+        // Load emojis from server
+        loadEmojisFromServer();
     }
     
     // Function to hide emoji picker
@@ -77,23 +64,60 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 200);
     }
     
-    // Render the default emoji set
-    function renderDefaultEmojis() {
-        emojiContainer.innerHTML = ''; // Clear container
+    // Load emojis directly from server
+    function loadEmojisFromServer() {
+        // Show loading message
+        emojiContainer.innerHTML = '<div class="emoji-loading">Loading emojis...</div>';
         
-        defaultEmojis.forEach(emoji => {
-            const emojiItem = document.createElement('div');
-            emojiItem.className = 'emoji-item';
-            emojiItem.textContent = emoji;
-            emojiItem.setAttribute('data-emoji', emoji);
-            
-            // Add click handler
-            emojiItem.addEventListener('click', function() {
-                insertEmoji(this.getAttribute('data-emoji'));
+        // Fetch emoji list from server
+        fetch('/api/emojis')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(emojis => {
+                if (!Array.isArray(emojis) || emojis.length === 0) {
+                    emojiContainer.innerHTML = '<div class="emoji-message">No emojis available from server</div>';
+                    return;
+                }
+                
+                // Render server-provided emojis
+                emojiContainer.innerHTML = '';
+                emojis.forEach(emojiFile => {
+                    const emojiItem = document.createElement('div');
+                    emojiItem.className = 'emoji-item';
+                    
+                    const img = document.createElement('img');
+                    img.src = `/emojis/${emojiFile}`;
+                    img.alt = emojiFile.replace(/\.\w+$/, '');
+                    img.title = emojiFile.replace(/\.\w+$/, '');
+                    
+                    emojiItem.appendChild(img);
+                    
+                    // Add click handler
+                    emojiItem.addEventListener('click', () => {
+                        insertEmoji(`[emoji:${emojiFile}]`);
+                    });
+                    
+                    emojiContainer.appendChild(emojiItem);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading emojis:', error);
+                emojiContainer.innerHTML = `
+                    <div class="emoji-error">
+                        Failed to load emojis from server.<br>
+                        <button class="retry-btn">Try again</button>
+                    </div>`;
+                
+                // Add retry button functionality
+                const retryBtn = emojiContainer.querySelector('.retry-btn');
+                if (retryBtn) {
+                    retryBtn.addEventListener('click', loadEmojisFromServer);
+                }
             });
-            
-            emojiContainer.appendChild(emojiItem);
-        });
     }
     
     // Insert emoji at cursor position
@@ -140,14 +164,4 @@ document.addEventListener('DOMContentLoaded', function() {
             positionEmojiPicker();
         }
     });
-    
-    // Preload default emojis for instant access
-    renderDefaultEmojis();
-    
-    // Define a global access point for other scripts
-    window.emojiPicker = {
-        show: showEmojiPicker,
-        hide: hideEmojiPicker,
-        insert: insertEmoji
-    };
 });
