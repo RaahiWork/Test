@@ -62,7 +62,7 @@ main {
     max-width: 220px;
 }
 
-/* Update main content to be in the middle */
+/* Update main content to be in the middle with improved layout */
 .main-content {
     flex-grow: 1;
     display: flex;
@@ -72,6 +72,36 @@ main {
     position: relative;
     padding: 0 0.5rem;
     overflow: hidden;
+}
+
+/* Give each section appropriate flex properties */
+.dev-banner,
+.current-room-header,
+.typing-container,
+.form-msg,
+.emoji-picker {
+    flex-shrink: 0; /* Prevent these elements from shrinking */
+}
+
+/* Fixed height chat display with controlled scrolling */
+.chat-display {
+    height: calc(100vh - 265px); /* Adjusted height calculation */
+    min-height: 200px; /* Reduced minimum height */
+    max-height: calc(100vh - 265px); /* Adjusted maximum height to match */
+    overflow-y: auto; /* Enable vertical scrolling */
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+    flex-grow: 0; /* Don't let it grow beyond specified height */
+    flex-shrink: 0; /* Don't let it shrink below specified height */
+    background-color: rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    margin: 0.25rem 0;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(160, 132, 238, 0.3) rgba(0, 0, 0, 0.1);
 }
 
 /* Add toggle button for side panel */
@@ -592,9 +622,10 @@ button {
 .form-msg {
     display: flex;
     gap: 0.75rem;
-    margin-bottom: 0.75rem;
-    margin-top: 0.75rem;
+    margin-top: 0.5rem; /* Reduced top margin */
+    margin-bottom: 0.5rem; /* Reduced bottom margin */
     width: 100%;
+    flex-shrink: 0; /* Prevent shrinking */
 }
 
 .form-msg button[type="submit"] {
@@ -804,10 +835,11 @@ button {
 /* Create a dedicated container for typing indicator with improved visibility */
 .typing-container {
     width: 100%;
-    min-height: 30px;
+    min-height: 24px; /* Reduced height */
     position: relative;
-    margin-bottom: 5px;
+    margin-bottom: 2px; /* Reduced margin */
     pointer-events: none; /* Allow clicking through when not active */
+    flex-shrink: 0;
 }
 
 /* Enhanced typing indicator styling */
