@@ -804,368 +804,60 @@ button {
 /* Create a dedicated container for typing indicator with improved visibility */
 .typing-container {
     width: 100%;
-    min-height: 32px;
-    margin-bottom: 6px;
+    min-height: 30px;
     position: relative;
-    z-index: 10;
+    margin-bottom: 5px;
+    pointer-events: none; /* Allow clicking through when not active */
 }
 
-/* Typing indicator styling with improved visibility */
+/* Enhanced typing indicator styling */
 .activity {
-    position: absolute;
-    left: 10px;
-    bottom: 2px;
-    padding: 6px 14px;
-    background-color: rgba(108, 99, 255, 0.25); /* More visible background */
-    border-radius: 16px;
-    color: #fff;
-    font-size: 0.85rem;
-    font-weight: 500; /* Makes text more visible */
+    width: auto;
+    max-width: 80%;
+    min-height: 0;
+    padding: 0.35rem 0.65rem;
     font-style: italic;
-    opacity: 0;
-    transform: translateY(10px);
-    transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 0.9rem;
     display: inline-flex;
     align-items: center;
-    max-width: 80%;
+    transition: all 0.3s ease;
+    position: absolute;
+    bottom: 0;
+    left: 10px;
+    border-radius: 12px;
+    opacity: 0;
+    transform: translateY(10px);
     z-index: 15;
-    pointer-events: none;
-    border-left: 3px solid rgba(160, 132, 238, 0.8); /* More visible border */
-    box-shadow: 0 2px 8px rgba(0,0,0,0.25); /* Stronger shadow for depth */
+    background: rgba(108, 99, 255, 0.25);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    border-left: 3px solid rgba(160, 132, 238, 0.6);
+    pointer-events: none; /* Allow clicking through */
 }
 
-/* Make active typing indicator fully visible */
 .activity.typing {
     opacity: 1;
     transform: translateY(0);
-    animation: pulse-glow 2s infinite alternate;
+    pointer-events: auto; /* Re-enable pointer events when visible */
 }
 
-@keyframes pulse-glow {
-    0% { box-shadow: 0 2px 8px rgba(108, 99, 255, 0.2); }
-    100% { box-shadow: 0 4px 12px rgba(108, 99, 255, 0.4); }
-}
-
-/* Improved typing indicator dots */
+/* Improved typing animation dots */
 .typing-indicator {
     display: inline-flex;
     align-items: center;
-    margin-left: 8px;
+    margin-left: 0.4rem;
     height: 1em;
 }
 
 .typing-indicator span {
     display: inline-block;
-    width: 7px;
-    height: 7px;
+    width: 6px;
+    height: 6px;
     background: #a084ee;
     border-radius: 50%;
-    margin: 0 2px;
-    opacity: 1; /* Full opacity for visibility */
+    margin: 0 0.1rem;
+    opacity: 0.9;
     animation: typingDot 1.4s infinite ease-in-out;
-}
-
-.typing-indicator span:nth-child(1) {
-    animation-delay: 0s;
-}
-
-.typing-indicator span:nth-child(2) {
-    animation-delay: 0.2s;
-}
-
-.typing-indicator span:nth-child(3) {
-    animation-delay: 0.4s;
-}
-
-@keyframes typingDot {
-    0%, 60%, 100% { transform: translateY(0); }
-    30% { transform: translateY(-5px); }
-}
-
-/* Hide activity area when empty but preserve space */
-.activity:empty {
-    opacity: 0 !important;
-    transform: translateY(10px);
-    pointer-events: none;
-}
-
-/* Responsive adjustments for typing indicator */
-@media (max-width: 768px) {
-    .activity {
-        font-size: 0.8rem;
-        padding: 4px 10px;
-        left: 8px;
-    }
-    
-    .typing-container {
-        min-height: 26px;
-        margin-bottom: 4px;
-    }
-    
-    .typing-indicator span {
-        width: 5px;
-        height: 5px;
-    }
-}
-
-@media (max-width: 480px) {
-    .activity {
-        font-size: 0.75rem;
-        padding: 3px 8px;
-        left: 5px;
-        max-width: 90%;
-    }
-    
-    .typing-indicator {
-        margin-left: 4px;
-    }
-    
-    .typing-container {
-        min-height: 22px;
-        margin-bottom: 3px;
-    }
-    
-    .typing-indicator span {
-        width: 4px;
-        height: 4px;
-        margin: 0 1px;
-    }
-}
-
-/* Extra small devices */
-@media (max-width: 375px) {
-    * {
-        font-size: 0.85rem;
-    }
-    
-    .post__header {
-        padding: 0.2rem 0.4rem;
-        font-size: 0.7rem;
-    }
-    
-    .post__header--name {
-        font-size: 0.7rem;
-    }
-    
-    .post__header--time {
-        font-size: 0.55rem;
-    }
-    
-    .post__text {
-        font-size: 0.8rem;
-        padding: 0.35rem 0.4rem;
-        line-height: 1.2;
-    }
-    
-    /* Make emoji even smaller */
-    .emoji {
-        width: 1.1em;
-        height: 1.1em;
-    }
-    
-    .current-room-name {
-        font-size: 0.85rem;
-    }
-    
-    .current-room-description {
-        font-size: 0.65rem;
-    }
-    
-    #message {
-        font-size: 0.85rem;
-        padding: 0.4rem;
-    }
-    
-    #send-button {
-        font-size: 0.85rem;
-        padding: 0.5rem;
-    }
-    
-    .message-input-container {
-        padding: 0.15rem 0.4rem;
-    }
-}
-
-/* Fix for smaller devices in landscape mode */
-@media (max-height: 480px) and (orientation: landscape) {
-    .chat-display {
-        max-height: calc(100vh - 180px);
-    }
-    
-    .current-room-header {
-        padding: 0.4rem 0.6rem;
-    }
-    
-    .current-room-description {
-        display: none;
-    }
-    
-    .form-msg {
-        flex-direction: row;
-    }
-    
-    .message-input-container {
-        margin-right: 0.5rem;
-        margin-bottom: 0;
-    }
-    
-    #send-button {
-        width: auto;
-        min-width: 60px;
-    }
-}
-
-/* Mobile-specific font size reductions for chat */
-@media (max-width: 768px) {
-    /* ...existing code... */
-    
-    .post__header {
-        padding: 0.35rem 0.65rem;
-        font-size: 0.85rem;
-    }
-    
-    .post__header--name {
-        font-size: 0.85rem;
-    }
-    
-    .post__header--time {
-        font-size: 0.7rem;
-    }
-    
-    .post__text {
-        font-size: 0.95rem;
-        padding: 0.5rem 0.65rem;
-        line-height: 1.35;
-    }
-}
-
-@media (max-width: 480px) {
-    /* ...existing code... */
-    
-    .post__header {
-        padding: 0.3rem 0.6rem;
-        font-size: 0.8rem;
-    }
-    
-    .post__header--name {
-        font-size: 0.8rem;
-    }
-    
-    .post__header--time {
-        font-size: 0.65rem;
-    }
-    
-    .post__text {
-        font-size: 0.9rem;
-        padding: 0.45rem 0.6rem;
-        line-height: 1.3;
-    }
-    
-    .emoji {
-        width: 1.2em;
-        height: 1.2em;
-        vertical-align: -0.25em;
-    }
-    
-    .post--admin {
-        font-size: 0.85rem;
-        padding: 6px 12px;
-    }
-    
-    .chat-display {
-        padding: 0.6rem;
-    }
-}
-
-/* Extra small devices */
-@media (max-width: 375px) {
-    .post__header {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.75rem;
-    }
-    
-    .post__text {
-        font-size: 0.85rem;
-        padding: 0.4rem 0.5rem;
-    }
-    
-    .post {
-        margin: 0.3rem 0.15rem;
-        max-width: 85%;
-    }
-}
-
-/* Fixed Emoji Picker Styles - Updated positioning */
-.emoji-picker {
-    position: fixed; /* Use fixed instead of absolute for better positioning */
-    bottom: auto;
-    left: auto;
-    right: auto;
-    top: auto;
-    background: transparent; /* Completely transparent background */
-    border-radius: 10px;
-    box-shadow: 0 5px 25px rgba(0,0,0,0.2);
-    width: 280px; /* Slightly smaller overall width */
-    max-width: 300px; /* Reduce maximum width */
-    z-index: 100;
-    display: none; /* Hide by default */
-    flex-direction: column;
-    overflow: hidden;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    backdrop-filter: none; /* Remove blur effect */
-    -webkit-backdrop-filter: none; /* Remove blur effect */
-}
-
-/* Add new styling for emoji items with medium size */
-.emoji-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-around;
-    padding: 10px;
-    overflow-y: auto;
-    max-height: 300px;
-    background: rgba(34,34,34,0.95);
-}
-
-.emoji-item {
-    cursor: pointer;
-    margin: 4px;
-    transition: transform 0.2s;
-    width: 36px; /* Medium size - fixed width */
-    height: 36px; /* Medium size - fixed height */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: transparent !important;
-}
-
-.emoji-item img {
-    max-width: 24px; /* Medium size for the actual emoji image */
-    max-height: 24px; /* Medium size for the actual emoji image */
-    object-fit: contain;
-}
-
-.emoji-item:hover {
-    transform: scale(1.2);
-    background-color: transparent !important;
-    filter: drop-shadow(0 0 3px rgba(108, 99, 255, 0.6));
-}
-
-/* Make emoji containers fully transparent */
-.emoji-container {
-    /* ...existing code... */
-    grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); /* Adjust grid for medium size */
-}
-
-/* Fix emoji loading/message backgrounds */
-.emoji-loading, 
-.emoji-message,
-.emoji-error {
-    /* ...existing code... */
-    background: none !important;
-    color: #ffffff; /* Light text for visibility */
-    text-shadow: 0 1px 2px rgba(0,0,0,0.5); /* Add shadow for readability */
 }
 
 /* Enhanced Mobile Responsive Styles and Slidable Panels */

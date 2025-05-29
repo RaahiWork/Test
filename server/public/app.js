@@ -400,11 +400,39 @@ socket.on("activity", (name) => {
     }, 3000);
 });
 
-// Function to update typing indicator display with animated dots
+// Improved typing indicator management
+let typingUsers = new Set();
+let typingTimer;
+
+// Enhanced activity handler - make sure we always update the list of typing users
+socket.on("activity", (name) => {
+    // Don't show typing indicator for our own messages
+    if (name === nameInput.value) return;
+    
+    // Add user to typing set
+    typingUsers.add(name);
+    
+    // Update typing indicator display
+    updateTypingIndicator();
+    
+    // Clear previous timer for this user if exists
+    if (typingTimer[name]) {
+        clearTimeout(typingTimer[name]);
+    }
+    
+    // Set new timeout to remove user from typing after delay
+    typingTimer[name] = setTimeout(() => {
+        // Remove this user from typing
+        typingUsers.delete(name);
+        updateTypingIndicator();
+    }, 3000);
+});
+
+// Update typing indicator function to be more robust
 function updateTypingIndicator() {
     const activity = document.querySelector('.activity');
     if (!activity) return;
-    
+
     if (typingUsers.size === 0) {
         activity.textContent = "";
         activity.classList.remove('typing');
@@ -430,17 +458,60 @@ function updateTypingIndicator() {
     
     // Set text with animated dots
     activity.innerHTML = text + '<div class="typing-indicator"><span></span><span></span><span></span></div>';
-    
-    // Force a repaint to ensure animation works
-    void activity.offsetWidth;
 }
 
-// Add this to ensure the typing indicator works even after page structure changes
-document.addEventListener('DOMContentLoaded', function() {
-    // Re-initialize typing indicator if needed
-    updateTypingIndicator();
+// Reset typing users when receiving messages
+socket.on("message", (data) => {
+    // ...existing code...
     
-    // Set up input event for typing indicator with debounce
+    // Clear typing indicator for the user who sent this message
+    if (typingUsers.has(data.name)) {
+        typingUsers.delete(data.name);
+        updateTypingIndicator();
+        
+        // Clear any pending timeouts for this user
+        if (typingTimer[data.name]) {
+            clearTimeout(typingTimer[data.name]);
+            delete typingTimer[data.name];
+        }
+    }
+    
+    // ...existing code...
+});
+
+// Initialize typing timers as an object for better management
+document.addEventListener('DOMContentLoaded', function() {
+    // ...existing code...
+    
+    // Initialize typing timer object to track per-user timeouts
+    typingTimer = {};
+    
+    // Ensure activity element exists
+    const activity = document.querySelector('.activity');
+    if (!activity) {
+        console.error("Activity element not found");
+    }
+    
+    // Clear typing list when changing rooms
+    const oldJoinRoom = window.joinRoom || joinRoom;
+    window.joinRoom = function(roomName) {
+        // Clear typing users list when changing rooms
+        typingUsers.clear();
+        
+        // Clear all typing timers
+        Object.keys(typingTimer).forEach(user => {
+            clearTimeout(typingTimer[user]);
+            delete typingTimer[user];
+        });
+        
+        // Update the UI
+        updateTypingIndicator();
+        
+        // Call the original function
+        return oldJoinRoom.apply(this, arguments);
+    };
+    
+    // Enhanced input events for typing
     const msgInput = document.getElementById('message');
     if (msgInput) {
         let typingTimeout;
@@ -457,39 +528,36 @@ document.addEventListener('DOMContentLoaded', function() {
                     lastTypingTime = now;
                 }
                 
-                // Clear existing timeout
                 clearTimeout(typingTimeout);
-                
-                // Set a new timeout to avoid emitting too many events
-                typingTimeout = setTimeout(() => {
-                    // This ensures we don't spam the server with typing events
-                }, 1000);
             }
         });
     }
+    
+    // ...existing code...
 });
 
-// Improved typing indicator with proper animation
-let typingUsers = new Set();
-let typingTimer;
-
-socket.on("activity", (name) => {
-    // Don't show typing indicator for our own messages
-    if (name === nameInput.value) return;
+// Also update when users leave
+socket.on('userList', ({ users }) => {
+    showUsers(users);
     
-    // Add user to typing set
-    typingUsers.add(name);
+    // Get current user names from the updated list
+    const currentUserNames = users.map(user => user.name);
     
-    // Update typing indicator
+    // Remove any typing indicators for users who are not in the room anymore
+    typingUsers.forEach(userName => {
+        if (!currentUserNames.includes(userName)) {
+            typingUsers.delete(userName);
+            
+            // Clear any pending timeouts for this user
+            if (typingTimer[userName]) {
+                clearTimeout(typingTimer[userName]);
+                delete typingTimer[userName];
+            }
+        }
+    });
+    
+    // Update the typing indicator
     updateTypingIndicator();
-    
-    // Clear after 3 seconds
-    clearTimeout(typingTimer);
-    typingTimer = setTimeout(() => {
-        // Remove this user from typing
-        typingUsers.delete(name);
-        updateTypingIndicator();
-    }, 3000);
 });
 
 // Connection handling
