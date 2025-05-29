@@ -1137,8 +1137,8 @@ button {
     background: transparent; /* Completely transparent background */
     border-radius: 10px;
     box-shadow: 0 5px 25px rgba(0,0,0,0.2);
-    width: 300px;
-    max-width: 320px;
+    width: 280px; /* Slightly smaller overall width */
+    max-width: 300px; /* Reduce maximum width */
     z-index: 100;
     display: none; /* Hide by default */
     flex-direction: column;
@@ -1149,39 +1149,45 @@ button {
     -webkit-backdrop-filter: none; /* Remove blur effect */
 }
 
-/* Only keep minimal styling for the header */
-.emoji-picker-header {
-    padding: 8px 12px;
-    background: rgba(108, 99, 255, 0.6); /* Semi-transparent header */
-    color: #fff;
-    font-weight: bold;
+/* Add new styling for emoji items with medium size */
+.emoji-container {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    padding: 10px;
+    overflow-y: auto;
+    max-height: 300px;
+    background: rgba(34,34,34,0.95);
 }
 
-/* Ensure chat display has no background affecting images */
-.post__image img {
-    /* ...existing code... */
-    background: none !important; /* Force no background */
-}
-
-/* Ensure emoji items have no backgrounds */
 .emoji-item {
-    /* ...existing code... */
-    background-color: transparent !important; /* Force transparent background */
+    cursor: pointer;
+    margin: 4px;
+    transition: transform 0.2s;
+    width: 36px; /* Medium size - fixed width */
+    height: 36px; /* Medium size - fixed height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent !important;
+}
+
+.emoji-item img {
+    max-width: 24px; /* Medium size for the actual emoji image */
+    max-height: 24px; /* Medium size for the actual emoji image */
+    object-fit: contain;
 }
 
 .emoji-item:hover {
     transform: scale(1.2);
-    background-color: transparent !important; /* Maintain transparency even on hover */
-    filter: drop-shadow(0 0 3px rgba(108, 99, 255, 0.6)); /* Use drop shadow instead for hover effect */
+    background-color: transparent !important;
+    filter: drop-shadow(0 0 3px rgba(108, 99, 255, 0.6));
 }
 
 /* Make emoji containers fully transparent */
 .emoji-container {
     /* ...existing code... */
-    background: none !important;
+    grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); /* Adjust grid for medium size */
 }
 
 /* Fix emoji loading/message backgrounds */
@@ -1192,4 +1198,23 @@ button {
     background: none !important;
     color: #ffffff; /* Light text for visibility */
     text-shadow: 0 1px 2px rgba(0,0,0,0.5); /* Add shadow for readability */
+}
+
+/* Additional responsive adjustments for emoji picker */
+@media (max-width: 480px) {
+    .emoji-picker {
+        width: 260px;
+        max-width: 280px;
+    }
+    
+    .emoji-item {
+        width: 32px;
+        height: 32px;
+        margin: 3px;
+    }
+    
+    .emoji-item img {
+        max-width: 22px;
+        max-height: 22px;
+    }
 }
