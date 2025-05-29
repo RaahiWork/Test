@@ -892,7 +892,7 @@ button {
     }
     
     .current-room-name {
-        font-size: 1rem;
+        font-size: 0.9rem;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -900,7 +900,7 @@ button {
     }
     
     .current-room-description {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -909,25 +909,111 @@ button {
     
     #message {
         padding: 0.5rem;
-        font-size: 0.95rem;
+        font-size: 0.92rem;
     }
     
-    .emoji-btn, .image-btn {
-        padding: 0.4rem;
+    #send-button {
+        font-size: 0.9rem;
+    }
+    
+    .emoji-btn {
+        font-size: 1.1rem;
     }
     
     .image-btn svg {
-        width: 1.2rem;
-        height: 1.2rem;
+        width: 1.1rem;
+        height: 1.1rem;
     }
     
-    .post {
-        max-width: 85%;
+    .post__header {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
     }
     
-    .side-pane-toggle {
-        width: 24px;
-        height: 48px;
+    .post__header--name {
+        font-size: 0.75rem;
+    }
+    
+    .post__header--time {
+        font-size: 0.6rem;
+    }
+    
+    .post__text {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.5rem;
+        line-height: 1.25;
+    }
+    
+    /* Make emoji picker smaller */
+    .emoji-picker {
+        max-width: 280px;
+    }
+    
+    .emoji-container {
+        font-size: 1.2rem;
+    }
+    
+    /* Make current room text smaller */
+    .current-room-name {
+        font-size: 0.9rem;
+    }
+    
+    .current-room-description {
+        font-size: 0.7rem;
+    }
+}
+
+/* Extra small devices */
+@media (max-width: 375px) {
+    * {
+        font-size: 0.85rem;
+    }
+    
+    .post__header {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.7rem;
+    }
+    
+    .post__header--name {
+        font-size: 0.7rem;
+    }
+    
+    .post__header--time {
+        font-size: 0.55rem;
+    }
+    
+    .post__text {
+        font-size: 0.8rem;
+        padding: 0.35rem 0.4rem;
+        line-height: 1.2;
+    }
+    
+    /* Make emoji even smaller */
+    .emoji {
+        width: 1.1em;
+        height: 1.1em;
+    }
+    
+    .current-room-name {
+        font-size: 0.85rem;
+    }
+    
+    .current-room-description {
+        font-size: 0.65rem;
+    }
+    
+    #message {
+        font-size: 0.85rem;
+        padding: 0.4rem;
+    }
+    
+    #send-button {
+        font-size: 0.85rem;
+        padding: 0.5rem;
+    }
+    
+    .message-input-container {
+        padding: 0.15rem 0.4rem;
     }
 }
 
@@ -957,5 +1043,85 @@ button {
     #send-button {
         width: auto;
         min-width: 60px;
+    }
+}
+
+/* Mobile-specific font size reductions for chat */
+@media (max-width: 768px) {
+    /* ...existing code... */
+    
+    .post__header {
+        padding: 0.35rem 0.65rem;
+        font-size: 0.85rem;
+    }
+    
+    .post__header--name {
+        font-size: 0.85rem;
+    }
+    
+    .post__header--time {
+        font-size: 0.7rem;
+    }
+    
+    .post__text {
+        font-size: 0.95rem;
+        padding: 0.5rem 0.65rem;
+        line-height: 1.35;
+    }
+}
+
+@media (max-width: 480px) {
+    /* ...existing code... */
+    
+    .post__header {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.8rem;
+    }
+    
+    .post__header--name {
+        font-size: 0.8rem;
+    }
+    
+    .post__header--time {
+        font-size: 0.65rem;
+    }
+    
+    .post__text {
+        font-size: 0.9rem;
+        padding: 0.45rem 0.6rem;
+        line-height: 1.3;
+    }
+    
+    .emoji {
+        width: 1.2em;
+        height: 1.2em;
+        vertical-align: -0.25em;
+    }
+    
+    .post--admin {
+        font-size: 0.85rem;
+        padding: 6px 12px;
+    }
+    
+    .chat-display {
+        padding: 0.6rem;
+    }
+}
+
+/* Extra small devices */
+@media (max-width: 375px) {
+    .post__header {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    
+    .post__text {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.5rem;
+    }
+    
+    .post {
+        margin: 0.3rem 0.15rem;
+        max-width: 85%;
     }
 }
