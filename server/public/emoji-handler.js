@@ -1,10 +1,11 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Get all the necessary elements
     const emojiBtn = document.getElementById('emoji-btn');
     const emojiPicker = document.getElementById('emoji-picker');
     const closeEmojiPicker = document.getElementById('close-emoji-picker');
     const emojiContainer = document.getElementById('emoji-container');
     const messageInput = document.getElementById('message');
+    
+    if (!emojiBtn || !emojiPicker) return;
     
     // Default emojis if server doesn't provide any
     const defaultEmojis = [
@@ -14,46 +15,82 @@ document.addEventListener('DOMContentLoaded', function() {
         '💯', '🔥', '💕', '😭', '😢'
     ];
     
-    // Function to show emoji picker
-    function showEmojiPicker(e) {
-        e.stopPropagation(); // Prevent clicks from propagating
-        
-        // Position the emoji picker properly
+    // Function to position the emoji picker
+    function positionEmojiPicker() {
         const isMobile = window.innerWidth <= 768;
         
         if (isMobile) {
-            // Center horizontally on mobile
-            emojiPicker.style.left = '50%';
-            emojiPicker.style.transform = 'translateX(-50%)';
-            emojiPicker.style.bottom = '120px';
-        } else {
-            // Position relative to emoji button
-            const rect = emojiBtn.getBoundingClientRect();
-            emojiPicker.style.left = `${rect.left}px`;
-            emojiPicker.style.bottom = `${window.innerHeight - rect.top + 10}px`;
-            emojiPicker.style.transform = 'none';
+            // On mobile, use the fixed centered position from CSS
+            return;
         }
         
-        // Show the picker
-        emojiPicker.style.display = 'flex';
+        // On desktop, position above the emoji button
+        const btnRect = emojiBtn.getBoundingClientRect();
+        const pickerWidth = 300; // Default width in CSS
         
-        // Load emojis if container is empty
-        if (emojiContainer.children.length === 0) {
-            loadEmojis();
+        // Calculate the left position to center with the button
+        let leftPos = btnRect.left + (btnRect.width / 2) - (pickerWidth / 2);
+        
+        // Ensure the picker doesn't go off-screen on the left
+        leftPos = Math.max(10, leftPos);
+        
+        // Ensure the picker doesn't go off-screen on the right
+        const rightEdge = leftPos + pickerWidth;
+        if (rightEdge > window.innerWidth - 10) {
+            leftPos = window.innerWidth - pickerWidth - 10;
+        }
+        
+        // Set the position directly
+        emojiPicker.style.position = 'fixed';
+        emojiPicker.style.bottom = `${window.innerHeight - btnRect.top + 10}px`;
+        emojiPicker.style.left = `${leftPos}px`;
+    }
+    
+    // Toggle emoji picker
+    function toggleEmojiPicker(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const isVisible = emojiPicker.style.display === 'flex';
+        
+        if (!isVisible) {
+            // Set display before positioning for accurate calculations
+            emojiPicker.style.opacity = '0';
+            emojiPicker.style.display = 'flex';
+            
+            // Position the picker
+            positionEmojiPicker();
+            
+            // Load emojis if needed
+            if (!emojiContainer.innerHTML || emojiContainer.children.length === 0) {
+                loadEmojis();
+            }
+            
+            // Fade in after positioning
+            setTimeout(() => {
+                emojiPicker.classList.add('positioned');
+                emojiPicker.style.opacity = '1';
+            }, 10);
+        } else {
+            hideEmojiPicker();
         }
     }
     
-    // Function to hide emoji picker
+    // Hide emoji picker
     function hideEmojiPicker() {
-        emojiPicker.style.display = 'none';
+        emojiPicker.classList.remove('positioned');
+        emojiPicker.style.opacity = '0';
+        setTimeout(() => {
+            emojiPicker.style.display = 'none';
+        }, 200);
     }
     
     // Function to load emojis
     function loadEmojis() {
-        // Show loading state
+        // Start with loading state
         emojiContainer.innerHTML = '<div class="emoji-loading">Loading emojis...</div>';
         
-        // Try to load from server
+        // Try to fetch from server
         fetch('/api/emojis')
             .then(response => {
                 if (!response.ok) {
@@ -63,15 +100,14 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(emojis => {
                 if (!Array.isArray(emojis) || emojis.length === 0) {
-                    // Use default emojis if server returns empty array
+                    // Fall back to default emojis
                     renderDefaultEmojis();
                     return;
                 }
                 
-                // Clear loading message
+                // Render server emojis
                 emojiContainer.innerHTML = '';
                 
-                // Render server emojis
                 emojis.forEach(emojiFile => {
                     const emojiItem = document.createElement('div');
                     emojiItem.className = 'emoji-item';
@@ -93,12 +129,11 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 console.error('Error loading emojis:', error);
-                // Fall back to default emojis
                 renderDefaultEmojis();
             });
     }
     
-    // Render default emoji set
+    // Render default emojis
     function renderDefaultEmojis() {
         emojiContainer.innerHTML = '';
         
@@ -107,7 +142,7 @@ document.addEventListener('DOMContentLoaded', function() {
             emojiItem.className = 'emoji-item';
             emojiItem.textContent = emoji;
             
-            // Add click handler for default emojis
+            // Add click handler
             emojiItem.addEventListener('click', () => {
                 insertEmoji(emoji);
             });
@@ -116,13 +151,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Insert emoji into message input
+    // Insert emoji at cursor position
     function insertEmoji(emoji) {
         if (!messageInput) return;
         
-        const cursorPos = messageInput.selectionStart || messageInput.value.length;
+        const cursorPos = messageInput.selectionStart;
         const textBefore = messageInput.value.substring(0, cursorPos);
-        const textAfter = messageInput.value.substring(cursorPos);
+        const textAfter = messageInput.value.substring(messageInput.selectionEnd);
         
         messageInput.value = textBefore + emoji + textAfter;
         
@@ -133,20 +168,15 @@ document.addEventListener('DOMContentLoaded', function() {
         // Focus back to input
         messageInput.focus();
         
-        // Hide picker after selection
+        // Hide picker after selecting an emoji
         hideEmojiPicker();
     }
     
-    // Add event listeners
-    if (emojiBtn) {
-        emojiBtn.addEventListener('click', showEmojiPicker);
-    }
+    // Event listeners
+    emojiBtn.addEventListener('click', toggleEmojiPicker);
+    closeEmojiPicker.addEventListener('click', hideEmojiPicker);
     
-    if (closeEmojiPicker) {
-        closeEmojiPicker.addEventListener('click', hideEmojiPicker);
-    }
-    
-    // Close emoji picker when clicking outside
+    // Close on outside click
     document.addEventListener('click', (e) => {
         if (emojiPicker.style.display !== 'none' && 
             !emojiPicker.contains(e.target) && 
@@ -155,24 +185,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Mobile-specific touch events
-    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-        if (emojiContainer) {
-            // Add touch feedback
-            emojiContainer.addEventListener('touchstart', (e) => {
-                const target = e.target.closest('.emoji-item');
-                if (target) {
-                    target.style.transform = 'scale(1.2)';
-                    target.style.backgroundColor = '#f0f0f0';
-                }
-            }, { passive: true });
-            
-            emojiContainer.addEventListener('touchend', (e) => {
-                document.querySelectorAll('.emoji-item').forEach(item => {
-                    item.style.transform = '';
-                    item.style.backgroundColor = '';
-                });
-            }, { passive: true });
+    // Reposition when window is resized
+    window.addEventListener('resize', () => {
+        if (emojiPicker.style.display === 'flex') {
+            positionEmojiPicker();
         }
-    }
+    });
 });
