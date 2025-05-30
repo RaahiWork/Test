@@ -92,6 +92,9 @@
     <!-- Login overlay -->
     <div class="login-overlay">
         <form class="login-form" id="login-form">
+            <div class="login-logo">
+                <img src="images/logo.png" alt="Vyb Chat Logo" class="logo-image">
+            </div>
             <h2>Welcome to Vyb Chat!</h2>
             <input type="text" id="login-username" name="name" placeholder="Your username" required autocomplete="off">
             <input type="password" id="login-password" name="password" placeholder="Your password" required autocomplete="off">
@@ -99,7 +102,7 @@
             <div class="login-instructions">
                 <p>🆕 New user? Just enter username + password to register<br>
                 🔐 Existing user? Login with your credentials</p>
-                <small>Username: 3-20 chars • Password: 6+ chars</small>
+                <small>Username: 3-20 chars (letters, numbers, underscore only) • Password: 6+ chars</small>
             </div>
             <button type="submit" onclick="handleLoginSubmit(event)" id="login-button" class="login-button">Enter Chat</button>
         </form>
@@ -551,13 +554,29 @@
 
     <!-- Add CSS for the login message -->
     <style>
-        .login-message {
-            margin: 10px 0;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 0.9em;
+        .login-logo {
             text-align: center;
-            min-height: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-image {
+            width: 96px;
+            height: 96px;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+            border-radius: 12px;
+        }
+
+        .login-message {
+            margin: 5px 0;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            text-align: center;
+            min-height: 16px;
             transition: all 0.3s ease;
         }
         
