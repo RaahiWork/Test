@@ -286,6 +286,179 @@ button {
     vertical-align: -0.3em;
 }
 
+/* Emoji picker styles - scoped to avoid conflicts */
+#emoji-picker {
+    position: fixed;
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid #6c63ff;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 1001;
+    display: none;
+    flex-direction: column;
+    width: 320px;
+    max-height: 420px;
+    min-height: 300px;
+    transition: opacity 0.2s ease;
+}
+
+#emoji-picker .emoji-picker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid rgba(108, 99, 255, 0.2);
+}
+
+#emoji-picker .emoji-picker-title {
+    font-weight: bold;
+    color: #333;
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+#emoji-picker #close-emoji-picker {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #666;
+    padding: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+#emoji-picker #close-emoji-picker:hover {
+    background-color: rgba(255, 107, 107, 0.1);
+    color: #ff6b6b;
+}
+
+#emoji-picker #emoji-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+    gap: 0.5rem;
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 0.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(108, 99, 255, 0.3) transparent;
+    border: 1px solid rgba(108, 99, 255, 0.1);
+    border-radius: 8px;
+    background: rgba(248, 250, 252, 0.5);
+}
+
+#emoji-picker #emoji-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+#emoji-picker #emoji-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+}
+
+#emoji-picker #emoji-container::-webkit-scrollbar-thumb {
+    background: rgba(108, 99, 255, 0.3);
+    border-radius: 4px;
+}
+
+#emoji-picker #emoji-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(108, 99, 255, 0.5);
+}
+
+#emoji-picker .emoji-item {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+    background: rgba(255, 255, 255, 0.7);
+}
+
+#emoji-picker .emoji-item:hover {
+    background-color: rgba(108, 99, 255, 0.15);
+    transform: scale(1.1);
+    border-color: rgba(108, 99, 255, 0.4);
+    box-shadow: 0 2px 8px rgba(108, 99, 255, 0.2);
+}
+
+#emoji-picker .emoji-item img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    border-radius: 4px;
+}
+
+/* Mobile responsive styles for emoji picker */
+@media (max-width: 768px) {
+    #emoji-picker {
+        width: 90% !important;
+        max-width: 350px;
+        left: 50% !important;
+        top: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        bottom: auto !important;
+        max-height: 60vh;
+    }
+    
+    #emoji-picker #emoji-container {
+        grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+        gap: 0.4rem;
+        max-height: 40vh;
+    }
+    
+    /* Keep same emoji size on mobile */
+    #emoji-picker .emoji-item {
+        width: 50px;
+        height: 50px;
+    }
+    
+    #emoji-picker .emoji-item img {
+        width: 32px;
+        height: 32px;
+    }
+}
+
+@media (max-width: 480px) {
+    #emoji-picker {
+        width: 95% !important;
+        max-width: 300px;
+        padding: 0.75rem;
+    }
+    
+    #emoji-picker #emoji-container {
+        grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+        gap: 0.3rem;
+    }
+    
+    /* Keep same emoji size on small mobile */
+    #emoji-picker .emoji-item {
+        width: 50px;
+        height: 50px;
+    }
+    
+    #emoji-picker .emoji-item img {
+        width: 32px;
+        height: 32px;
+    }
+    
+    #emoji-picker .emoji-picker-title {
+        font-size: 1rem;
+    }
+}
+
 /* Improved loading/error states */
 .image-loading, .image-error {
     padding: 12px;
@@ -1081,20 +1254,6 @@ body.swiping-left::after {
 
 /* Specific styles for smaller screens */
 @media (max-width: 480px) {
-    /* Make sidebars wider on small screens for better touch targets */
-    .side-pane {
-        width: 80%;
-        max-width: 280px;
-    }
-    
-    /* Adjust toggle buttons */
-    .side-pane-toggle {
-        width: 36px;
-        height: 36px;
-        font-size: 0.9rem;
-    }
-    
-    /* Further compact development banner */
     .dev-banner {
         padding: 4px;
     }
