@@ -7,8 +7,6 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "build": "npm install --production",
-    "obfuscate": "javascript-obfuscator . --output dist --exclude node_modules,.env,dist",
     "install-deps": "npm install"
   },
   "dependencies": {
