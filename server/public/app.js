@@ -1059,11 +1059,18 @@ function loadEmojis() {
                 return;
             }
             
+            // Note: This fallback function now delegates to the emoji-handler.js
+            // which has proper pagination. If emoji-handler.js is loaded, it will
+            // override this function. This is kept as a basic fallback only.
+            
             // Clear container
             emojiContainer.innerHTML = '';
             
+            // Show only first 10 emojis as a basic fallback
+            const displayEmojis = emojis.slice(0, 10);
+            
             // Add each emoji to the container
-            emojis.forEach(emoji => {
+            displayEmojis.forEach(emoji => {
                 const emojiItem = document.createElement('div');
                 emojiItem.className = 'emoji-item';
                 emojiItem.innerHTML = `<img src="/emojis/${emoji}" alt="${emoji}" title="${emoji.replace(/\.\w+$/, '')}">`;
@@ -1089,6 +1096,14 @@ function loadEmojis() {
                 
                 emojiContainer.appendChild(emojiItem);
             });
+            
+            // Add note if there are more emojis
+            if (emojis.length > 10) {
+                const moreNote = document.createElement('div');
+                moreNote.className = 'emoji-message';
+                moreNote.textContent = `Showing 10 of ${emojis.length} emojis (basic mode)`;
+                emojiContainer.appendChild(moreNote);
+            }
         })
         .catch(error => {
             console.error('Error loading emojis:', error);

@@ -6,6 +6,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const emojiContainer = document.getElementById('emoji-container');
     const messageInput = document.getElementById('message');
     
+    // Pagination state
+    let allEmojis = [];
+    let currentPage = 1;
+    const emojisPerPage = 10;
+    
     if (!emojiBtn || !emojiPicker || !emojiContainer) {
         console.error('Emoji picker elements not found');
         return;
@@ -64,10 +69,117 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 200);
     }
     
+    // Create pagination controls
+    function createPaginationControls() {
+        const existingPagination = emojiPicker.querySelector('.emoji-pagination');
+        if (existingPagination) {
+            existingPagination.remove();
+        }
+        
+        const paginationDiv = document.createElement('div');
+        paginationDiv.className = 'emoji-pagination';
+        
+        const totalPages = Math.ceil(allEmojis.length / emojisPerPage);
+        
+        paginationDiv.innerHTML = `
+            <div class="pagination-info">
+                Page ${currentPage} of ${totalPages} (${allEmojis.length} emojis)
+            </div>
+            <div class="pagination-controls">
+                <button class="pagination-btn" id="prev-page" ${currentPage === 1 ? 'disabled' : ''}>
+                    Previous
+                </button>
+                <button class="pagination-btn" id="next-page" ${currentPage === totalPages ? 'disabled' : ''}>
+                    Next
+                </button>
+            </div>
+        `;
+        
+        emojiPicker.appendChild(paginationDiv);
+        
+        // Add event listeners to pagination buttons
+        const prevBtn = document.getElementById('prev-page');
+        const nextBtn = document.getElementById('next-page');
+        
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderCurrentPage();
+                    updatePaginationControls();
+                }
+            });
+        }
+        
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderCurrentPage();
+                    updatePaginationControls();
+                }
+            });
+        }
+    }
+    
+    // Update pagination controls
+    function updatePaginationControls() {
+        const totalPages = Math.ceil(allEmojis.length / emojisPerPage);
+        const prevBtn = document.getElementById('prev-page');
+        const nextBtn = document.getElementById('next-page');
+        const paginationInfo = emojiPicker.querySelector('.pagination-info');
+        
+        if (prevBtn) {
+            prevBtn.disabled = currentPage === 1;
+        }
+        
+        if (nextBtn) {
+            nextBtn.disabled = currentPage === totalPages;
+        }
+        
+        if (paginationInfo) {
+            paginationInfo.textContent = `Page ${currentPage} of ${totalPages} (${allEmojis.length} emojis)`;
+        }
+    }
+    
+    // Render current page of emojis
+    function renderCurrentPage() {
+        emojiContainer.innerHTML = '';
+        
+        const startIndex = (currentPage - 1) * emojisPerPage;
+        const endIndex = Math.min(startIndex + emojisPerPage, allEmojis.length);
+        const pageEmojis = allEmojis.slice(startIndex, endIndex);
+        
+        pageEmojis.forEach(emojiFile => {
+            const emojiItem = document.createElement('div');
+            emojiItem.className = 'emoji-item';
+            
+            const img = document.createElement('img');
+            img.src = `/emojis/${emojiFile}`;
+            img.alt = emojiFile.replace(/\.\w+$/, '');
+            img.title = emojiFile.replace(/\.\w+$/, '');
+            
+            emojiItem.appendChild(img);
+            
+            // Add click handler
+            emojiItem.addEventListener('click', () => {
+                insertEmoji(`[emoji:${emojiFile}]`);
+            });
+            
+            emojiContainer.appendChild(emojiItem);
+        });
+    }
+    
     // Load emojis directly from server
     function loadEmojisFromServer() {
         // Show loading message
         emojiContainer.innerHTML = '<div class="emoji-loading">Loading emojis...</div>';
+        
+        // Remove existing pagination controls during loading
+        const existingPagination = emojiPicker.querySelector('.emoji-pagination');
+        if (existingPagination) {
+            existingPagination.remove();
+        }
         
         // Fetch emoji list from server
         fetch('/api/emojis')
@@ -83,26 +195,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 
-                // Render server-provided emojis
-                emojiContainer.innerHTML = '';
-                emojis.forEach(emojiFile => {
-                    const emojiItem = document.createElement('div');
-                    emojiItem.className = 'emoji-item';
-                    
-                    const img = document.createElement('img');
-                    img.src = `/emojis/${emojiFile}`;
-                    img.alt = emojiFile.replace(/\.\w+$/, '');
-                    img.title = emojiFile.replace(/\.\w+$/, '');
-                    
-                    emojiItem.appendChild(img);
-                    
-                    // Add click handler
-                    emojiItem.addEventListener('click', () => {
-                        insertEmoji(`[emoji:${emojiFile}]`);
-                    });
-                    
-                    emojiContainer.appendChild(emojiItem);
-                });
+                // Store all emojis and reset to first page
+                allEmojis = emojis;
+                currentPage = 1;
+                
+                // Render first page
+                renderCurrentPage();
+                
+                // Create pagination controls
+                createPaginationControls();
             })
             .catch(error => {
                 console.error('Error loading emojis:', error);
@@ -162,6 +263,25 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('resize', function() {
         if (emojiPicker.style.display === 'flex') {
             positionEmojiPicker();
+        }
+    });
+    
+    // Add keyboard navigation for pagination
+    document.addEventListener('keydown', function(e) {
+        if (emojiPicker.style.display === 'flex') {
+            const totalPages = Math.ceil(allEmojis.length / emojisPerPage);
+            
+            if (e.key === 'ArrowLeft' && currentPage > 1) {
+                e.preventDefault();
+                currentPage--;
+                renderCurrentPage();
+                updatePaginationControls();
+            } else if (e.key === 'ArrowRight' && currentPage < totalPages) {
+                e.preventDefault();
+                currentPage++;
+                renderCurrentPage();
+                updatePaginationControls();
+            }
         }
     });
 });
