@@ -280,10 +280,12 @@ button {
 }
 
 .emoji {
-    width: 1.4em;
-    height: 1.4em;
-    margin: 0 0.1em;
-    vertical-align: -0.3em;
+    width: 32px;
+    height: 32px;
+    margin: 0 0.2em;
+    vertical-align: -0.1em;
+    object-fit: contain;
+    border-radius: 4px;
 }
 
 /* Emoji picker styles - scoped to avoid conflicts */
