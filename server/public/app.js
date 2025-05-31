@@ -89,7 +89,10 @@ window.sendMessage = function(e) {
     
     // Clear input field after sending
     msgInput.value = "";
-    msgInput.focus();
+    // Only focus if not iOS
+    if (!(/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream)) {
+        msgInput.focus();
+    }
 };
 
 // Join room function

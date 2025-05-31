@@ -60,6 +60,14 @@
                 <div class="activity"></div>
             </div>
 
+            <!-- Voice message action buttons, hidden by default -->
+            <div id="voice-action-container" style="display:none;gap:0.5em;margin-bottom:0.5em;">
+                <audio id="voice-audio-preview" controls style="vertical-align:middle;"></audio>
+                <button type="button" id="voice-send-btn">Send</button>
+                <button type="button" id="voice-cancel-btn">Cancel</button>
+                <button type="button" id="voice-download-btn">Download as MP3</button>
+            </div>
+
             <form class="form-msg" id="message-form" onsubmit="return window.sendMessage(event)">
                 <div class="message-input-container">
                     <input type="text" id="message" placeholder="Type a message..." autocomplete="off">
@@ -73,13 +81,6 @@
                     <!-- Voice message button and input -->
                     <button type="button" id="voice-record-btn" class="voice-btn" aria-label="Record voice">🎤</button>
                     <input type="file" id="voice-file" accept="audio/*" style="display:none">
-                </div>
-                <!-- Voice message action buttons, hidden by default -->
-                <div id="voice-action-container" style="display:none;gap:0.5em;margin-top:0.5em;">
-                    <audio id="voice-audio-preview" controls style="vertical-align:middle;"></audio>
-                    <button type="button" id="voice-send-btn">Send</button>
-                    <button type="button" id="voice-cancel-btn">Cancel</button>
-                    <button type="button" id="voice-download-btn">Download as MP3</button>
                 </div>
                 <button type="submit" id="send-button">Send</button>
             </form>
@@ -233,6 +234,17 @@
     <script src="private-messaging.js"></script>
     <script src="radio-player.js"></script>
     <script src="voice-message.js"></script>
+    <script>
+        // Remove any JS that does: msgInput.focus(); after sending a message
+        // Add this utility to conditionally set autofocus (optional, for clarity)
+        (function() {
+            var isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            var msgInput = document.getElementById('message');
+            if (msgInput && !isiOS) {
+                msgInput.setAttribute('autofocus', 'autofocus');
+            }
+        })();
+    </script>
 
 </body>
 
