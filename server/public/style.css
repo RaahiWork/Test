@@ -1482,6 +1482,8 @@ body.swiping-left::after {
     background: rgba(255, 255, 255, 0.02);
     list-style: none;
     margin: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Minified post styles only for private message chat */
@@ -1490,281 +1492,850 @@ body.swiping-left::after {
     margin: 0.25rem 0.1rem;
     font-size: 0.8rem;
     transform: scale(0.9);
-    transform-origin: left top;
 }
 
 .private-message-chat .post--left {
     align-self: flex-start;
     border-bottom-left-radius: 3px;
+    transform-origin: left top;
 }
 
 .private-message-chat .post--right {
     align-self: flex-end;
     border-bottom-right-radius: 3px;
+    transform-origin: right top;
+    margin-left: auto;
 }
 
-.private-message-chat .post__header {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.7rem;
+/* Improved loading/error states */
+.image-loading, .image-error {
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    text-align: center;
+    margin: 8px;
 }
 
-.private-message-chat .post__header--name {
-    font-weight: 600;
-    font-size: 0.7rem;
-}
-
-.private-message-chat .post__header--time {
-    font-size: 0.6rem;
-    opacity: 0.8;
-}
-
-.private-message-chat .post__text {
-    padding: 0.4rem 0.5rem;
-    line-height: 1.2;
-    font-size: 0.75rem;
-}
-
-.private-message-chat .post__image {
-    padding: 0.3rem;
-}
-
-.private-message-chat .post__image img {
-    max-height: 150px;
-    border-radius: 6px;
-}
-
-.private-message-chat .emoji {
-    width: 16px;
-    height: 16px;
-    margin: 0 0.1em;
-}
-
-.private-message-chat .image-loading,
-.private-message-chat .image-error {
-    padding: 0.4rem;
-    font-size: 0.7rem;
-}
-
-.private-message-chat .image-loading {
+.image-loading {
     background: rgba(100, 100, 100, 0.08);
     color: #777;
 }
 
-.private-message-chat .image-error {
+.image-error {
     background: rgba(255, 107, 107, 0.08);
     color: #ff6b6b;
 }
 
-/* Improve mobile responsiveness */
-@media (max-width: 768px) {
-    .left-pane {
-        position: fixed;
-        left: -100%;
-        top: 0;
-        bottom: 0;
-        margin: 0;
-        height: 100%;
-        border-radius: 0 12px 12px 0;
-        z-index: 1000;
-        padding-top: 1.5rem;
-        transition: left 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-    
-    .right-pane {
-        position: fixed;
-        right: -100%;
-        top: 0;
-        bottom: 0;
-        margin: 0;
-        height: 100%;
-        border-radius: 12px 0 0 12px;
-        z-index: 1000;
-        padding-top: 1.5rem;
-        transition: right 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-    
-    .left-pane.active {
-        left: 0;
-        box-shadow: 5px 0 25px rgba(0,0,0,0.3);
-    }
-    
-    .right-pane.active {
-        right: 0;
-        box-shadow: -5px 0 25px rgba(0,0,0,0.3);
-    }
-    
-    .main-content {
-        width: 100% !important;
-        padding: 0 0.25rem;
-    }
-    
-    /* Enhance toggle buttons */
-    .side-pane-toggle {
-        display: flex;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: rgba(108, 99, 255, 0.2);
-        backdrop-filter: blur(5px);
-        -webkit-backdrop-filter: blur(5px);
-        color: white;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        z-index: 99;
-        transition: all 0.3s ease;
-    }
-    
-    .side-pane-toggle:active {
-        transform: translateY(-50%) scale(0.9);
-    }
-    
-    .left-toggle {
-        left: 15px;
-        right: auto;
-    }
-    
-    .right-toggle {
-        right: 15px;
-        left: auto;
-        display: flex;
-    }
-    
-    /* Compact development banner */
-    .dev-banner {
-        padding: 5px;
-        border-radius: 8px;
-        margin-bottom: 5px;
-    }
-    
-    .dev-banner p {
-        font-size: 0.75rem;
-        max-width: 90%;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-    
-    .banner-icon {
-        font-size: 0.9rem;
-    }
-}
-
-/* Specific styles for smaller screens */
-@media (max-width: 480px) {
-    .dev-banner {
-        padding: 4px;
-    }
-    
-    .dev-banner p {
-        font-size: 0.7rem;
-    }
-    
-    .banner-icon {
-        font-size: 0.8rem;
-    }
-    
-    /* More compact room header */
-    .current-room-header {
-        padding: 0.6rem 0.8rem;
-    }
-    
-    /* Ensure typing indicator matches room box */
-    .activity {
-        padding: 5px 15px;
-        font-size: 0.75rem;
-    }
-}
-
-/* Ensure chat display takes remaining height */
-@media (max-height: 600px) {
-    .chat-display {
-        max-height: calc(100vh - 180px);
-    }
-}
-
-/* Enhanced development banner styling */
-.dev-banner {
+.user-list,
+.room-list,
+.activity {
     width: 100%;
-    background: linear-gradient(135deg, #6c63ff 0%, #a084ee 100%);
-    color: white;
-    padding: 8px 12px;
-    margin-bottom: 10px;
-    border-radius: 10px;
-    box-shadow: 0 3px 15px rgba(108, 99, 255, 0.3);
-    overflow: hidden;
-    position: relative;
-    animation: banner-pulse 3s infinite alternate;
-    z-index: 10;
+    min-height: 2.65rem;
+    margin: 0 auto;
+    max-width: none; /* Remove max-width limitation */
+    padding: .75rem .25rem;
+    font-style: italic;
 }
 
-@keyframes banner-pulse {
-    0% { box-shadow: 0 3px 15px rgba(108, 99, 255, 0.2); }
-    100% { box-shadow: 0 5px 20px rgba(108, 99, 255, 0.5); }
-}
-
-.banner-content {
+.login-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.85);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    z-index: 1000;
+    opacity: 1;
+    pointer-events: all;
+    transition: opacity 0.6s cubic-bezier(.4,2,.6,1);
+}
+
+.login-overlay.hide {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s cubic-bezier(.4,2,.6,1);
+}
+
+.login-form {
+    background: #222;
+    padding: 2rem 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    align-items: center;
+    animation: popin 0.7s cubic-bezier(.4,2,.6,1);
+}
+
+@keyframes popin {
+    0% { transform: scale(0.7); opacity: 0; }
+    80% { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(1); }
+}
+
+.login-form input[type="text"] {
+    padding: .7rem 1rem;
+    border-radius: 8px;
+    border: none;
+    font-size: 1.1rem;
+    width: 220px;
+    outline: none;
+    transition: box-shadow 0.3s;
+}
+
+.login-form input[type="text"]:focus {
+    box-shadow: 0 0 0 2px #6c63ff;
+}
+
+.login-form button {
+    padding: .7rem 1.5rem;
+    border-radius: 8px;
+    border: none;
+    background: linear-gradient(90deg, #6c63ff 60%, #a084ee 100%);
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s;
+    width: 100%;  /* Use full width */
+    max-width: 250px;  /* Limit maximum width */
+    -webkit-appearance: none; /* Fix for iOS */
+    -moz-appearance: none;
+    appearance: none;
+    height: auto; /* Fix height issues on mobile */
+    min-height: 44px; /* Ensure touch target size */
     text-align: center;
-    white-space: nowrap;
-    padding: 0 5px;
-    animation: banner-shimmer 30s linear infinite;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
-@keyframes banner-shimmer {
-    0%, 10%, 90%, 100% { transform: translateX(0); }
-    45%, 55% { transform: translateX(-15px); }
+/* Add hover effect only for non-touch devices */
+@media (hover: hover) {
+    .login-form button:hover {
+        background: linear-gradient(90deg, #5a52e5 60%, #9173e0 100%);
+    }
 }
 
-.dev-banner p {
-    font-weight: 600;
-    font-size: 0.95rem;
-    letter-spacing: 0.02em;
+/* Mobile-specific enhancements */
+@media (max-width: 768px) {
+    /* ...existing code... */
+    
+    .login-form button {
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+}
+
+@media (max-width: 480px) {
+    /* ...existing code... */
+    
+    .login-form {
+        padding: 1.5rem 1.2rem;
+    }
+    
+    .login-form button {
+        padding: 0.8rem 1rem;
+        font-size: 1.1rem;
+        min-width: 200px;
+        margin-top: 0.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    
+    .login-form button:active {
+        transform: translateY(1px);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+}
+
+.side-pane ul {
+    list-style: none;
+    padding-left: 0;
     margin: 0;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    width: 100%;
+}
+
+.side-pane ul li {
+    background: rgba(160, 132, 238, 0.13);
+    color: #fff;
+    border-radius: 7px;
+    margin-bottom: 0.7em;
+    padding: 0.7em 1em;
+    font-size: 1.08rem;
+    letter-spacing: 0.5px;
+    transition: background 0.2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+}
+
+.side-pane ul li:last-child {
+    margin-bottom: 0;
+}
+
+.rooms-header {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    color: #a084ee;
+    font-size: 1.05rem;
+}
+
+/* Enhanced room list styling */
+.rooms-container {
+    width: 100%;
+    box-sizing: border-box; /* Ensure padding is included in width calculation */
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin: 0;
+    max-height: 70vh;
+    overflow-y: auto;
+    padding: 0.4rem;
+    scrollbar-width: thin;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* Set consistent width for rooms list container */
+#rooms-list-container {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0; 
+    margin: 0.5rem 0;
+}
+
+/* Ensure room items fit within the container */
+.room-item {
+    width: 100%;
+    box-sizing: border-box;
+    background: rgba(108, 99, 255, 0.15);
+    border-radius: 8px;
+    padding: 0.6rem 0.5rem; /* Slightly reduce horizontal padding */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.25rem; /* Reduce gap to allow more room */
+    transition: all 0.2s ease;
+    border: 1px solid rgba(160, 132, 238, 0.1);
+    cursor: pointer;
+    margin: 0 0 0.35rem 0;
+}
+
+/* Add special styling for default room to make it stand out */
+.room-item[data-room="Vibe Room"] {
+    background: rgba(128, 112, 255, 0.25);
+    border-left: 3px solid #a084ee;
+}
+
+.room-item[data-room="Vibe Room"]:not(.active-room):hover {
+    background: rgba(128, 112, 255, 0.3);
+}
+
+.room-item[data-room="Vibe Room"].active-room {
+    background: rgba(128, 112, 255, 0.4);
+    border-color: #8c75ea;
+}
+
+/* Make room info take up appropriate space */
+.room-info {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem; /* Reduce gap between icon and name */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 1;
+    cursor: inherit;
+    min-width: 0; /* Allow text truncation */
+}
+
+.room-icon {
+    font-size: 0.95rem; /* Slightly smaller icon */
+    opacity: 0.8;
+    flex-shrink: 0;
+}
+
+.room-name {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-weight: 500;
+    font-size: 0.9rem; /* Slightly smaller font size */
+    letter-spacing: 0.01em;
+    color: #fff;
+    max-width: calc(100% - 25px); /* Ensure text can be truncated */
 }
 
-.banner-icon {
+.join-room-btn {
+    border: none;
+    background: rgba(108, 99, 255, 0.7);
+    color: white;
+    padding: 0.2rem 0.35rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: bold;
+    transition: background-color 0.2s;
+    flex-shrink: 0;
+    white-space: nowrap;
+    min-width: 35px; /* Smaller minimum width for the button */
+    max-width: 40px; /* Add maximum width as well */
+}
+
+/* Remove dropdown-related styles */
+.room-dropdown-container,
+.room-dropdown {
+    display: none; /* Hide these elements */
+}
+
+/* Custom scrollbar styling */
+.rooms-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.rooms-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+}
+
+.rooms-container::-webkit-scrollbar-thumb {
+    background: rgba(160, 132, 238, 0.3);
+    border-radius: 8px;
+}
+
+.rooms-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(160, 132, 238, 0.5);
+}
+
+/* Chat box styles */
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: calc(100% - 460px); /* Adjust width for two side panes */
+    position: relative;
+    padding: 0 0.5rem;
+    overflow: hidden;
+}
+
+.message-input-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #fff;
+    border-radius: 10px;
+    padding: 0.25rem 0.5rem;
+    flex-grow: 1;
+    border: 1px solid #ddd;
+}
+
+.message-input-container input {
+    flex-grow: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    padding: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.form-msg {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.5rem; /* Reduced top margin */
+    margin-bottom: 0.5rem; /* Reduced bottom margin */
+    width: 100%;
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+.form-msg button[type="submit"] {
+    background: #6c63ff;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 0.6rem 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+    min-width: 80px;
+    flex-shrink: 0;
+}
+
+.form-msg button[type="submit"]:hover {
+    background: #5650d8;
+}
+
+.form-msg button[type="submit"]:active {
+    background: #4842c9;
+    transform: scale(0.98);
+}
+
+.emoji-btn, .image-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #777;
     font-size: 1.2rem;
-    animation: icon-pulse 2s infinite alternate;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+}
+
+.emoji-btn:hover, .image-btn:hover {
+    color: #6c63ff;
+    background: rgba(108, 99, 255, 0.1);
+}
+
+.image-btn svg {
+    width: 1.2rem;
+    height: 1.2rem;
+}
+
+/* Add pane header styling for title and logout button */
+.pane-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 0.75rem;
+}
+
+.pane-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+/* Power logout button styling */
+.power-logout-btn {
+    background: none;
+    border: none;
+    color: #ff6b6b;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.power-logout-btn:hover {
+    background-color: rgba(255, 107, 107, 0.2);
+    transform: scale(1.1);
+}
+
+.power-logout-btn:active {
+    transform: scale(0.95);
+}
+
+.power-icon {
     display: inline-block;
+    transform: rotate(90deg);
 }
 
-.banner-icon:nth-child(1) {
-    animation-delay: 0s;
+/* Current room header styling */
+.current-room-header {
+    background: rgba(34,34,34,0.75);
+    border-radius: 8px 8px 0 0;
+    padding: 0.8rem 1rem;
+    margin-bottom: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
 }
 
-.banner-icon:nth-child(3) {
-    animation-delay: 1s;
-}
-
-@keyframes icon-pulse {
-    0% { transform: scale(1); opacity: 0.8; }
-    100% { transform: scale(1.2); opacity: 1; }
-}
-
-/* Add a glow effect to the banner */
-.dev-banner::before {
+.current-room-header::before {
     content: "";
     position: absolute;
     top: 0;
     left: 0;
-    right: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(108, 99, 255, 0.2) 0%, rgba(0, 0, 0, 0) 80%);
+    opacity: 0.6;
+    z-index: 0;
+}
+
+.room-info-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    position: relative;
+    z-index: 1;
+}
+
+.current-room-name {
+    font-size: 1.3rem;
+    margin-bottom: 0.3rem;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.current-room-name::before {
+    content: "🚪";
+    margin-right: 0.5rem;
+    font-size: 1.2rem;
+    opacity: 0.85;
+}
+
+.current-room-description {
+    font-size: 0.9rem;
+    color: #cccccc;
+    font-style: italic;
+    margin: 0;
+    max-width: 90%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Room-specific header styling */
+.current-room-header[data-room="Vibe Room"] {
+    background: linear-gradient(to right, rgba(128, 112, 255, 0.2), rgba(108, 99, 255, 0.05));
+}
+
+.current-room-header[data-room="Vibe Room"] .current-room-name::before {
+    content: "🎵";
+}
+
+.current-room-header[data-room="Lounge 404"] .current-room-name::before {
+    content: "🛋️";
+}
+
+.current-room-header[data-room="The Hive"] .current-room-name::before {
+    content: "🐝";
+}
+
+.current-room-header[data-room="Code & Coffee"] .current-room-name::before {
+    content: "☕";
+}
+
+.current-room-header[data-room="Midnight Rant Club"] .current-room-name::before {
+    content: "🌙";
+}
+
+.current-room-header[data-room="MemeStream"] .current-room-name::before {
+    content: "😂";
+}
+
+.current-room-header[data-room="The Think Tank"] .current-room-name::before {
+    content: "🧠";
+}
+
+.current-room-header[data-room="AFK Café"] .current-room-name::before {
+    content: "💤";
+}
+
+.current-room-header[data-room="Spoiler Zone"] .current-room-name::before {
+    content: "🎬";
+}
+
+.current-room-header[data-room="Echo Base"] .current-room-name::before {
+    content: "📢";
+}
+
+/* Adjust activity section to make room for header */
+.activity {
+    min-height: 1.5rem;
+    padding: 0.4rem 0.25rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+}
+
+/* Create a dedicated container for typing indicator with improved visibility */
+.typing-container {
+    width: 100%;
+    min-height: 24px; /* Reduced height */
+    position: relative;
+    margin-bottom: 2px; /* Reduced margin */
+    pointer-events: none; /* Allow clicking through when not active */
+    flex-shrink: 0;
+}
+
+/* Enhanced typing indicator styling */
+.activity {
+    width: auto;
+    max-width: 80%;
+    min-height: 0;
+    padding: 0.35rem 0.65rem;
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.3s ease;
+    position: absolute;
     bottom: 0;
-    background: linear-gradient(90deg, 
-        rgba(255,255,255,0) 0%, 
-        rgba(255,255,255,0.2) 50%, 
-        rgba(255,255,255,0) 100%);
-    transform: translateX(-100%);
-    animation: banner-shine 5s infinite;
+    left: 10px;
+    border-radius: 12px;
+    opacity: 0;
+    transform: translateY(10px);
+    z-index: 15;
+    background: rgba(108, 99, 255, 0.25);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    border-left: 3px solid rgba(160, 132, 238, 0.6);
+    pointer-events: none; /* Allow clicking through */
+}
+
+.activity.typing {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto; /* Re-enable pointer events when visible */
+}
+
+/* Improved typing animation dots */
+.typing-indicator {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 0.4rem;
+    height: 1em;
+}
+
+.typing-indicator span {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: #a084ee;
+    border-radius: 50%;
+    margin: 0 0.1rem;
+    opacity: 0.9;
+    animation: typingDot 1.4s infinite ease-in-out;
+}
+
+/* Enhanced Mobile Responsive Styles and Slidable Panels */
+
+/* Swipe indicators */
+.swipe-indicator {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(108, 99, 255, 0.2);
+    border-radius: 8px;
+    padding: 12px 8px;
+    color: white;
+    font-size: 0.9rem;
+    z-index: 15;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.left-indicator {
+    left: 10px;
+    transform: translateY(-50%) translateX(-100%);
+}
+
+.right-indicator {
+    right: 10px;
+    transform: translateY(-50%) translateX(100%);
+}
+
+.indicator-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.indicator-content span:first-child {
+    font-size: 1.3rem;
+}
+
+/* Swipe guide animation */
+.show-swipe-guide .left-indicator {
+    opacity: 0.9;
+    transform: translateY(-50%) translateX(0);
+    animation: pulse-left 2s ease;
+}
+
+.show-swipe-guide .right-indicator {
+    opacity: 0.9;
+    transform: translateY(-50%) translateX(0);
+    animation: pulse-right 2s ease 1s;
+}
+
+@keyframes pulse-left {
+    0%, 100% { transform: translateY(-50%) translateX(0); }
+    50% { transform: translateY(-50%) translateX(10px); }
+}
+
+@keyframes pulse-right {
+    0%, 100% { transform: translateY(-50%) translateX(0); }
+    50% { transform: translateY(-50%) translateX(-10px); }
+}
+
+/* Visual feedback for swipe gestures */
+body.swiping-right::after,
+body.swiping-left::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    width: 20px;
+    z-index: 20;
+    opacity: 0.5;
     pointer-events: none;
 }
 
-@keyframes banner-shine {
-    0% { transform: translateX(-100%); }
-    20%, 100% { transform: translateX(100%); }
+body.swiping-right::after {
+    left: 0;
+    background: linear-gradient(90deg, rgba(160, 132, 238, 0.5), transparent);
 }
+
+body.swiping-left::after {
+    right: 0;
+    background: linear-gradient(-90deg, rgba(160, 132, 238, 0.5), transparent);
+}
+
+/* Enhance side panes for better sliding */
+.side-pane {
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+                left 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+                right 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Private message form */
+.private-message-form {
+    display: flex;
+    gap: 0.3rem;
+    padding: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 0 0 12px 12px;
+}
+
+.private-message-input-container {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: #fff;
+    border-radius: 6px;
+    padding: 0.2rem 0.4rem;
+    flex-grow: 1;
+    border: 1px solid #ddd;
+}
+
+.private-message-input-container input {
+    flex-grow: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    padding: 0.4rem;
+    font-size: 0.85rem;
+    color: #333;
+}
+
+.private-message-form button[type="submit"] {
+    background: #6c63ff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 0.8rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+    min-width: 60px;
+    font-size: 0.8rem;
+}
+
+.private-message-form button[type="submit"]:hover {
+    background: #5650d8;
+}
+
+/* User list message buttons */
+.user-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.3rem 0.4rem;
+    border-radius: 4px;
+    margin-bottom: 0.2rem;
+    background: rgba(255, 255, 255, 0.05);
+    transition: background 0.2s ease;
+}
+
+.user-list-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-grow: 1;
+    font-size: 0.85rem;
+}
+
+.message-user-btn {
+    background: rgba(108, 99, 255, 0.3);
+    border: none;
+    color: white;
+    padding: 0.15rem 0.3rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.65rem;
+    transition: background 0.2s ease;
+    min-width: 25px;
+}
+
+.message-user-btn:hover {
+    background: rgba(108, 99, 255, 0.5);
+}
+
+/* Private message notifications */
+.private-message-notification {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    background: linear-gradient(135deg, #6c63ff, #a084ee);
+    color: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    box-shadow: 0 3px 8px rgba(108, 99, 255, 0.3);
+    z-index: 2001;
+    transform: translateX(300px);
+    transition: transform 0.3s ease;
+    max-width: 250px;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.private-message-notification.show {
+    transform: translateX(0);
+}
+
+.private-message-notification-header {
+    font-weight: bold;
+    font-size: 0.8rem;
+    margin-bottom: 0.1rem;
+}
+
+.private-message-notification-text {
+    font-size: 0.7rem;
+    opacity: 0.9;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Private messaging styles */
+.private-messaging-section {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.private-messaging-section h4 {
+    font-size
