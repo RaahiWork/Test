@@ -47,9 +47,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Prevent main scroll when side pane is open
     function preventScroll(e) {
-        if ((leftPane && leftPane.classList.contains('open')) ||
-            (rightPane && rightPane.classList.contains('open'))) {
-            e.preventDefault();
+        if (!isMobile()) return; // Ensure this only runs on mobile
+
+        const openPane = (leftPane && leftPane.classList.contains('open')) ? leftPane :
+                         (rightPane && rightPane.classList.contains('open')) ? rightPane : null;
+
+        if (openPane) {
+            // If the touch event's target is NOT a descendant of the open pane,
+            // then prevent default scrolling (this stops the body/main-content behind the pane).
+            if (!openPane.contains(e.target)) {
+                e.preventDefault();
+            }
+            // Otherwise, if the touch is inside the open pane, allow default behavior,
+            // which includes scrolling within the pane's scrollable children.
         }
     }
     document.addEventListener('touchmove', preventScroll, { passive: false });

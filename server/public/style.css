@@ -807,6 +807,8 @@ button {
     scrollbar-width: thin;
     border-radius: 8px;
     background: rgba(0, 0, 0, 0.1);
+    -webkit-overflow-scrolling: touch; /* For smoother scrolling on iOS */
+    touch-action: pan-y; /* Optimize touch handling for vertical scrolling */
 }
 
 /* Set consistent width for rooms list container */
@@ -2160,6 +2162,8 @@ body.swiping-left::after {
     scrollbar-width: thin;
     border-radius: 8px;
     background: rgba(0, 0, 0, 0.1);
+    -webkit-overflow-scrolling: touch; /* For smoother scrolling on iOS */
+    touch-action: pan-y; /* Optimize touch handling for vertical scrolling */
 }
 
 /* Set consistent width for rooms list container */

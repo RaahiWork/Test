@@ -26,6 +26,21 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Handle touch start - record initial position
     function handleTouchStart(e) {
+        // If a side pane is open and the touch starts inside it, disable swipe on mobile
+        if (window.innerWidth <= 768) {
+            const isOpenLeftPane = leftPane && leftPane.classList.contains('open');
+            const isOpenRightPane = rightPane && rightPane.classList.contains('open');
+
+            if (isOpenLeftPane && leftPane.contains(e.target)) {
+                touchStarted = false;
+                return;
+            }
+            if (isOpenRightPane && rightPane.contains(e.target)) {
+                touchStarted = false;
+                return;
+            }
+        }
+
         touchStartX = e.touches[0].clientX;
         touchStarted = true;
     }
