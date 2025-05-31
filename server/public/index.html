@@ -1,4 +1,4 @@
-clean this file: <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -7,6 +7,7 @@ clean this file: <!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vyb Chat</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="login.css">
 </head>
 
 <body>
@@ -14,17 +15,13 @@ clean this file: <!DOCTYPE html>
     <main>
         <aside class="side-pane left-pane">
             <h3>Chat Rooms</h3>
-            <!-- Room list will be inserted here -->
             <div id="rooms-list-container"></div>
             <div class="connection-status">Connecting...</div>
         </aside>
 
-        <!-- Add toggle button for mobile -->
         <div class="side-pane-toggle left-toggle">☰</div>
         
-        <!-- Wrap the main content in a container -->
         <div class="main-content">
-            <!-- Enhanced development banner -->
             <div class="dev-banner">
                 <div class="banner-content">
                     <span class="banner-icon">🚀</span>
@@ -33,7 +30,6 @@ clean this file: <!DOCTYPE html>
                 </div>
             </div>
             
-            <!-- Add current room info header -->
             <div class="current-room-header">
                 <div class="room-info-container">
                     <h2 class="current-room-name">Select a room to join</h2>
@@ -43,12 +39,10 @@ clean this file: <!DOCTYPE html>
 
             <ul class="chat-display"></ul>
 
-            <!-- Add a dedicated typing indicator container just above the message form -->
             <div class="typing-container">
                 <div class="activity"></div>
             </div>
 
-            <!-- Replace the form with an updated version that's mobile-friendly -->
             <form class="form-msg" id="message-form" onsubmit="return window.sendMessage(event)">
                 <div class="message-input-container">
                     <input type="text" id="message" placeholder="Type a message..." autocomplete="off">
@@ -69,11 +63,9 @@ clean this file: <!DOCTYPE html>
                     <button id="close-emoji-picker" class="close-btn">×</button>
                 </div>
                 <div id="emoji-container" class="emoji-container"></div>
-                <!-- Pagination controls will be dynamically inserted here -->
             </div>
         </div>
         
-        <!-- Add new right side panel for users with logout button -->
         <aside class="side-pane right-pane">
             <div class="pane-header">
                 <h3>Online Users</h3>
@@ -84,12 +76,10 @@ clean this file: <!DOCTYPE html>
             <section class="user-list"></section>
         </aside>
         
-        <!-- Add toggle button for right panel on mobile -->
         <div class="side-pane-toggle right-toggle">👤</div>
 
     </main>
 
-    <!-- Login overlay -->
     <div class="login-overlay">
         <form class="login-form" id="login-form">
             <div class="login-logo">
@@ -109,515 +99,16 @@ clean this file: <!DOCTYPE html>
     </div>
 
     <form class="form-join" style="display:none;">
-        <!-- Hidden form for joining rooms - needed for initial room joining via socket -->
         <input type="hidden" name="room-join" id="room-join">
         <input type="hidden" name="name" id="name">
     </form>
 
-    <!-- Use the CDN version of Socket.io instead of relying on the server-provided one -->
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="app.js"></script>
     <script src="emoji-handler.js"></script>
     <script src="touch-handler.js"></script>
-    
-    <!-- Add mobile-specific fix for the login button -->
-    <script>
-        // Global variable to store users data
-        let cachedUsers = [];
-        let usersDataLoaded = false;
+    <script src="auth.js"></script>
 
-        document.addEventListener('DOMContentLoaded', function() {
-            // Fetch and cache users from MongoDB on page load
-            fetchAndCacheUsersFromMongoDB();
-            
-            // Add logout button functionality
-            const logoutBtn = document.getElementById('logout-btn');
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', function() {
-                    //console.log('🔴 Logout button clicked - refreshing page...');
-                    window.location.reload();
-                });
-            }
-            
-            // Add login form submission handler
-            //const loginForm = document.getElementById('login-form');
-            // loginForm.addEventListener('submit', handleLoginSubmit);
-            
-            // Fix for mobile button styling issues
-            const loginButton = document.getElementById('login-button');
-            
-            // Add specific class for mobile 
-            if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-                loginButton.classList.add('mobile-button');
-                
-                // Prevent default touch action to avoid delay
-                loginButton.addEventListener('touchstart', function(e) {
-                    // Only style change for visual feedback
-                }, { passive: true });
-            }
-            
-            // Fix iOS focus issues
-            const usernameInput = document.getElementById('login-username');
-            usernameInput.addEventListener('focus', function() {
-                // Slight delay to ensure iOS keyboard is fully shown
-                setTimeout(function() {
-                    window.scrollTo(0, 0);
-                }, 50);
-            });
-        });
-        
-        // Function to fetch and cache users from MongoDB on page load
-        async function fetchAndCacheUsersFromMongoDB() {
-            try {
-                //console.log('🔍 Fetching and caching users from MongoDB on page load...');
-                
-                // Determine the server URL
-                const serverUrl = (() => {
-                    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                        return `http://${window.location.hostname}:3500`;
-                    } else {
-                        return window.location.origin;
-                    }
-                })();
-                
-                const response = await fetch(`${serverUrl}/api/users`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`Server returned ${response.status}: ${response.statusText}`);
-                }
-                
-                const data = await response.json();
-                
-                // Cache the users data
-                cachedUsers = data.users || [];
-                usersDataLoaded = true;
-                
-                //console.log('✅ Successfully cached users from MongoDB:');
-                //console.log('📊 Total users in database:', data.count);
-                //console.log('👥 Cached users array:', cachedUsers);
-                
-                // Log each user individually for better readability
-                if (cachedUsers.length > 0) {
-                    //console.log('📝 Individual user details:');
-                    cachedUsers.forEach((user, index) => {
-                        //console.log(`${index + 1}. Username: "${user.username}", Created: ${new Date(user.createdAt).toLocaleString()}, ID: ${user._id}`);
-                    });
-                    
-                    // Create a summary table for better visualization
-                    // console.table(cachedUsers.map(user => ({
-                    //     Username: user.username,
-                    //     'Created Date': new Date(user.createdAt).toLocaleDateString(),
-                    //     'Created Time': new Date(user.createdAt).toLocaleTimeString()
-                    // })));
-                } else {
-                    //console.log('ℹ️ No users found in the MongoDB database');
-                }
-                
-                // Log additional stats
-                // console.log('📈 User Statistics:');
-                // console.log(`   - Total registered users: ${data.count}`);
-                // console.log(`   - Database status: Connected`);
-                // console.log(`   - Cache timestamp: ${new Date().toISOString()}`);
-                
-            } catch (error) {
-                console.error('❌ Error fetching users from MongoDB:', error.message);
-                usersDataLoaded = false;
-                cachedUsers = [];
-                
-                if (error.message.includes('Failed to fetch') || error.message.includes('Network')) {
-                    console.warn('⚠️ Network error - Server might not be running on port 3500');
-                } else if (error.message.includes('500')) {
-                    console.warn('⚠️ Server error - MongoDB might not be connected');
-                } else {
-                    console.warn('⚠️ Unknown error occurred while fetching users');
-                }
-                
-                // console.log('💡 Troubleshooting tips:');
-                // console.log('   1. Make sure the server is running (npm start or npm run dev)');
-                // console.log('   2. Check if MongoDB is installed and running');
-                // console.log('   3. Verify the server is accessible at the correct port');
-            }
-        }
-        
-        // Function to check if user exists in cached data
-        function findCachedUser(username) {
-            if (!usersDataLoaded || !cachedUsers) {
-                return null;
-            }
-            return cachedUsers.find(user => 
-                user.username.toLowerCase() === username.toLowerCase()
-            );
-        }
-        
-        // Optional: Add a function to manually refresh cached user data
-        window.refreshUserData = function() {
-            //console.log('🔄 Manually refreshing cached user data...');
-            fetchAndCacheUsersFromMongoDB();
-        };
-        
-        // Remove periodic monitoring to avoid unnecessary server calls
-        // User data will only be refreshed when explicitly requested
-
-        // Function to show messages in the login message label
-        function showLoginMessage(message, type = 'error') {
-            const messageElement = document.getElementById('login-message');
-            messageElement.textContent = message;
-            messageElement.className = `login-message ${type}`;
-            
-            // Auto-clear success messages after 3 seconds
-            if (type === 'success') {
-                setTimeout(() => {
-                    messageElement.textContent = '';
-                    messageElement.className = 'login-message';
-                }, 3000);
-            }
-        }
-
-        // Function to clear login messages
-        function clearLoginMessage() {
-            const messageElement = document.getElementById('login-message');
-            messageElement.textContent = '';
-            messageElement.className = 'login-message';
-        }
-
-        // Function to attempt registration
-        function attemptRegistration(username, password) {
-            const serverUrl = (() => {
-                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                    return `http://${window.location.hostname}:3500`;
-                } else {
-                    return window.location.origin;
-                }
-            })();
-
-            // User doesn't exist - proceed with registration
-            //console.log('🆕 User not found, attempting registration...');
-            const loginButton = document.getElementById('login-button');
-            loginButton.textContent = 'Creating Account...';
-            showLoginMessage('Creating your account...', 'info');
-            
-            // Use XMLHttpRequest for synchronous call
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', `${serverUrl}/api/register`, false); // false = synchronous
-            xhr.setRequestHeader('Content-Type', 'application/json');
-            
-            try {
-                xhr.send(JSON.stringify({
-                    username: username,
-                    password: password
-                }));
-                
-                const registerData = JSON.parse(xhr.responseText);
-                //console.log('📡 Registration response:', registerData);
-                
-                if (xhr.status === 200) {
-                    //console.log('✅ New user successfully registered:', registerData);
-                    // console.log('👤 New user details:', {
-                    //     username: registerData.user.username,
-                    //     id: registerData.user.id,
-                    //     createdAt: registerData.user.createdAt
-                    // });
-                    
-                    showLoginMessage(`Welcome ${username}! Your account has been created.`, 'success');
-                    
-                    // Add new user to cache immediately
-                    cachedUsers.push({
-                        _id: registerData.user.id,
-                        username: registerData.user.username,
-                        createdAt: registerData.user.createdAt
-                    });
-                    
-                    setTimeout(() => proceedWithLogin(username), 1500);
-                    
-                } else {
-                    // Registration failed
-                    console.error('❌ Failed to register user:', registerData.error);
-                    console.error('📋 Registration error details:', registerData.details || 'No additional details');
-                    
-                    if (xhr.status === 409) {
-                        showLoginMessage('Username already exists. Please try logging in with the correct password.');
-                    } else if (xhr.status === 400) {
-                        if (registerData.details && Array.isArray(registerData.details)) {
-                            showLoginMessage(`Registration failed: ${registerData.details.join(', ')}`);
-                        } else {
-                            showLoginMessage(`Registration failed: ${registerData.error}`);
-                        }
-                    } else {
-                        showLoginMessage('Registration failed. Please try again.');
-                    }
-                }
-            } catch (error) {
-                console.error('❌ Registration error:', error);
-                showLoginMessage('Registration failed. Please try again.');
-            }
-        }
-
-        // Function to attempt login
-        function attemptLogin(username, password) {
-            const serverUrl = (() => {
-                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                    return `http://${window.location.hostname}:3500`;
-                } else {
-                    return window.location.origin;
-                }
-            })();
-
-            // Use XMLHttpRequest for synchronous call
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', `${serverUrl}/api/login`, false); // false = synchronous
-            xhr.setRequestHeader('Content-Type', 'application/json');
-            
-            try {
-                xhr.send(JSON.stringify({
-                    username: username,
-                    password: password
-                }));
-                
-                const loginData = JSON.parse(xhr.responseText);
-                //console.log('📡 Login response:', loginData);
-
-                if (xhr.status === 200) {
-                    // User exists and password is correct
-                    //console.log('✅ User successfully logged in:', loginData);
-                    // console.log('👤 Existing user details:', {
-                    //     username: loginData.user.username,
-                    //     id: loginData.user.id,
-                    //     loginAt: loginData.user.loginAt
-                    // });
-
-                    showLoginMessage(`Welcome back, ${username}!`, 'success');
-                    setTimeout(() => proceedWithLogin(username), 1500);
-
-                } else {
-                    // Wrong password for existing user
-                    console.error('❌ Wrong password for existing user:', username);
-
-                    showLoginMessage('Incorrect password. Please try again.');
-
-                    // Clear password field but keep username
-                    document.getElementById('login-password').value = '';
-
-                    // Add visual feedback to password field
-                    const passwordField = document.getElementById('login-password');
-                    passwordField.style.borderColor = '#ff6b6b';
-                    passwordField.style.backgroundColor = '#ffe6e6';
-
-                    // Reset field styling after a few seconds
-                    setTimeout(() => {
-                        passwordField.style.borderColor = '';
-                        passwordField.style.backgroundColor = '';
-                    }, 3000);
-
-                    // Focus back to password field for retry
-                    passwordField.focus();
-
-                    // Ensure login overlay stays visible
-                    const loginOverlay = document.querySelector('.login-overlay');
-                    const main = document.querySelector('main');
-
-                    loginOverlay.style.display = 'flex';
-                    loginOverlay.classList.remove('hide');
-                    main.style.opacity = '0.5';
-                    main.style.pointerEvents = 'none';
-                    return false;
-                }
-            } catch (error) {
-                console.error('❌ Login error:', error);
-                showLoginMessage('Login failed. Please try again.');
-            }
-        }
-
-        // Function to handle login form submission and save to MongoDB
-        function handleLoginSubmit(e) {
-            e.preventDefault();
-            
-            // Clear any previous messages
-            clearLoginMessage();
-            
-            const username = document.getElementById('login-username').value.trim();
-            const password = document.getElementById('login-password').value;
-            
-            if (!username || !password) {
-                showLoginMessage('Please enter both username and password');
-                return;
-            }
-            
-            // Validate username and password before sending
-            if (username.length < 3) {
-                showLoginMessage('Username must be at least 3 characters long');
-                return;
-            }
-            
-            if (username.length > 20) {
-                showLoginMessage('Username cannot exceed 20 characters');
-                return;
-            }
-            
-            if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-                showLoginMessage('Username can only contain letters, numbers, and underscores');
-                return;
-            }
-            
-            if (password.length < 6) {
-                showLoginMessage('Password must be at least 6 characters long');
-                return;
-            }
-            
-            const loginButton = document.getElementById('login-button');
-            const originalText = loginButton.textContent;
-            
-            try {
-                //console.log('🔐 Attempting to authenticate user...');
-                //console.log('📝 Username:', username);
-                //console.log('🔐 Password length:', password.length);
-                
-                // Show loading state
-                loginButton.textContent = 'Checking...';
-                loginButton.disabled = true;
-                showLoginMessage('Checking credentials...', 'info');
-                
-                // Check cached users first to determine if user exists
-                const existingUser = findCachedUser(username);
-                
-                if (existingUser) {
-                    //console.log('🔍 User found in cache, attempting login...');
-                    // User exists in cache, try login
-                    attemptLogin(username, password);
-                } else {
-                    //console.log('🆕 User not found in cache, attempting registration...');
-                    // User doesn't exist in cache, try registration
-                    loginButton.textContent = 'Creating Account...';
-                    showLoginMessage('Creating your account...', 'info');
-                    attemptRegistration(username, password);
-                }
-                
-            } catch (error) {
-                console.error('❌ Network error during authentication:', error);
-                showLoginMessage('Connection error. Please check if the server is running and try again.');
-            } finally {
-                // Reset button state
-                loginButton.textContent = originalText;
-                loginButton.disabled = false;
-            }
-        }
-
-        // Function to proceed with login after successful registration
-        function proceedWithLogin(username) {
-            // Clear any error messages
-            clearLoginMessage();
-            
-            // Set the hidden name field value
-            const nameField = document.querySelector('#name');
-            if (nameField) nameField.value = username;
-            
-            // Store in local storage
-            localStorage.setItem('vybchat-username', username);
-            
-            // Add to disabled input if exists
-            const nameInput = document.querySelector('#name');
-            if (nameInput) {
-                nameInput.value = username;
-                nameInput.disabled = true;
-                nameInput.classList.add('disabled');
-            }
-            
-            // Hide overlay only after successful authentication
-            const loginOverlay = document.querySelector('.login-overlay');
-            const main = document.querySelector('main');
-            
-            loginOverlay.classList.add('hide');
-            
-            // Show logout button if exists
-            const logoutBtn = document.querySelector('.logout-btn');
-            if (logoutBtn) logoutBtn.style.display = 'block';
-            
-            // Show main content with animation and enable socket connection
-            setTimeout(() => {
-                loginOverlay.style.display = 'none';
-                main.style.opacity = '1';
-                main.style.pointerEvents = 'auto';
-                
-                //console.log('🎉 User logged in successfully:', username);
-                
-                // Only now initialize socket connection after successful login
-                if (window.initializeSocketConnection) {
-                    window.initializeSocketConnection(username);
-                }
-            }, 600);
-        }
-    </script>
-
-    <!-- Add CSS for the login message -->
-    <style>
-        .login-logo {
-            text-align: center;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .logo-image {
-            width: 96px;
-            height: 96px;
-            object-fit: contain;
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
-            border-radius: 12px;
-        }
-
-        .login-message {
-            margin: 5px 0;
-            padding: 6px 10px;
-            border-radius: 4px;
-            font-size: 0.85em;
-            text-align: center;
-            min-height: 16px;
-            transition: all 0.3s ease;
-        }
-        
-        .login-message.error {
-            background-color: #ffe6e6;
-            color: #cc0000;
-            border: 1px solid #ff9999;
-        }
-        
-        .login-message.success {
-            background-color: #e6f7e6;
-            color: #006600;
-            border: 1px solid #99cc99;
-        }
-        
-        .login-message.info {
-            background-color: #e6f3ff;
-            color: #0066cc;
-            border: 1px solid #99ccff;
-        }
-
-        .login-instructions {
-            margin: 12px 0;
-            padding: 8px;
-            background-color: #f9f9f9;
-            border-radius: 4px;
-            font-size: 0.8em;
-            text-align: center;
-            color: #666;
-        }
-
-        .login-instructions p {
-            margin: 0 0 6px 0;
-            line-height: 1.3;
-        }
-
-        .login-instructions small {
-            color: #888;
-            font-size: 0.9em;
-        }
-    </style>
 </body>
 
 </html>
