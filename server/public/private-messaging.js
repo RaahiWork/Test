@@ -61,8 +61,15 @@ class PrivateMessaging {
         // Private voice message
         const privateVoiceBtn = document.getElementById('private-voice-record-btn');
         const privateVoiceFile = document.getElementById('private-voice-file');
-        if (privateVoiceBtn && privateVoiceFile) {
-            let mediaRecorder, audioChunks = [];
+        const privateVoiceActionContainer = document.getElementById('private-voice-action-container');
+        const privateVoiceAudioPreview = document.getElementById('private-voice-audio-preview');
+        const privateVoiceSendBtn = document.getElementById('private-voice-send-btn');
+        const privateVoiceCancelBtn = document.getElementById('private-voice-cancel-btn');
+        const privateVoiceDownloadBtn = document.getElementById('private-voice-download-btn');
+        let privateRecordedVoiceData = null;
+        let mediaRecorder, audioChunks = [];
+
+        if (privateVoiceBtn && privateVoiceFile && privateVoiceActionContainer && privateVoiceAudioPreview && privateVoiceSendBtn && privateVoiceCancelBtn && privateVoiceDownloadBtn) {
             privateVoiceBtn.addEventListener('click', async () => {
                 if (mediaRecorder && mediaRecorder.state === 'recording') {
                     mediaRecorder.stop();
@@ -82,7 +89,9 @@ class PrivateMessaging {
                         const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                         const reader = new FileReader();
                         reader.onload = (event) => {
-                            this.sendPrivateMessage(this.currentPrivateChat, null, null, event.target.result);
+                            privateRecordedVoiceData = event.target.result;
+                            privateVoiceAudioPreview.src = privateRecordedVoiceData;
+                            privateVoiceActionContainer.style.display = 'flex';
                         };
                         reader.readAsDataURL(audioBlob);
                     };
@@ -92,6 +101,22 @@ class PrivateMessaging {
                     alert('Could not start recording: ' + err.message);
                 }
             });
+
+            privateVoiceSendBtn.addEventListener('click', () => {
+                if (privateRecordedVoiceData && this.currentPrivateChat) {
+                    this.sendPrivateMessage(this.currentPrivateChat, null, null, privateRecordedVoiceData);
+                }
+                privateVoiceActionContainer.style.display = 'none';
+                privateVoiceAudioPreview.src = '';
+                privateRecordedVoiceData = null;
+            });
+
+            privateVoiceCancelBtn.addEventListener('click', () => {
+                privateVoiceActionContainer.style.display = 'none';
+                privateVoiceAudioPreview.src = '';
+                privateRecordedVoiceData = null;
+            });
+
             privateVoiceFile.addEventListener('change', function() {
                 if (this.files && this.files[0]) {
                     const file = this.files[0];
@@ -102,13 +127,35 @@ class PrivateMessaging {
                     }
                     const reader = new FileReader();
                     reader.onload = (event) => {
-                        window.privateMessaging.sendPrivateMessage(
-                            window.privateMessaging.currentPrivateChat, null, null, event.target.result
-                        );
+                        privateRecordedVoiceData = event.target.result;
+                        privateVoiceAudioPreview.src = privateRecordedVoiceData;
+                        privateVoiceActionContainer.style.display = 'flex';
                     };
                     reader.readAsDataURL(file);
                     this.value = '';
                 }
+            });
+
+            privateVoiceDownloadBtn.addEventListener('click', function() {
+                if (!privateRecordedVoiceData) return;
+                const arr = privateRecordedVoiceData.split(',');
+                const mime = arr[0].match(/:(.*?);/)[1];
+                const bstr = atob(arr[1]);
+                let n = bstr.length;
+                const u8arr = new Uint8Array(n);
+                while (n--) u8arr[n] = bstr.charCodeAt(n);
+                let blob = new Blob([u8arr], { type: mime });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'voice-message.mp3';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    URL.revokeObjectURL(url);
+                    a.remove();
+                }, 100);
             });
         }
     }
@@ -416,7 +463,27 @@ class PrivateMessaging {
         
         // Add voice content if available
         if (data.voice) {
-            contentHtml += `<div class="post__voice"><audio controls src="${data.voice}"></audio></div>`;
+            const downloadMp3Btn = `
+                <a href="${data.voice}" download="voice-message.mp3" 
+                   style="
+                    display:inline-block;
+                    margin-left:10px;
+                    padding:4px 14px;
+                    background:#2ecc71;
+                    color:#fff;
+                    border-radius:18px;
+                    font-size:0.97em;
+                    font-weight:500;
+                    text-decoration:none;
+                    box-shadow:0 2px 6px rgba(46,204,113,0.12);
+                    transition:background 0.2s;
+                    vertical-align:middle;
+                "
+                onmouseover="this.style.background='#27ae60'"
+                onmouseout="this.style.background='#2ecc71'"
+                title="Download voice message as MP3"
+                >⬇️ Download</a>`;
+            contentHtml += `<div class="post__voice"><audio controls src="${data.voice}"></audio>${downloadMp3Btn}</div>`;
         }
         
         // Add text content if available

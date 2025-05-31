@@ -74,6 +74,13 @@
                     <button type="button" id="voice-record-btn" class="voice-btn" aria-label="Record voice">🎤</button>
                     <input type="file" id="voice-file" accept="audio/*" style="display:none">
                 </div>
+                <!-- Voice message action buttons, hidden by default -->
+                <div id="voice-action-container" style="display:none;gap:0.5em;margin-top:0.5em;">
+                    <audio id="voice-audio-preview" controls style="vertical-align:middle;"></audio>
+                    <button type="button" id="voice-send-btn">Send</button>
+                    <button type="button" id="voice-cancel-btn">Cancel</button>
+                    <button type="button" id="voice-download-btn">Download</button>
+                </div>
                 <button type="submit" id="send-button">Send</button>
             </form>
 
@@ -156,6 +163,13 @@
                     <!-- Voice message button and input for private chat -->
                     <button type="button" id="private-voice-record-btn" class="voice-btn" aria-label="Record voice">🎤</button>
                     <input type="file" id="private-voice-file" accept="audio/*" style="display:none">
+                </div>
+                <!-- Voice message action buttons for private, hidden by default -->
+                <div id="private-voice-action-container" style="display:none;gap:0.5em;margin-top:0.5em;">
+                    <audio id="private-voice-audio-preview" controls style="vertical-align:middle;"></audio>
+                    <button type="button" id="private-voice-send-btn">Send</button>
+                    <button type="button" id="private-voice-cancel-btn">Cancel</button>
+                    <button type="button" id="private-voice-download-btn">Download</button>
                 </div>
                 <button type="submit" id="private-send-button">Send</button>
             </form>

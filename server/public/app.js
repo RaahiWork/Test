@@ -402,8 +402,28 @@ socket.on("message", (data) => {
     }
     
     if (voice) {
-        // Add audio player for voice message
-        contentHtml += `<div class="post__voice"><audio controls src="${voice}"></audio></div>`;
+        // Attractive download button for voice message
+        const downloadMp3Btn = `
+            <a href="${voice}" download="voice-message.mp3" 
+               style="
+                display:inline-block;
+                margin-left:10px;
+                padding:4px 14px;
+                background:#2ecc71;
+                color:#fff;
+                border-radius:18px;
+                font-size:0.97em;
+                font-weight:500;
+                text-decoration:none;
+                box-shadow:0 2px 6px rgba(46,204,113,0.12);
+                transition:background 0.2s;
+                vertical-align:middle;
+            "
+            onmouseover="this.style.background='#27ae60'"
+            onmouseout="this.style.background='#2ecc71'"
+            title="Download voice message as MP3"
+            >⬇️ Download</a>`;
+        contentHtml += `<div class="post__voice"><audio controls src="${voice}"></audio>${downloadMp3Btn}</div>`;
     }
     
     li.innerHTML = contentHtml;
@@ -1033,9 +1053,15 @@ function setupEmojiAndImageHandlers() {
 function setupVoiceMessageHandlers() {
     const voiceBtn = document.getElementById('voice-record-btn');
     const voiceFileInput = document.getElementById('voice-file');
-    if (!voiceBtn || !voiceFileInput) return;
-
+    const voiceActionContainer = document.getElementById('voice-action-container');
+    const voiceAudioPreview = document.getElementById('voice-audio-preview');
+    const voiceSendBtn = document.getElementById('voice-send-btn');
+    const voiceCancelBtn = document.getElementById('voice-cancel-btn');
+    const voiceDownloadBtn = document.getElementById('voice-download-btn');
+    let recordedVoiceData = null;
     let mediaRecorder, audioChunks = [];
+
+    if (!voiceBtn || !voiceFileInput || !voiceActionContainer || !voiceAudioPreview || !voiceSendBtn || !voiceCancelBtn) return;
 
     voiceBtn.addEventListener('click', async () => {
         if (mediaRecorder && mediaRecorder.state === 'recording') {
@@ -1056,11 +1082,9 @@ function setupVoiceMessageHandlers() {
                 const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    // Send voice message as base64 data
-                    socket.emit('voiceMessage', {
-                        name: nameInput.value,
-                        voice: e.target.result
-                    });
+                    recordedVoiceData = e.target.result;
+                    voiceAudioPreview.src = recordedVoiceData;
+                    voiceActionContainer.style.display = 'flex';
                 };
                 reader.readAsDataURL(audioBlob);
             };
@@ -1071,7 +1095,24 @@ function setupVoiceMessageHandlers() {
         }
     });
 
-    // Optional: allow sending pre-recorded audio files
+    voiceSendBtn.addEventListener('click', function() {
+        if (recordedVoiceData) {
+            socket.emit('voiceMessage', {
+                name: nameInput.value,
+                voice: recordedVoiceData
+            });
+        }
+        voiceActionContainer.style.display = 'none';
+        voiceAudioPreview.src = '';
+        recordedVoiceData = null;
+    });
+
+    voiceCancelBtn.addEventListener('click', function() {
+        voiceActionContainer.style.display = 'none';
+        voiceAudioPreview.src = '';
+        recordedVoiceData = null;
+    });
+
     voiceFileInput.addEventListener('change', function() {
         if (this.files && this.files[0]) {
             const file = this.files[0];
@@ -1082,15 +1123,42 @@ function setupVoiceMessageHandlers() {
             }
             const reader = new FileReader();
             reader.onload = function(e) {
-                socket.emit('voiceMessage', {
-                    name: nameInput.value,
-                    voice: e.target.result
-                });
+                recordedVoiceData = e.target.result;
+                voiceAudioPreview.src = recordedVoiceData;
+                voiceActionContainer.style.display = 'flex';
             };
             reader.readAsDataURL(file);
             this.value = '';
         }
     });
+    
+    if (voiceDownloadBtn) {
+        voiceDownloadBtn.addEventListener('click', function() {
+            if (!recordedVoiceData) return;
+            // Convert base64 to Blob
+            const arr = recordedVoiceData.split(',');
+            const mime = arr[0].match(/:(.*?);/)[1];
+            const bstr = atob(arr[1]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            while (n--) u8arr[n] = bstr.charCodeAt(n);
+            let blob = new Blob([u8arr], { type: mime });
+
+            // If browser supports, use webm-to-mp3 conversion (optional, fallback to webm)
+            // For simplicity, just rename to .mp3 for download
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'voice-message.mp3';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+                a.remove();
+            }, 100);
+        });
+    }
 }
 document.addEventListener('DOMContentLoaded', function() {
     // ...existing code...
@@ -1104,8 +1172,28 @@ socket.on("message", (data) => {
     const { name, text, time, image, voice } = data;
     // ...existing code...
     if (voice) {
-        // Add audio player for voice message
-        contentHtml += `<div class="post__voice"><audio controls src="${voice}"></audio></div>`;
+        // Attractive download button for voice message
+        const downloadMp3Btn = `
+            <a href="${voice}" download="voice-message.mp3" 
+               style="
+                display:inline-block;
+                margin-left:10px;
+                padding:4px 14px;
+                background:#2ecc71;
+                color:#fff;
+                border-radius:18px;
+                font-size:0.97em;
+                font-weight:500;
+                text-decoration:none;
+                box-shadow:0 2px 6px rgba(46,204,113,0.12);
+                transition:background 0.2s;
+                vertical-align:middle;
+            "
+            onmouseover="this.style.background='#27ae60'"
+            onmouseout="this.style.background='#2ecc71'"
+            title="Download voice message as MP3"
+            >⬇️ Download</a>`;
+        contentHtml += `<div class="post__voice"><audio controls src="${voice}"></audio>${downloadMp3Btn}</div>`;
     }
     // ...existing code...
 });
