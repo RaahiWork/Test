@@ -2,7 +2,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-size: 1rem;
+    font-size: 0.85rem; /* Reduced from 1rem */
     font-family: Arial, Helvetica, sans-serif;
 }
 
@@ -136,7 +136,7 @@ main {
 }
 
 .side-pane h3 {
-    font-size: 1.1rem;
+    font-size: 0.9rem; /* Reduced from 1.1rem */
     margin-bottom: 0.7rem;
     color: #a084ee;
     letter-spacing: 1px;
@@ -223,12 +223,12 @@ button {
 
 .post__header {
     color: #fff;
-    padding: 0.4rem 0.75rem;
+    padding: 0.3rem 0.6rem; /* Reduced padding */
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 1rem;
-    font-size: 0.9rem;
+    gap: 0.8rem; /* Reduced gap */
+    font-size: 0.75rem; /* Reduced from 0.9rem */
 }
 
 .post__header--user {
@@ -248,16 +248,17 @@ button {
 }
 
 .post__header--time {
-    font-size: 0.75rem;
+    font-size: 0.65rem; /* Reduced from 0.75rem */
     opacity: 0.85;
 }
 
 .post__text {
     margin: 0;
     color: #333;
-    padding: 0.6rem 0.75rem;
-    line-height: 1.4;
+    padding: 0.5rem 0.6rem; /* Reduced padding */
+    line-height: 1.3; /* Reduced from 1.4 */
     word-break: break-word;
+    font-size: 0.8rem; /* Added explicit smaller font size */
 }
 
 .post__image {
@@ -585,36 +586,32 @@ button {
 }
 
 .login-form input[type="text"] {
-    padding: .7rem 1rem;
+    padding: .6rem 0.9rem; /* Reduced padding */
     border-radius: 8px;
     border: none;
-    font-size: 1.1rem;
+    font-size: 0.95rem; /* Reduced from 1.1rem */
     width: 220px;
     outline: none;
     transition: box-shadow 0.3s;
 }
 
-.login-form input[type="text"]:focus {
-    box-shadow: 0 0 0 2px #6c63ff;
-}
-
 .login-form button {
-    padding: .7rem 1.5rem;
+    padding: .6rem 1.3rem; /* Reduced padding */
     border-radius: 8px;
     border: none;
     background: linear-gradient(90deg, #6c63ff 60%, #a084ee 100%);
     color: #fff;
-    font-size: 1.1rem;
+    font-size: 0.95rem; /* Reduced from 1.1rem */
     font-weight: bold;
     cursor: pointer;
     transition: background 0.3s;
-    width: 100%;  /* Use full width */
-    max-width: 250px;  /* Limit maximum width */
-    -webkit-appearance: none; /* Fix for iOS */
+    width: 100%;
+    max-width: 250px;
+    -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
-    height: auto; /* Fix height issues on mobile */
-    min-height: 44px; /* Ensure touch target size */
+    height: auto;
+    min-height: 40px; /* Reduced from 44px */
     text-align: center;
     display: inline-flex;
     align-items: center;
@@ -670,15 +667,15 @@ button {
     background: rgba(160, 132, 238, 0.13);
     color: #fff;
     border-radius: 7px;
-    margin-bottom: 0.7em;
-    padding: 0.7em 1em;
-    font-size: 1.08rem;
-    letter-spacing: 0.5px;
+    margin-bottom: 0.5em; /* Reduced from 0.7em */
+    padding: 0.5em 0.8em; /* Reduced padding */
+    font-size: 0.9rem; /* Reduced from 1.08rem */
+    letter-spacing: 0.3px; /* Reduced from 0.5px */
     transition: background 0.2s;
     box-shadow: 0 1px 4px rgba(0,0,0,0.05);
     display: flex;
     align-items: center;
-    gap: 0.5em;
+    gap: 0.4em; /* Reduced from 0.5em */
 }
 
 .side-pane ul li:last-child {
@@ -687,9 +684,9 @@ button {
 
 .rooms-header {
     font-weight: bold;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem; /* Reduced from 0.5rem */
     color: #a084ee;
-    font-size: 1.05rem;
+    font-size: 0.9rem; /* Reduced from 1.05rem */
 }
 
 /* Enhanced room list styling */
@@ -726,15 +723,15 @@ button {
     box-sizing: border-box;
     background: rgba(108, 99, 255, 0.15);
     border-radius: 8px;
-    padding: 0.6rem 0.5rem; /* Slightly reduce horizontal padding */
+    padding: 0.4rem 0.4rem; /* Reduced padding */
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 0.25rem; /* Reduce gap to allow more room */
+    gap: 0.2rem; /* Reduced from 0.25rem */
     transition: all 0.2s ease;
     border: 1px solid rgba(160, 132, 238, 0.1);
     cursor: pointer;
-    margin: 0 0 0.35rem 0;
+    margin: 0 0 0.25rem 0; /* Reduced margin */
 }
 
 /* Add special styling for default room to make it stand out */
@@ -765,7 +762,7 @@ button {
 }
 
 .room-icon {
-    font-size: 0.95rem; /* Slightly smaller icon */
+    font-size: 0.8rem; /* Reduced from 0.95rem */
     opacity: 0.8;
     flex-shrink: 0;
 }
@@ -775,26 +772,26 @@ button {
     overflow: hidden;
     text-overflow: ellipsis;
     font-weight: 500;
-    font-size: 0.9rem; /* Slightly smaller font size */
+    font-size: 0.75rem; /* Reduced from 0.9rem */
     letter-spacing: 0.01em;
     color: #fff;
-    max-width: calc(100% - 25px); /* Ensure text can be truncated */
+    max-width: calc(100% - 25px);
 }
 
 .join-room-btn {
     border: none;
     background: rgba(108, 99, 255, 0.7);
     color: white;
-    padding: 0.2rem 0.35rem;
+    padding: 0.15rem 0.25rem; /* Reduced padding */
     border-radius: 6px;
     cursor: pointer;
-    font-size: 0.75rem;
+    font-size: 0.65rem; /* Reduced from 0.75rem */
     font-weight: bold;
     transition: background-color 0.2s;
     flex-shrink: 0;
     white-space: nowrap;
-    min-width: 35px; /* Smaller minimum width for the button */
-    max-width: 40px; /* Add maximum width as well */
+    min-width: 30px; /* Reduced from 35px */
+    max-width: 35px; /* Reduced from 40px */
 }
 
 /* Remove dropdown-related styles */
@@ -850,8 +847,8 @@ button {
     border: none;
     outline: none;
     background: transparent;
-    padding: 0.5rem;
-    font-size: 0.95rem;
+    padding: 0.4rem; /* Reduced from 0.5rem */
+    font-size: 0.85rem; /* Reduced from 0.95rem */
 }
 
 .form-msg {
@@ -868,21 +865,13 @@ button {
     color: white;
     border: none;
     border-radius: 10px;
-    padding: 0.6rem 1.2rem;
+    padding: 0.5rem 1rem; /* Reduced padding */
     font-weight: bold;
     cursor: pointer;
     transition: background 0.2s;
-    min-width: 80px;
+    min-width: 70px; /* Reduced from 80px */
     flex-shrink: 0;
-}
-
-.form-msg button[type="submit"]:hover {
-    background: #5650d8;
-}
-
-.form-msg button[type="submit"]:active {
-    background: #4842c9;
-    transform: scale(0.98);
+    font-size: 0.85rem; /* Added smaller font size */
 }
 
 .emoji-btn, .image-btn {
@@ -890,25 +879,15 @@ button {
     border: none;
     cursor: pointer;
     color: #777;
-    font-size: 1.2rem;
-    padding: 0.25rem;
+    font-size: 1rem; /* Reduced from 1.2rem */
+    padding: 0.2rem; /* Reduced from 0.25rem */
     display: flex;
     align-items: center;
     justify-content: center;
     transition: color 0.2s;
-    width: 2rem;
-    height: 2rem;
+    width: 1.8rem; /* Reduced from 2rem */
+    height: 1.8rem; /* Reduced from 2rem */
     border-radius: 50%;
-}
-
-.emoji-btn:hover, .image-btn:hover {
-    color: #6c63ff;
-    background: rgba(108, 99, 255, 0.1);
-}
-
-.image-btn svg {
-    width: 1.2rem;
-    height: 1.2rem;
 }
 
 /* Add pane header styling for title and logout button */
@@ -922,7 +901,7 @@ button {
 
 .pane-header h3 {
     margin: 0;
-    font-size: 1.1rem;
+    font-size: 0.9rem; /* Reduced from 1.1rem */
     font-weight: 600;
     color: #fff;
 }
@@ -932,12 +911,12 @@ button {
     background: none;
     border: none;
     color: #ff6b6b;
-    font-size: 1.2rem;
+    font-size: 1rem; /* Reduced from 1.2rem */
     cursor: pointer;
-    padding: 0.25rem;
+    padding: 0.2rem; /* Reduced from 0.25rem */
     border-radius: 50%;
-    width: 32px;
-    height: 32px;
+    width: 28px; /* Reduced from 32px */
+    height: 28px; /* Reduced from 32px */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -962,8 +941,8 @@ button {
 .current-room-header {
     background: rgba(34,34,34,0.75);
     border-radius: 8px 8px 0 0;
-    padding: 0.8rem 1rem;
-    margin-bottom: 0.5rem;
+    padding: 0.5rem 0.6rem; /* Reduced padding */
+    margin-bottom: 0.4rem; /* Reduced margin */
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     position: relative;
     overflow: hidden;
@@ -990,21 +969,21 @@ button {
 }
 
 .current-room-name {
-    font-size: 1.3rem;
-    margin-bottom: 0.3rem;
+    font-size: 1.1rem; /* Reduced from 1.3rem */
+    margin-bottom: 0.25rem; /* Reduced from 0.3rem */
     color: #ffffff;
     font-weight: 600;
 }
 
 .current-room-name::before {
     content: "🚪";
-    margin-right: 0.5rem;
-    font-size: 1.2rem;
+    margin-right: 0.4rem; /* Reduced from 0.5rem */
+    font-size: 1rem; /* Reduced from 1.2rem */
     opacity: 0.85;
 }
 
 .current-room-description {
-    font-size: 0.9rem;
+    font-size: 0.75rem; /* Reduced from 0.9rem */
     color: #cccccc;
     font-style: italic;
     margin: 0;
@@ -1061,10 +1040,10 @@ button {
 
 /* Adjust activity section to make room for header */
 .activity {
-    min-height: 1.5rem;
-    padding: 0.4rem 0.25rem;
+    min-height: 1.2rem; /* Reduced from 1.5rem */
+    padding: 0.3rem 0.2rem; /* Reduced padding */
     color: rgba(255, 255, 255, 0.7);
-    font-size: 0.9rem;
+    font-size: 0.75rem; /* Reduced from 0.9rem */
 }
 
 /* Create a dedicated container for typing indicator with improved visibility */
@@ -1072,7 +1051,7 @@ button {
     width: 100%;
     min-height: 24px; /* Reduced height */
     position: relative;
-    margin-bottom: 2px; /* Reduced margin */
+    margin-bottom: 0.2rem; /* Reduced margin */
     pointer-events: none; /* Allow clicking through when not active */
     flex-shrink: 0;
 }
@@ -1082,10 +1061,10 @@ button {
     width: auto;
     max-width: 80%;
     min-height: 0;
-    padding: 0.35rem 0.65rem;
+    padding: 0.25rem 0.5rem; /* Reduced padding */
     font-style: italic;
     color: rgba(255, 255, 255, 0.95);
-    font-size: 0.9rem;
+    font-size: 0.75rem; /* Reduced from 0.9rem */
     display: inline-flex;
     align-items: center;
     transition: all 0.3s ease;
@@ -1099,7 +1078,7 @@ button {
     background: rgba(108, 99, 255, 0.25);
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     border-left: 3px solid rgba(160, 132, 238, 0.6);
-    pointer-events: none; /* Allow clicking through */
+    pointer-events: none;
 }
 
 .activity.typing {
@@ -1118,11 +1097,11 @@ button {
 
 .typing-indicator span {
     display: inline-block;
-    width: 6px;
-    height: 6px;
+    width: 4px; /* Reduced from 6px */
+    height: 4px; /* Reduced from 6px */
     background: #a084ee;
     border-radius: 50%;
-    margin: 0 0.1rem;
+    margin: 0 0.08rem; /* Reduced from 0.1rem */
     opacity: 0.9;
     animation: typingDot 1.4s infinite ease-in-out;
 }
@@ -1260,7 +1239,7 @@ body.swiping-left::after {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem 1.2rem;
+    padding: 0.6rem 0.8rem; /* Reduced padding */
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     flex-shrink: 0;
 }
@@ -1268,7 +1247,7 @@ body.swiping-left::after {
 .private-message-header h3 {
     margin: 0;
     color: #fff;
-    font-size: 1.1rem;
+    font-size: 0.85rem; /* Reduced from 1rem */
     font-weight: 600;
 }
 
@@ -1276,10 +1255,10 @@ body.swiping-left::after {
     background: none;
     border: none;
     color: #fff;
-    font-size: 1.5rem;
+    font-size: 1.4rem; /* Reduced from 1.6rem */
     cursor: pointer;
-    width: 30px;
-    height: 30px;
+    width: 34px; /* Reduced from 40px */
+    height: 34px; /* Reduced from 40px */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1423,48 +1402,30 @@ body.swiping-left::after {
 }
 
 .private-messaging-section h4 {
-    margin: 0 0 0.6rem 0;
-    font-size: 1rem;
+    margin: 0 0 0.5rem 0; /* Reduced margin */
+    font-size: 0.85rem; /* Reduced from 1rem */
     color: #a084ee;
     font-weight: 600;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.4px; /* Reduced letter spacing */
 }
 
 .private-conversations {
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
-    max-height: 200px;
+    gap: 0.25rem; /* Reduced from 0.3rem */
+    max-height: 160px; /* Reduced from 200px */
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: rgba(160, 132, 238, 0.3) rgba(0, 0, 0, 0.1);
-    padding: 0.2rem;
+    padding: 0.15rem; /* Reduced padding */
     border-radius: 6px;
     background: rgba(0, 0, 0, 0.05);
-}
-
-.private-conversations::-webkit-scrollbar {
-    width: 4px;
-}
-
-.private-conversations::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 4px;
-}
-
-.private-conversations::-webkit-scrollbar-thumb {
-    background: rgba(160, 132, 238, 0.3);
-    border-radius: 4px;
-}
-
-.private-conversations::-webkit-scrollbar-thumb:hover {
-    background: rgba(160, 132, 238, 0.5);
 }
 
 .private-conversation-tab {
     background: rgba(108, 99, 255, 0.1);
     border-radius: 6px;
-    padding: 0.5rem 0.6rem;
+    padding: 0.4rem 0.5rem; /* Reduced padding */
     cursor: pointer;
     transition: all 0.2s ease;
     border: 1px solid rgba(160, 132, 238, 0.1);
@@ -1472,47 +1433,18 @@ body.swiping-left::after {
     overflow: hidden;
 }
 
-.private-conversation-tab:hover {
-    background: rgba(108, 99, 255, 0.2);
-    border-color: rgba(160, 132, 238, 0.3);
-    transform: translateY(-1px);
-}
-
-.private-conversation-tab.active {
-    background: rgba(108, 99, 255, 0.25);
-    border-color: rgba(160, 132, 238, 0.4);
-    box-shadow: 0 2px 6px rgba(108, 99, 255, 0.2);
-}
-
-.private-conversation-tab.has-unread {
-    border-left: 3px solid #6c63ff;
-    background: rgba(108, 99, 255, 0.15);
-}
-
-.private-conversation-tab.has-unread::after {
-    content: '';
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 8px;
-    height: 8px;
-    background: #6c63ff;
-    border-radius: 50%;
-    box-shadow: 0 0 4px rgba(108, 99, 255, 0.5);
-}
-
 .private-conversation-name {
     font-weight: 600;
     color: #fff;
-    margin-bottom: 0.2rem;
-    font-size: 0.85rem;
+    margin-bottom: 0.15rem; /* Reduced margin */
+    font-size: 0.75rem; /* Reduced from 0.85rem */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .private-conversation-preview {
-    font-size: 0.75rem;
+    font-size: 0.65rem; /* Reduced from 0.75rem */
     color: rgba(255, 255, 255, 0.7);
     font-style: italic;
     white-space: nowrap;
@@ -1521,22 +1453,11 @@ body.swiping-left::after {
     line-height: 1.2;
 }
 
-.private-conversation-tab.has-unread .private-conversation-name {
-    color: #fff;
-    font-weight: 700;
-}
-
-.private-conversation-tab.has-unread .private-conversation-preview {
-    color: rgba(255, 255, 255, 0.9);
-    font-weight: 500;
-}
-
-/* Empty state for private conversations */
 .private-conversations-empty {
     text-align: center;
-    padding: 1rem 0.5rem;
+    padding: 0.8rem 0.4rem; /* Reduced padding */
     color: rgba(255, 255, 255, 0.5);
-    font-size: 0.8rem;
+    font-size: 0.7rem; /* Reduced from 0.8rem */
     font-style: italic;
 }
 
@@ -1546,36 +1467,36 @@ body.swiping-left::after {
     width: 100%;
     background: linear-gradient(135deg, rgba(108, 99, 255, 0.1), rgba(160, 132, 238, 0.05));
     border-radius: 8px;
-    padding: 0.5rem;
+    padding: 0.4rem; /* Reduced from 0.5rem */
     border: 1px solid rgba(160, 132, 238, 0.3);
     box-shadow: 0 2px 12px rgba(108, 99, 255, 0.1);
 }
 
 .radio-section h4 {
-    margin: 0 0 0.5rem 0;
-    font-size: 0.75rem;
+    margin: 0 0 0.4rem 0; /* Reduced margin */
+    font-size: 0.65rem; /* Reduced from 0.75rem */
     color: #a084ee;
     font-weight: 700;
     text-align: center;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.4px; /* Reduced letter spacing */
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .radio-player {
     background: rgba(0, 0, 0, 0.1);
     border-radius: 6px;
-    padding: 0.4rem;
+    padding: 0.3rem; /* Reduced from 0.4rem */
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .radio-controls {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
-    margin-bottom: 0.4rem;
+    gap: 0.2rem; /* Reduced from 0.25rem */
+    margin-bottom: 0.3rem; /* Reduced margin */
     justify-content: center;
     background: rgba(255, 255, 255, 0.05);
-    padding: 0.3rem;
+    padding: 0.25rem; /* Reduced from 0.3rem */
     border-radius: 4px;
 }
 
@@ -1583,48 +1504,38 @@ body.swiping-left::after {
     background: linear-gradient(135deg, rgba(108, 99, 255, 0.4), rgba(160, 132, 238, 0.3));
     border: 1px solid rgba(108, 99, 255, 0.6);
     color: white;
-    padding: 0.15rem;
+    padding: 0.1rem; /* Reduced from 0.15rem */
     border-radius: 4px;
     cursor: pointer;
-    font-size: 0.65rem;
+    font-size: 0.55rem; /* Reduced from 0.65rem */
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 22px;
-    height: 22px;
+    min-width: 18px; /* Reduced from 22px */
+    height: 18px; /* Reduced from 22px */
     flex-shrink: 0;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.radio-btn:hover {
-    background: linear-gradient(135deg, rgba(108, 99, 255, 0.6), rgba(160, 132, 238, 0.5));
-    transform: scale(1.1);
-    box-shadow: 0 3px 8px rgba(108, 99, 255, 0.3);
-}
-
-.radio-btn:active {
-    transform: scale(0.95);
-}
-
 .volume-slider {
     flex-grow: 1;
-    height: 3px;
+    height: 2px; /* Reduced from 3px */
     background: linear-gradient(90deg, rgba(255, 255, 255, 0.2), rgba(160, 132, 238, 0.3));
     border-radius: 2px;
     outline: none;
     cursor: pointer;
     -webkit-appearance: none;
     appearance: none;
-    margin: 0 0.3rem;
-    max-width: 50px;
+    margin: 0 0.25rem; /* Reduced from 0.3rem */
+    max-width: 40px; /* Reduced from 50px */
 }
 
 .volume-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 12px;
-    height: 12px;
+    width: 10px; /* Reduced from 12px */
+    height: 10px; /* Reduced from 12px */
     background: linear-gradient(135deg, #a084ee, #8c75ea);
     border-radius: 50%;
     cursor: pointer;
@@ -1632,15 +1543,9 @@ body.swiping-left::after {
     transition: all 0.2s;
 }
 
-.volume-slider::-webkit-slider-thumb:hover {
-    background: linear-gradient(135deg, #8c75ea, #7266d3);
-    transform: scale(1.2);
-    box-shadow: 0 2px 8px rgba(160, 132, 238, 0.5);
-}
-
 .station-info {
-    margin-bottom: 0.4rem;
-    padding: 0.3rem 0.4rem;
+    margin-bottom: 0.3rem; /* Reduced margin */
+    padding: 0.25rem 0.3rem; /* Reduced padding */
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
     border-radius: 5px;
     text-align: center;
@@ -1651,8 +1556,8 @@ body.swiping-left::after {
 .current-station {
     font-weight: 600;
     color: #fff;
-    font-size: 0.65rem;
-    margin-bottom: 0.1rem;
+    font-size: 0.55rem; /* Reduced from 0.65rem */
+    margin-bottom: 0.08rem; /* Reduced margin */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1660,7 +1565,7 @@ body.swiping-left::after {
 }
 
 .station-status {
-    font-size: 0.55rem;
+    font-size: 0.45rem; /* Reduced from 0.55rem */
     color: rgba(255, 255, 255, 0.8);
     font-style: italic;
     font-weight: 500;
@@ -1669,44 +1574,26 @@ body.swiping-left::after {
 .station-list {
     display: flex;
     flex-direction: column;
-    gap: 0.1rem;
-    max-height: 90px;
+    gap: 0.08rem; /* Reduced from 0.1rem */
+    max-height: 75px; /* Reduced from 90px */
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: rgba(160, 132, 238, 0.4) rgba(0, 0, 0, 0.1);
-    padding: 0.1rem;
+    padding: 0.08rem; /* Reduced padding */
     background: rgba(0, 0, 0, 0.1);
     border-radius: 4px;
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.station-list::-webkit-scrollbar {
-    width: 3px;
-}
-
-.station-list::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 2px;
-}
-
-.station-list::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, rgba(160, 132, 238, 0.6), rgba(108, 99, 255, 0.4));
-    border-radius: 2px;
-}
-
-.station-list::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, rgba(160, 132, 238, 0.8), rgba(108, 99, 255, 0.6));
-}
-
 /* Station section headers - smaller and more attractive */
 .station-section-header {
-    font-size: 0.5rem;
+    font-size: 0.4rem; /* Reduced from 0.5rem */
     font-weight: 700;
     color: rgba(160, 132, 238, 0.9);
     text-transform: uppercase;
-    letter-spacing: 0.8px;
-    padding: 0.2rem 0.1rem 0.1rem;
-    margin: 0.05rem 0;
+    letter-spacing: 0.6px; /* Reduced letter spacing */
+    padding: 0.15rem 0.08rem 0.08rem; /* Reduced padding */
+    margin: 0.04rem 0; /* Reduced margin */
     border-bottom: 1px solid rgba(160, 132, 238, 0.3);
     background: linear-gradient(90deg, rgba(108, 99, 255, 0.15), rgba(160, 132, 238, 0.1));
     border-radius: 3px;
@@ -1720,15 +1607,15 @@ body.swiping-left::after {
 .station-item {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
-    padding: 0.15rem 0.25rem;
+    gap: 0.2rem; /* Reduced from 0.25rem */
+    padding: 0.1rem 0.2rem; /* Reduced padding */
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.3s ease;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    min-height: 20px;
-    font-size: 0.6rem;
+    min-height: 16px; /* Reduced from 20px */
+    font-size: 0.5rem; /* Reduced from 0.6rem */
     position: relative;
     overflow: hidden;
 }
@@ -1781,9 +1668,9 @@ body.swiping-left::after {
 }
 
 .station-icon {
-    font-size: 0.65rem;
+    font-size: 0.55rem; /* Reduced from 0.65rem */
     flex-shrink: 0;
-    width: 16px;
+    width: 14px; /* Reduced from 16px */
     text-align: center;
     filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
 }
@@ -1797,7 +1684,7 @@ body.swiping-left::after {
 .station-name {
     font-weight: 600;
     color: #fff;
-    font-size: 0.6rem;
+    font-size: 0.5rem; /* Reduced from 0.6rem */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1806,7 +1693,7 @@ body.swiping-left::after {
 }
 
 .station-genre {
-    font-size: 0.5rem;
+    font-size: 0.4rem; /* Reduced from 0.5rem */
     color: rgba(255, 255, 255, 0.7);
     font-style: italic;
     line-height: 1;
@@ -1814,8 +1701,8 @@ body.swiping-left::after {
 }
 
 .station-status-dot {
-    width: 5px;
-    height: 5px;
+    width: 4px; /* Reduced from 5px */
+    height: 4px; /* Reduced from 5px */
     background: rgba(255, 255, 255, 0.5);
     border-radius: 50%;
     flex-shrink: 0;
@@ -1951,4 +1838,946 @@ body.swiping-left::after {
         width: 3px;
         height: 3px;
     }
+}
+
+/* Improved loading/error states */
+.image-loading, .image-error {
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    text-align: center;
+    margin: 8px;
+}
+
+.image-loading {
+    background: rgba(100, 100, 100, 0.08);
+    color: #777;
+}
+
+.image-error {
+    background: rgba(255, 107, 107, 0.08);
+    color: #ff6b6b;
+}
+
+.user-list,
+.room-list,
+.activity {
+    width: 100%;
+    min-height: 2.65rem;
+    margin: 0 auto;
+    max-width: none; /* Remove max-width limitation */
+    padding: .75rem .25rem;
+    font-style: italic;
+}
+
+.login-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 1;
+    pointer-events: all;
+    transition: opacity 0.6s cubic-bezier(.4,2,.6,1);
+}
+
+.login-overlay.hide {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s cubic-bezier(.4,2,.6,1);
+}
+
+.login-form {
+    background: #222;
+    padding: 2rem 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    align-items: center;
+    animation: popin 0.7s cubic-bezier(.4,2,.6,1);
+}
+
+@keyframes popin {
+    0% { transform: scale(0.7); opacity: 0; }
+    80% { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(1); }
+}
+
+.login-form input[type="text"] {
+    padding: .6rem 0.9rem; /* Reduced padding */
+    border-radius: 8px;
+    border: none;
+    font-size: 0.95rem; /* Reduced from 1.1rem */
+    width: 220px;
+    outline: none;
+    transition: box-shadow 0.3s;
+}
+
+.login-form button {
+    padding: .6rem 1.3rem; /* Reduced padding */
+    border-radius: 8px;
+    border: none;
+    background: linear-gradient(90deg, #6c63ff 60%, #a084ee 100%);
+    color: #fff;
+    font-size: 0.95rem; /* Reduced from 1.1rem */
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s;
+    width: 100%;
+    max-width: 250px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    height: auto;
+    min-height: 40px; /* Reduced from 44px */
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Add hover effect only for non-touch devices */
+@media (hover: hover) {
+    .login-form button:hover {
+        background: linear-gradient(90deg, #5a52e5 60%, #9173e0 100%);
+    }
+}
+
+/* Mobile-specific enhancements */
+@media (max-width: 768px) {
+    /* ...existing code... */
+    
+    .login-form button {
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+}
+
+@media (max-width: 480px) {
+    /* ...existing code... */
+    
+    .login-form {
+        padding: 1.5rem 1.2rem;
+    }
+    
+    .login-form button {
+        padding: 0.8rem 1rem;
+        font-size: 1.1rem;
+        min-width: 200px;
+        margin-top: 0.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    
+    .login-form button:active {
+        transform: translateY(1px);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+}
+
+.side-pane ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+    width: 100%;
+}
+
+.side-pane ul li {
+    background: rgba(160, 132, 238, 0.13);
+    color: #fff;
+    border-radius: 7px;
+    margin-bottom: 0.5em; /* Reduced from 0.7em */
+    padding: 0.5em 0.8em; /* Reduced padding */
+    font-size: 0.9rem; /* Reduced from 1.08rem */
+    letter-spacing: 0.3px; /* Reduced from 0.5px */
+    transition: background 0.2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    display: flex;
+    align-items: center;
+    gap: 0.4em; /* Reduced from 0.5em */
+}
+
+.side-pane ul li:last-child {
+    margin-bottom: 0;
+}
+
+.rooms-header {
+    font-weight: bold;
+    margin-bottom: 0.4rem; /* Reduced from 0.5rem */
+    color: #a084ee;
+    font-size: 0.9rem; /* Reduced from 1.05rem */
+}
+
+/* Enhanced room list styling */
+.rooms-container {
+    width: 100%;
+    box-sizing: border-box; /* Ensure padding is included in width calculation */
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin: 0;
+    max-height: 70vh;
+    overflow-y: auto;
+    padding: 0.4rem;
+    scrollbar-width: thin;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* Set consistent width for rooms list container */
+#rooms-list-container {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0; 
+    margin: 0.5rem 0;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 120px;
+    margin-bottom: 0.5rem;
+}
+
+/* Ensure room items fit within the container */
+.room-item {
+    width: 100%;
+    box-sizing: border-box;
+    background: rgba(108, 99, 255, 0.15);
+    border-radius: 8px;
+    padding: 0.4rem 0.4rem; /* Reduced padding */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.2rem; /* Reduced from 0.25rem */
+    transition: all 0.2s ease;
+    border: 1px solid rgba(160, 132, 238, 0.1);
+    cursor: pointer;
+    margin: 0 0 0.25rem 0; /* Reduced margin */
+}
+
+/* Add special styling for default room to make it stand out */
+.room-item[data-room="Vibe Room"] {
+    background: rgba(128, 112, 255, 0.25);
+    border-left: 3px solid #a084ee;
+}
+
+.room-item[data-room="Vibe Room"]:not(.active-room):hover {
+    background: rgba(128, 112, 255, 0.3);
+}
+
+.room-item[data-room="Vibe Room"].active-room {
+    background: rgba(128, 112, 255, 0.4);
+    border-color: #8c75ea;
+}
+
+/* Make room info take up appropriate space */
+.room-info {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem; /* Reduce gap between icon and name */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 1;
+    cursor: inherit;
+    min-width: 0; /* Allow text truncation */
+}
+
+.room-icon {
+    font-size: 0.8rem; /* Reduced from 0.95rem */
+    opacity: 0.8;
+    flex-shrink: 0;
+}
+
+.room-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500;
+    font-size: 0.75rem; /* Reduced from 0.9rem */
+    letter-spacing: 0.01em;
+    color: #fff;
+    max-width: calc(100% - 25px);
+}
+
+.join-room-btn {
+    border: none;
+    background: rgba(108, 99, 255, 0.7);
+    color: white;
+    padding: 0.15rem 0.25rem; /* Reduced padding */
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.65rem; /* Reduced from 0.75rem */
+    font-weight: bold;
+    transition: background-color 0.2s;
+    flex-shrink: 0;
+    white-space: nowrap;
+    min-width: 30px; /* Reduced from 35px */
+    max-width: 35px; /* Reduced from 40px */
+}
+
+/* Remove dropdown-related styles */
+.room-dropdown-container,
+.room-dropdown {
+    display: none; /* Hide these elements */
+}
+
+/* Custom scrollbar styling */
+.rooms-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.rooms-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+}
+
+.rooms-container::-webkit-scrollbar-thumb {
+    background: rgba(160, 132, 238, 0.3);
+    border-radius: 8px;
+}
+
+.rooms-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(160, 132, 238, 0.5);
+}
+
+/* Chat box styles */
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: calc(100% - 460px); /* Adjust width for two side panes */
+    position: relative;
+    padding: 0 0.5rem;
+    overflow: hidden;
+}
+
+.message-input-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #fff;
+    border-radius: 10px;
+    padding: 0.25rem 0.5rem;
+    flex-grow: 1;
+    border: 1px solid #ddd;
+}
+
+.message-input-container input {
+    flex-grow: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    padding: 0.4rem; /* Reduced from 0.5rem */
+    font-size: 0.85rem; /* Reduced from 0.95rem */
+}
+
+.form-msg {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.5rem; /* Reduced top margin */
+    margin-bottom: 0.5rem; /* Reduced bottom margin */
+    width: 100%;
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+.form-msg button[type="submit"] {
+    background: #6c63ff;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 0.5rem 1rem; /* Reduced padding */
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+    min-width: 70px; /* Reduced from 80px */
+    flex-shrink: 0;
+    font-size: 0.85rem; /* Added smaller font size */
+}
+
+.emoji-btn, .image-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #777;
+    font-size: 1rem; /* Reduced from 1.2rem */
+    padding: 0.2rem; /* Reduced from 0.25rem */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+    width: 1.8rem; /* Reduced from 2rem */
+    height: 1.8rem; /* Reduced from 2rem */
+    border-radius: 50%;
+}
+
+/* Add pane header styling for title and logout button */
+.pane-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 0.75rem;
+}
+
+.pane-header h3 {
+    margin: 0;
+    font-size: 0.9rem; /* Reduced from 1.1rem */
+    font-weight: 600;
+    color: #fff;
+}
+
+.power-logout-btn {
+    background: none;
+    border: none;
+    color: #ff6b6b;
+    font-size: 1rem; /* Reduced from 1.2rem */
+    cursor: pointer;
+    padding: 0.2rem; /* Reduced from 0.25rem */
+    border-radius: 50%;
+    width: 28px; /* Reduced from 32px */
+    height: 28px; /* Reduced from 32px */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.power-logout-btn:hover {
+    background-color: rgba(255, 107, 107, 0.2);
+    transform: scale(1.1);
+}
+
+.power-logout-btn:active {
+    transform: scale(0.95);
+}
+
+.power-icon {
+    display: inline-block;
+    transform: rotate(90deg);
+}
+
+/* Current room header styling */
+.current-room-header {
+    background: rgba(34,34,34,0.75);
+    border-radius: 8px 8px 0 0;
+    padding: 0.5rem 0.6rem; /* Reduced padding */
+    margin-bottom: 0.4rem; /* Reduced margin */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.current-room-header::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(108, 99, 255, 0.2) 0%, rgba(0, 0, 0, 0) 80%);
+    opacity: 0.6;
+    z-index: 0;
+}
+
+.room-info-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    position: relative;
+    z-index: 1;
+}
+
+.current-room-name {
+    font-size: 1.1rem; /* Reduced from 1.3rem */
+    margin-bottom: 0.25rem; /* Reduced from 0.3rem */
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.current-room-name::before {
+    content: "🚪";
+    margin-right: 0.4rem; /* Reduced from 0.5rem */
+    font-size: 1rem; /* Reduced from 1.2rem */
+    opacity: 0.85;
+}
+
+.current-room-description {
+    font-size: 0.75rem; /* Reduced from 0.9rem */
+    color: #cccccc;
+    font-style: italic;
+    margin: 0;
+    max-width: 90%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Room-specific header styling */
+.current-room-header[data-room="Vibe Room"] {
+    background: linear-gradient(to right, rgba(128, 112, 255, 0.2), rgba(108, 99, 255, 0.05));
+}
+
+.current-room-header[data-room="Vibe Room"] .current-room-name::before {
+    content: "🎵";
+}
+
+.current-room-header[data-room="Lounge 404"] .current-room-name::before {
+    content: "🛋️";
+}
+
+.current-room-header[data-room="The Hive"] .current-room-name::before {
+    content: "🐝";
+}
+
+.current-room-header[data-room="Code & Coffee"] .current-room-name::before {
+    content: "☕";
+}
+
+.current-room-header[data-room="Midnight Rant Club"] .current-room-name::before {
+    content: "🌙";
+}
+
+.current-room-header[data-room="MemeStream"] .current-room-name::before {
+    content: "😂";
+}
+
+.current-room-header[data-room="The Think Tank"] .current-room-name::before {
+    content: "🧠";
+}
+
+.current-room-header[data-room="AFK Café"] .current-room-name::before {
+    content: "💤";
+}
+
+.current-room-header[data-room="Spoiler Zone"] .current-room-name::before {
+    content: "🎬";
+}
+
+.current-room-header[data-room="Echo Base"] .current-room-name::before {
+    content: "📢";
+}
+
+/* Adjust activity section to make room for header */
+.activity {
+    min-height: 1.2rem; /* Reduced from 1.5rem */
+    padding: 0.3rem 0.2rem; /* Reduced padding */
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.75rem; /* Reduced from 0.9rem */
+}
+
+/* Create a dedicated container for typing indicator with improved visibility */
+.typing-container {
+    width: 100%;
+    min-height: 24px; /* Reduced height */
+    position: relative;
+    margin-bottom: 0.2rem; /* Reduced margin */
+    pointer-events: none; /* Allow clicking through when not active */
+    flex-shrink: 0;
+}
+
+/* Enhanced typing indicator styling */
+.activity {
+    width: auto;
+    max-width: 80%;
+    min-height: 0;
+    padding: 0.25rem 0.5rem; /* Reduced padding */
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 0.75rem; /* Reduced from 0.9rem */
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.3s ease;
+    position: absolute;
+    bottom: 0;
+    left: 10px;
+    border-radius: 12px;
+    opacity: 0;
+    transform: translateY(10px);
+    z-index: 15;
+    background: rgba(108, 99, 255, 0.25);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    border-left: 3px solid rgba(160, 132, 238, 0.6);
+    pointer-events: none;
+}
+
+.activity.typing {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto; /* Re-enable pointer events when visible */
+}
+
+/* Improved typing animation dots */
+.typing-indicator {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 0.4rem;
+    height: 1em;
+}
+
+.typing-indicator span {
+    display: inline-block;
+    width: 4px; /* Reduced from 6px */
+    height: 4px; /* Reduced from 6px */
+    background: #a084ee;
+    border-radius: 50%;
+    margin: 0 0.08rem; /* Reduced from 0.1rem */
+    opacity: 0.9;
+    animation: typingDot 1.4s infinite ease-in-out;
+}
+
+/* Enhanced Mobile Responsive Styles and Slidable Panels */
+
+/* Swipe indicators */
+.swipe-indicator {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(108, 99, 255, 0.2);
+    border-radius: 8px;
+    padding: 12px 8px;
+    color: white;
+    font-size: 0.9rem;
+    z-index: 15;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.left-indicator {
+    right: -15px;
+    border-radius: 0 8px 8px 0;
+}
+
+.right-indicator {
+    left: -15px;
+    border-radius: 8px 0 0 8px;
+    display: none; /* Hide by default, show only on mobile */
+}
+
+.indicator-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.indicator-content span:first-child {
+    font-size: 1.3rem;
+}
+
+/* Swipe guide animation */
+.show-swipe-guide .left-indicator {
+    opacity: 0.9;
+    transform: translateY(-50%) translateX(0);
+    animation: pulse-left 2s ease;
+}
+
+.show-swipe-guide .right-indicator {
+    opacity: 0.9;
+    transform: translateY(-50%) translateX(0);
+    animation: pulse-right 2s ease 1s;
+}
+
+@keyframes pulse-left {
+    0%, 100% { transform: translateY(-50%) translateX(0); }
+    50% { transform: translateY(-50%) translateX(10px); }
+}
+
+@keyframes pulse-right {
+    0%, 100% { transform: translateY(-50%) translateX(0); }
+    50% { transform: translateY(-50%) translateX(-10px); }
+}
+
+/* Visual feedback for swipe gestures */
+body.swiping-right::after,
+body.swiping-left::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    width: 20px;
+    z-index: 20;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+body.swiping-right::after {
+    left: 0;
+    background: linear-gradient(90deg, rgba(160, 132, 238, 0.5), transparent);
+}
+
+body.swiping-left::after {
+    right: 0;
+    background: linear-gradient(-90deg, rgba(160, 132, 238, 0.5), transparent);
+}
+
+/* Enhance side panes for better sliding */
+.side-pane {
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+                left 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+                right 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Private message modal */
+.private-message-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.private-message-modal.show {
+    opacity: 1;
+}
+
+.private-message-content {
+    background: rgba(34, 34, 34, 0.95);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    height: 70%;
+    max-height: 500px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(160, 132, 238, 0.2);
+}
+
+.private-message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0.8rem; /* Reduced padding */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+}
+
+.private-message-header h3 {
+    margin: 0;
+    color: #fff;
+    font-size: 0.85rem; /* Reduced from 1rem */
+    font-weight: 600;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1.4rem; /* Reduced from 1.6rem */
+    cursor: pointer;
+    width: 34px; /* Reduced from 40px */
+    height: 34px; /* Reduced from 40px */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.close-btn:hover {
+    background-color: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
+}
+
+.private-message-chat {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    list-style: none;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(160, 132, 238, 0.3) rgba(0, 0, 0, 0.1);
+}
+
+.private-message-chat::-webkit-scrollbar {
+    width: 6px;
+}
+
+.private-message-chat::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+.private-message-chat::-webkit-scrollbar-thumb {
+    background: rgba(160, 132, 238, 0.3);
+    border-radius: 8px;
+}
+
+.private-message-chat::-webkit-scrollbar-thumb:hover {
+    background: rgba(160, 132, 238, 0.5);
+}
+
+/* Private message form */
+.private-message-form {
+    display: flex;
+    gap: 0.75rem;
+    padding: 1rem 1.2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 0 0 12px 12px;
+    flex-shrink: 0;
+}
+
+.private-message-input-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #fff;
+    border-radius: 8px;
+    padding: 0.3rem 0.6rem;
+    flex-grow: 1;
+    border: 1px solid #ddd;
+}
+
+.private-message-input-container input {
+    flex-grow: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    padding: 0.5rem;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.private-message-form button[type="submit"] {
+    background: #6c63ff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.6rem 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+    min-width: 80px;
+    font-size: 0.9rem;
+}
+
+.private-message-form button[type="submit"]:hover {
+    background: #5650d8;
+}
+
+.private-message-form button[type="submit"]:active {
+    background: #4842c9;
+    transform: scale(0.98);
+}
+
+/* Private message notifications */
+.private-message-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(34, 34, 34, 0.95);
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    border-left: 4px solid #6c63ff;
+    max-width: 300px;
+    z-index: 1001;
+    cursor: pointer;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.private-message-notification.show {
+    transform: translateX(0);
+}
+
+.private-message-notification-header {
+    font-weight: bold;
+    color: #6c63ff;
+    margin-bottom: 0.3rem;
+    font-size: 0.9rem;
+}
+
+.private-message-notification-text {
+    color: #fff;
+    font-size: 0.85rem;
+    line-height: 1.3;
+}
+
+/* Private messaging section in sidebar */
+.private-messaging-section {
+    width: 100%;
+    margin-top: 1rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.private-messaging-section h4 {
+    margin: 0 0 0.5rem 0; /* Reduced margin */
+    font-size: 0.85rem; /* Reduced from 1rem */
+    color: #a084ee;
+    font-weight: 600;
+    letter-spacing: 0.4px; /* Reduced letter spacing */
+}
+
+.private-conversations {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem; /* Reduced from 0.3rem */
+    max-height: 160px; /* Reduced from 200px */
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(160, 132, 238, 0.3) rgba(0, 0, 0, 0.1);
+    padding: 0.15rem; /* Reduced padding */
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.private-conversation-tab {
+    background: rgba(108, 99, 255, 0.1);
+    border-radius: 6px;
+    padding: 0.4rem 0.5rem; /* Reduced padding */
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(160, 132, 238, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.private-conversation-name {
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 0.15rem; /* Reduced margin */
+    font-size: 0.75rem; /* Reduced from 0.85rem */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.private-conversation-preview {
+    font-size: 0.65rem; /* Reduced from 0.75rem */
+    color: rgba(255, 255, 255, 0.7);
+    font-style: italic;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+}
+
+.private-conversations-empty {
+    text-align: center;
+    padding: 0.8rem 0.4rem; /* Reduced padding */
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.7rem; /* Reduced from 0.8rem */
+    font-style: italic;
 }
