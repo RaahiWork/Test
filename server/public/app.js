@@ -582,8 +582,8 @@ socket.on('connect', () => {
     
     // If we were in a room before disconnection, try to rejoin it
     if (nameInput.value) {
-        // If we were in a room, rejoin it, otherwise join default room
-        const roomToJoin = currentRoom || DEFAULT_ROOM;
+        // Always join Vibe room as default for authenticated users
+        const roomToJoin = 'Vibe';
         
         socket.emit('enterRoom', {
             name: nameInput.value,
@@ -592,6 +592,9 @@ socket.on('connect', () => {
         
         // Update current room
         currentRoom = roomToJoin;
+        
+        // Update room header
+        updateRoomHeader(roomToJoin);
     }
     
     // Update UI for connected state - replace text with indicator dot
@@ -724,7 +727,7 @@ function handleLogout() {
     }
 }
 
-// Update DOMContentLoaded to set up the logout button
+// Update DOMContentLoaded to set up auto-join for Vibe room
 document.addEventListener('DOMContentLoaded', function() {
     // Set up favicon
     const setFavicon = () => {
@@ -791,14 +794,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (socket.connected) {
             socket.emit('getRooms');
             
-            // Auto-join default room if not already in a room
-            if (!currentRoom && nameInput.value) {
-                socket.emit('enterRoom', {
-                    name: nameInput.value,
-                    room: DEFAULT_ROOM
-                });
-                currentRoom = DEFAULT_ROOM;
-            }
+            // Auto-join Vibe room for authenticated users
+            socket.emit('enterRoom', {
+                name: savedUsername,
+                room: 'Vibe'
+            });
+            currentRoom = 'Vibe';
+            updateRoomHeader('Vibe');
         }
     } else {
         main.style.opacity = '0.5';
@@ -1227,3 +1229,16 @@ function formatLocalTime(timestamp) {
         return timestamp; // Return original on error
     }
 }
+
+// Create a global function to initialize socket connection for auth.js
+window.initializeSocketConnection = function(username) {
+    if (socket && socket.connected) {
+        // Auto-join Vibe room
+        socket.emit('enterRoom', {
+            name: username,
+            room: 'Vibe'
+        });
+        currentRoom = 'Vibe';
+        updateRoomHeader('Vibe');
+    }
+};

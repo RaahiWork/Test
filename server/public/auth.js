@@ -299,6 +299,17 @@ function proceedWithLogin(displayName) {
         
         if (window.initializeSocketConnection) {
             window.initializeSocketConnection(dbDisplayName);
+        } else if (window.socket && window.socket.connected) {
+            // Auto-join Vibe room after login
+            window.socket.emit('enterRoom', {
+                name: dbDisplayName,
+                room: 'Vibe'
+            });
+            
+            // Update current room in app.js if available
+            if (window.currentRoom !== undefined) {
+                window.currentRoom = 'Vibe';
+            }
         }
     }, 600);
 }
