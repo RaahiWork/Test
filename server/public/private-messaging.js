@@ -33,6 +33,20 @@ class PrivateMessaging {
             privateImageBtn.addEventListener('click', () => privateImageFile.click());
             privateImageFile.addEventListener('change', (e) => this.handlePrivateImageUpload(e));
         }
+
+        // Private message emoji button
+        const privateEmojiBtn = document.getElementById('private-emoji-btn');
+        const privateMessageInput = document.getElementById('private-message-input');
+
+        if (privateEmojiBtn && privateMessageInput) {
+            privateEmojiBtn.addEventListener('click', (e) => {
+                if (window.openEmojiPickerFor) {
+                    window.openEmojiPickerFor(e, privateMessageInput, privateEmojiBtn);
+                } else {
+                    console.error('Emoji picker handler (window.openEmojiPickerFor) not available.');
+                }
+            });
+        }
         
         // Close modal when clicking outside
         const modal = document.getElementById('private-message-modal');
