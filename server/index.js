@@ -259,6 +259,56 @@ io.on('connection', socket => {
         });
     });
 
+    // Add handler for private messages
+    socket.on('privateMessage', ({ fromUser, toUser, text, image = null }) => {
+        //console.log('Private message received:', { fromUser, toUser, text: text ? 'Text message' : null, image: image ? 'Image data' : null });
+        
+        // Find the target user's socket
+        const targetUser = UsersState.users.find(user => user.name === toUser);
+        
+        if (targetUser) {
+            const messageData = {
+                fromUser,
+                toUser,
+                text,
+                image,
+                time: new Intl.DateTimeFormat('default', {
+                    hour: 'numeric',
+                    minute: 'numeric',
+                    second: 'numeric',
+                }).format(new Date())
+            };
+            
+            // Send message to target user
+            io.to(targetUser.id).emit('privateMessage', messageData);
+            
+            // Send confirmation back to sender
+            socket.emit('privateMessageSent', messageData);
+            
+            //console.log(`Private message sent from ${fromUser} to ${toUser}`);
+        } else {
+            // User not found or offline
+            //console.log(`User ${toUser} not found or offline`);
+            socket.emit('privateMessageError', {
+                error: `User ${toUser} is not online`,
+                toUser
+            });
+        }
+    });
+
+    // Add handler for getting online users for private messaging
+    socket.on('getOnlineUsers', () => {
+        const currentUser = getUser(socket.id);
+        if (currentUser) {
+            // Get all online users except the current user
+            const onlineUsers = UsersState.users
+                .filter(user => user.name !== currentUser.name)
+                .map(user => ({ name: user.name, room: user.room }));
+            
+            socket.emit('onlineUsers', onlineUsers);
+        }
+    });
+
     socket.on('enterRoom', ({ name, room }) => {
         // leave previous room 
         const prevRoom = getUser(socket.id)?.room

@@ -260,8 +260,14 @@ function showUsers(users) {
         usersList.innerHTML = `<ul>` +
             uniqueUsers.map(user =>
                 `<li class="user-list-item">
-                    <span style="display:inline-block;width:1.3em;text-align:center;margin-right:0.5em;opacity:0.7;">👤</span>
-                    <span>${user.name}</span>
+                    <div class="user-info">
+                        <span style="display:inline-block;width:1.3em;text-align:center;margin-right:0.5em;opacity:0.7;">👤</span>
+                        <span>${user.name}</span>
+                    </div>
+                    ${user.name !== nameInput.value ? 
+                        `<button class="message-user-btn" onclick="window.privateMessaging?.openPrivateMessage('${user.name}')" title="Send private message">💬</button>` : 
+                        ''
+                    }
                 </li>`
             ).join('') +
             `</ul>`;
@@ -477,8 +483,6 @@ function updateTypingIndicator() {
 
 // Reset typing users when receiving messages
 socket.on("message", (data) => {
-    // ...existing code...
-    
     // Clear typing indicator for the user who sent this message
     if (typingUsers.has(data.name)) {
         typingUsers.delete(data.name);
@@ -490,14 +494,10 @@ socket.on("message", (data) => {
             delete typingTimer[data.name];
         }
     }
-    
-    // ...existing code...
 });
 
 // Initialize typing timers as an object for better management
 document.addEventListener('DOMContentLoaded', function() {
-    // ...existing code...
-    
     // Initialize typing timer object to track per-user timeouts
     typingTimer = {};
     
@@ -547,8 +547,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
-    // ...existing code...
 });
 
 // Also update when users leave
@@ -579,6 +577,9 @@ socket.on('userList', ({ users }) => {
 socket.on('connect', () => {
     // Request room list immediately after connection
     socket.emit('getRooms');
+    
+    // Request online users for private messaging
+    socket.emit('getOnlineUsers');
     
     // If we were in a room before disconnection, try to rejoin it
     if (nameInput.value) {

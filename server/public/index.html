@@ -74,6 +74,14 @@
                 </button>
             </div>
             <section class="user-list"></section>
+            
+            <!-- Add private messaging section -->
+            <div class="private-messaging-section">
+                <h4>Private Messages</h4>
+                <div class="private-conversations" id="private-conversations">
+                    <!-- Private conversation tabs will be added here -->
+                </div>
+            </div>
         </aside>
         
         <div class="side-pane-toggle right-toggle">👤</div>
@@ -103,11 +111,40 @@
         <input type="hidden" name="name" id="name">
     </form>
 
+    <!-- Add private message modal -->
+    <div id="private-message-modal" class="private-message-modal" style="display: none;">
+        <div class="private-message-content">
+            <div class="private-message-header">
+                <h3 id="private-message-title">Private Message</h3>
+                <button id="close-private-message" class="close-btn">×</button>
+            </div>
+            
+            <div class="private-message-chat" id="private-message-chat">
+                <!-- Private messages will appear here -->
+            </div>
+            
+            <form class="private-message-form" id="private-message-form">
+                <div class="private-message-input-container">
+                    <input type="text" id="private-message-input" placeholder="Type a private message..." autocomplete="off">
+                    <button type="button" id="private-emoji-btn" class="emoji-btn" aria-label="Select emoji">😊</button>
+                    <button type="button" id="private-image-btn" class="image-btn" aria-label="Upload image">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                    </button>
+                    <input type="file" id="private-image-file" accept="image/*" style="display:none">
+                </div>
+                <button type="submit" id="private-send-button">Send</button>
+            </form>
+        </div>
+    </div>
+
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="app.js"></script>
     <script src="emoji-handler.js"></script>
     <script src="touch-handler.js"></script>
     <script src="auth.js"></script>
+    <script src="private-messaging.js"></script>
 
 </body>
 

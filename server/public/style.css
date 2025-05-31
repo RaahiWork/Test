@@ -229,11 +229,14 @@ button {
 }
 
 .post__header--user {
-    background: linear-gradient(135deg, #6c63ff, #a084ee);
+    background: linear-gradient(135deg, rgba(133, 23, 82, 0.3), rgba(78, 24, 224, 0.2));
 }
 
 .post__header--reply {
-    background: linear-gradient(135deg, #ff6b6b, #ffa1a1);
+    background: linear-gradient(135deg, rgba(119, 89, 114, 0.3), rgba(132, 238, 226, 0.2));
+    color: rgba(0, 0, 0, 0.8);
+    border-bottom-left-radius: 3px;
+    border-bottom-right-radius: 12px;
 }
 
 .post__header--name {
@@ -1462,4 +1465,383 @@ body.swiping-left::after {
     .banner-icon {
         font-size: 1rem;
     }
+}
+
+/* Private messaging styles */
+.private-messaging-section {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.private-messaging-section h4 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    color: #a084ee;
+    font-weight: 600;
+}
+
+.private-conversations {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.private-conversation-tab {
+    background: rgba(108, 99, 255, 0.15);
+    border-radius: 6px;
+    padding: 0.4rem 0.6rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(160, 132, 238, 0.1);
+    position: relative;
+}
+
+.private-conversation-tab:hover {
+    background: rgba(108, 99, 255, 0.25);
+}
+
+.private-conversation-tab.has-unread {
+    border-left: 3px solid #a084ee;
+}
+
+.private-conversation-tab.has-unread::after {
+    content: '';
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    background: #ff6b6b;
+    border-radius: 50%;
+}
+
+.private-conversation-name {
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: #fff;
+}
+
+.private-conversation-preview {
+    font-size: 0.75rem;
+    color: #ccc;
+    margin-top: 0.2rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Private message modal styles - keep modal structure only */
+.private-message-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.private-message-modal.show {
+    opacity: 1;
+}
+
+.private-message-content {
+    background: rgba(34, 34, 34, 0.95);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    height: 75%;
+    max-height: 600px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.private-message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px 12px 0 0;
+    background: linear-gradient(135deg, rgba(108, 99, 255, 0.2), rgba(160, 132, 238, 0.1));
+}
+
+.private-message-header h3 {
+    margin: 0;
+    color: #fff;
+    font-size: 1rem;
+}
+
+.private-message-header .close-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #fff;
+    padding: 0;
+    width: 25px;
+    height: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.private-message-header .close-btn:hover {
+    background-color: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
+}
+
+/* Private message chat - use existing main chat styles */
+.private-message-chat {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.02);
+    list-style: none;
+    margin: 0;
+    /* No custom styles - inherits from main .chat-display styles */
+}
+
+/* Private message form */
+.private-message-form {
+    display: flex;
+    gap: 0.3rem;
+    padding: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 0 0 12px 12px;
+}
+
+.private-message-input-container {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: #fff;
+    border-radius: 6px;
+    padding: 0.2rem 0.4rem;
+    flex-grow: 1;
+    border: 1px solid #ddd;
+}
+
+.private-message-input-container input {
+    flex-grow: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    padding: 0.4rem;
+    font-size: 0.85rem;
+    color: #333;
+}
+
+.private-message-form button[type="submit"] {
+    background: #6c63ff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 0.8rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+    min-width: 60px;
+    font-size: 0.8rem;
+}
+
+.private-message-form button[type="submit"]:hover {
+    background: #5650d8;
+}
+
+/* Private messaging sidebar section */
+.private-messaging-section {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.private-messaging-section h4 {
+    font-size: 0.9rem;
+    margin-bottom: 0.4rem;
+    color: #a084ee;
+    font-weight: 600;
+}
+
+.private-conversations {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.private-conversation-tab {
+    background: rgba(108, 99, 255, 0.15);
+    border-radius: 4px;
+    padding: 0.3rem 0.4rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(160, 132, 238, 0.1);
+    position: relative;
+}
+
+.private-conversation-tab:hover {
+    background: rgba(108, 99, 255, 0.25);
+}
+
+.private-conversation-tab.has-unread {
+    border-left: 2px solid #a084ee;
+}
+
+.private-conversation-tab.has-unread::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 6px;
+    height: 6px;
+    background: #ff6b6b;
+    border-radius: 50%;
+}
+
+.private-conversation-name {
+    font-weight: 500;
+    font-size: 0.8rem;
+    color: #fff;
+}
+
+.private-conversation-preview {
+    font-size: 0.7rem;
+    color: #ccc;
+    margin-top: 0.1rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* User list message buttons */
+.user-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.3rem 0.4rem;
+    border-radius: 4px;
+    margin-bottom: 0.2rem;
+    background: rgba(255, 255, 255, 0.05);
+    transition: background 0.2s ease;
+}
+
+.user-list-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-grow: 1;
+    font-size: 0.85rem;
+}
+
+.message-user-btn {
+    background: rgba(108, 99, 255, 0.3);
+    border: none;
+    color: white;
+    padding: 0.15rem 0.3rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.65rem;
+    transition: background 0.2s ease;
+    min-width: 25px;
+}
+
+.message-user-btn:hover {
+    background: rgba(108, 99, 255, 0.5);
+}
+
+/* Private message notifications */
+.private-message-notification {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    background: linear-gradient(135deg, #6c63ff, #a084ee);
+    color: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    box-shadow: 0 3px 8px rgba(108, 99, 255, 0.3);
+    z-index: 2001;
+    transform: translateX(300px);
+    transition: transform 0.3s ease;
+    max-width: 250px;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.private-message-notification.show {
+    transform: translateX(0);
+}
+
+.private-message-notification-header {
+    font-weight: bold;
+    font-size: 0.8rem;
+    margin-bottom: 0.1rem;
+}
+
+.private-message-notification-text {
+    font-size: 0.7rem;
+    opacity: 0.9;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Mobile responsive for private messaging */
+@media (max-width: 768px) {
+    .private-message-content {
+        width: 95%;
+        height: 85%;
+        margin: 7.5% auto;
+    }
+    
+    .private-message-header {
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .private-message-form {
+        padding: 0.5rem;
+    }
+    
+    .private-messaging-section {
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+    }
+    
+    .private-conversations {
+        max-height: 100px;
+    }
+}
+
+/* Private message received message styles - light colors */
+.private-message-chat .post--received .post__header--received {
+    background: linear-gradient(135deg, rgba(160, 160, 160, 0.3), rgba(180, 180, 180, 0.2));
+    color: rgba(80, 80, 80, 0.9);
+}
+
+.private-message-chat .post--received .post__text--received {
+    background: linear-gradient(135deg, rgba(160, 160, 160, 0.2), rgba(180, 180, 180, 0.15));
+    color: rgba(60, 60, 60, 0.95);
+}
+
+.private-message-chat .post--received .post__image {
+    background: linear-gradient(135deg, rgba(160, 160, 160, 0.2), rgba(180, 180, 180, 0.15));
 }
