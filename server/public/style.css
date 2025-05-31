@@ -526,6 +526,100 @@ button {
     }
 }
 
+/* --- Mobile sliding panels for side panes --- */
+@media (max-width: 768px) {
+    .side-pane {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        height: 100vh;
+        z-index: 1002;
+        background: rgba(34,34,34,0.97);
+        box-shadow: 2px 0 16px rgba(0,0,0,0.25);
+        transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+        /* Hide both panes by default */
+        transform: translateX(-100%);
+        left: 0;
+        right: auto;
+        margin-right: 0;
+        margin-left: 0;
+        border-radius: 0 12px 12px 0;
+        min-height: 0;
+        min-width: 70vw;
+        max-width: 85vw;
+        width: 80vw;
+        overflow-y: auto;
+    }
+    .right-pane.side-pane {
+        left: auto;
+        right: 0;
+        border-radius: 12px 0 0 12px;
+        transform: translateX(100%);
+    }
+    .side-pane.open {
+        transform: translateX(0);
+    }
+    .main-content {
+        width: 100% !important;
+        padding: 0 !important;
+    }
+    .side-pane-toggle {
+        display: flex !important;
+        position: fixed;
+        top: 1.2rem;
+        z-index: 1100;
+        background: #6c63ff;
+        color: #fff;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+        cursor: pointer;
+        opacity: 0.95;
+        transition: background 0.2s;
+    }
+    .left-toggle {
+        left: 1rem;
+        right: auto;
+        border-radius: 50%;
+    }
+    .right-toggle {
+        right: 1rem;
+        left: auto;
+        border-radius: 50%;
+        display: flex !important;
+    }
+    /* Hide side panes by default on mobile */
+    .side-pane:not(.open) {
+        pointer-events: none;
+    }
+    /* Hide toggles on desktop */
+}
+@media (min-width: 769px) {
+    .side-pane-toggle {
+        display: none !important;
+    }
+    .side-pane {
+        position: relative !important;
+        transform: none !important;
+        left: auto !important;
+        right: auto !important;
+        border-radius: 12px !important;
+        min-width: 180px !important;
+        max-width: 220px !important;
+        width: 220px !important;
+        margin-right: 0.5rem !important;
+        margin-left: 0 !important;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+        pointer-events: auto !important;
+    }
+}
+
+/* ...existing code... */
+
 /* Improved loading/error states */
 .image-loading, .image-error {
     padding: 12px;

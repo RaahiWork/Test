@@ -1,0 +1,9 @@
+/* Mobile-specific overrides for chat UI */
+
+@media (max-width: 768px) {
+    /* ...copy all @media (max-width: 768px) rules from style.css here... */
+}
+
+@media (max-width: 480px) {
+    /* ...copy all @media (max-width: 480px) rules from style.css here... */
+}
