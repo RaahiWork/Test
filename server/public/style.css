@@ -1685,7 +1685,7 @@ body.swiping-left::after {
     display: flex;
     flex-direction: column;
     gap: 0.08rem; /* Reduced from 0.1rem */
-    max-height: 75px; /* Reduced from 90px */
+    max-height: 75px; /* Base max-height, overridden in media queries */
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: rgba(160, 132, 238, 0.4) rgba(0, 0, 0, 0.1);
@@ -1693,6 +1693,8 @@ body.swiping-left::after {
     background: rgba(0, 0, 0, 0.1);
     border-radius: 4px;
     border: 1px solid rgba(255, 255, 255, 0.05);
+    -webkit-overflow-scrolling: touch; /* Improve scrolling on iOS */
+    touch-action: pan-y; /* Optimize touch handling for vertical scrolling */
 }
 
 /* Custom scrollbar styling for WebKit browsers (Chrome, Safari) */
