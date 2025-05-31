@@ -70,6 +70,9 @@
                         </svg>
                     </button>
                     <input type="file" id="image-file" accept="image/*" style="display:none">
+                    <!-- Voice message button and input -->
+                    <button type="button" id="voice-record-btn" class="voice-btn" aria-label="Record voice">🎤</button>
+                    <input type="file" id="voice-file" accept="audio/*" style="display:none">
                 </div>
                 <button type="submit" id="send-button">Send</button>
             </form>
@@ -150,6 +153,9 @@
                         </svg>
                     </button>
                     <input type="file" id="private-image-file" accept="image/*" style="display:none">
+                    <!-- Voice message button and input for private chat -->
+                    <button type="button" id="private-voice-record-btn" class="voice-btn" aria-label="Record voice">🎤</button>
+                    <input type="file" id="private-voice-file" accept="audio/*" style="display:none">
                 </div>
                 <button type="submit" id="private-send-button">Send</button>
             </form>
@@ -164,6 +170,7 @@
     <script src="auth.js"></script>
     <script src="private-messaging.js"></script>
     <script src="radio-player.js"></script>
+    <script src="voice-message.js"></script>
 
 </body>
 

@@ -313,7 +313,7 @@ socket.on("message", (data) => {
     
     // Reset activity indicator
     activity.textContent = "";
-    const { name, text, time, image } = data;
+    const { name, text, time, image, voice } = data;
     
     const li = document.createElement('li');
     li.className = 'post';
@@ -399,6 +399,11 @@ socket.on("message", (data) => {
         });
         
         contentHtml += `<div class="post__text">${processedText}</div>`;
+    }
+    
+    if (voice) {
+        // Add audio player for voice message
+        contentHtml += `<div class="post__voice"><audio controls src="${voice}"></audio></div>`;
     }
     
     li.innerHTML = contentHtml;
@@ -1024,91 +1029,86 @@ function setupEmojiAndImageHandlers() {
     });
 }
 
-// Add function to load emojis that was referenced but missing
-function loadEmojis() {
-    const emojiContainer = document.getElementById('emoji-container');
-    if (!emojiContainer) return;
-    
-    // Show loading state
-    emojiContainer.innerHTML = '<div class="emoji-loading">Loading emojis...</div>';
-    
-    // Get base URL for emoji API
-    const baseUrl = serverUrl.replace('ws://', 'http://').replace('wss://', 'https://');
-    
-    // Fetch emoji list from server
-    fetch(`${baseUrl}/api/emojis`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`Server returned ${response.status}: ${response.statusText}`);
-            }
-            return response.json();
-        })
-        .then(emojis => {
-            if (!Array.isArray(emojis) || emojis.length === 0) {
-                emojiContainer.innerHTML = '<div class="emoji-message">No emojis available</div>';
+// Add voice message support
+function setupVoiceMessageHandlers() {
+    const voiceBtn = document.getElementById('voice-record-btn');
+    const voiceFileInput = document.getElementById('voice-file');
+    if (!voiceBtn || !voiceFileInput) return;
+
+    let mediaRecorder, audioChunks = [];
+
+    voiceBtn.addEventListener('click', async () => {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+            voiceBtn.textContent = '🎤';
+            return;
+        }
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            alert('Voice recording not supported in this browser.');
+            return;
+        }
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Send voice message as base64 data
+                    socket.emit('voiceMessage', {
+                        name: nameInput.value,
+                        voice: e.target.result
+                    });
+                };
+                reader.readAsDataURL(audioBlob);
+            };
+            mediaRecorder.start();
+            voiceBtn.textContent = '⏹️';
+        } catch (err) {
+            alert('Could not start recording: ' + err.message);
+        }
+    });
+
+    // Optional: allow sending pre-recorded audio files
+    voiceFileInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            const file = this.files[0];
+            if (!file.type.match('audio.*')) {
+                alert('Please select a valid audio file.');
+                this.value = '';
                 return;
             }
-            
-            // Note: This fallback function now delegates to the emoji-handler.js
-            // which has proper pagination. If emoji-handler.js is loaded, it will
-            // override this function. This is kept as a basic fallback only.
-            
-            // Clear container
-            emojiContainer.innerHTML = '';
-            
-            // Show only first 10 emojis as a basic fallback
-            const displayEmojis = emojis.slice(0, 10);
-            
-            // Add each emoji to the container
-            displayEmojis.forEach(emoji => {
-                const emojiItem = document.createElement('div');
-                emojiItem.className = 'emoji-item';
-                emojiItem.innerHTML = `<img src="/emojis/${emoji}" alt="${emoji}" title="${emoji.replace(/\.\w+$/, '')}">`;
-                
-                // Add click handler to insert emoji
-                emojiItem.addEventListener('click', () => {
-                    const emojiCode = `[emoji:${emoji}]`;
-                    
-                    // Insert at cursor position
-                    const cursorPos = msgInput.selectionStart;
-                    msgInput.value = msgInput.value.substring(0, cursorPos) + 
-                                   emojiCode + 
-                                   msgInput.value.substring(msgInput.selectionEnd);
-                    
-                    // Move cursor after inserted emoji
-                    msgInput.selectionStart = cursorPos + emojiCode.length;
-                    msgInput.selectionEnd = cursorPos + emojiCode.length;
-                    msgInput.focus();
-                    
-                    // Hide emoji picker
-                    document.getElementById('emoji-picker').style.display = 'none';
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                socket.emit('voiceMessage', {
+                    name: nameInput.value,
+                    voice: e.target.result
                 });
-                
-                emojiContainer.appendChild(emojiItem);
-            });
-            
-            // Add note if there are more emojis
-            if (emojis.length > 10) {
-                const moreNote = document.createElement('div');
-                moreNote.className = 'emoji-message';
-                moreNote.textContent = `Showing 10 of ${emojis.length} emojis (basic mode)`;
-                emojiContainer.appendChild(moreNote);
-            }
-        })
-        .catch(error => {
-            console.error('Error loading emojis:', error);
-            emojiContainer.innerHTML = `<div class="emoji-error">
-                Failed to load emojis: ${error.message}
-                <button class="retry-btn">Retry</button>
-            </div>`;
-            
-            // Add retry button functionality
-            const retryBtn = emojiContainer.querySelector('.retry-btn');
-            if (retryBtn) {
-                retryBtn.addEventListener('click', loadEmojis);
-            }
-        });
+            };
+            reader.readAsDataURL(file);
+            this.value = '';
+        }
+    });
 }
+document.addEventListener('DOMContentLoaded', function() {
+    // ...existing code...
+    setupVoiceMessageHandlers();
+    // ...existing code...
+});
+
+// Display voice messages in chat
+socket.on("message", (data) => {
+    // ...existing code...
+    const { name, text, time, image, voice } = data;
+    // ...existing code...
+    if (voice) {
+        // Add audio player for voice message
+        contentHtml += `<div class="post__voice"><audio controls src="${voice}"></audio></div>`;
+    }
+    // ...existing code...
+});
 
 // Remove the window.addEventListener('load') section as it's causing duplicate handlers
 

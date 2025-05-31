@@ -57,6 +57,60 @@ class PrivateMessaging {
                 }
             });
         }
+
+        // Private voice message
+        const privateVoiceBtn = document.getElementById('private-voice-record-btn');
+        const privateVoiceFile = document.getElementById('private-voice-file');
+        if (privateVoiceBtn && privateVoiceFile) {
+            let mediaRecorder, audioChunks = [];
+            privateVoiceBtn.addEventListener('click', async () => {
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
+                    mediaRecorder.stop();
+                    privateVoiceBtn.textContent = '🎤';
+                    return;
+                }
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    alert('Voice recording not supported in this browser.');
+                    return;
+                }
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            this.sendPrivateMessage(this.currentPrivateChat, null, null, event.target.result);
+                        };
+                        reader.readAsDataURL(audioBlob);
+                    };
+                    mediaRecorder.start();
+                    privateVoiceBtn.textContent = '⏹️';
+                } catch (err) {
+                    alert('Could not start recording: ' + err.message);
+                }
+            });
+            privateVoiceFile.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const file = this.files[0];
+                    if (!file.type.match('audio.*')) {
+                        alert('Please select a valid audio file.');
+                        this.value = '';
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        window.privateMessaging.sendPrivateMessage(
+                            window.privateMessaging.currentPrivateChat, null, null, event.target.result
+                        );
+                    };
+                    reader.readAsDataURL(file);
+                    this.value = '';
+                }
+            });
+        }
     }
     
     setupSocketHandlers() {
@@ -154,7 +208,7 @@ class PrivateMessaging {
         }
     }
     
-    sendPrivateMessage(toUser, text, image = null) {
+    sendPrivateMessage(toUser, text, image = null, voice = null) {
         const nameInput = document.querySelector('#name');
         
         if (typeof socket === 'undefined' || !socket || !nameInput?.value) {
@@ -171,13 +225,14 @@ class PrivateMessaging {
             fromUser: nameInput.value,
             toUser,
             text,
-            image
+            image,
+            voice
         });
     }
     
     handleIncomingPrivateMessage(data) {
         const nameInput = document.querySelector('#name');
-        const { fromUser, text, image, time } = data;
+        const { fromUser, text, image, time, voice } = data;
         
         // Add to conversation history
         this.addMessageToConversation(fromUser, {
@@ -185,6 +240,7 @@ class PrivateMessaging {
             toUser: nameInput?.value,
             text,
             image,
+            voice,
             time,
             type: 'received'
         });
@@ -206,7 +262,7 @@ class PrivateMessaging {
     handlePrivateMessageSent(data) {
         //console.log('Handling sent message:', data);
         const nameInput = document.querySelector('#name');
-        const { toUser, text, image, time } = data;
+        const { toUser, text, image, time, voice } = data;
         
         // Add to conversation history
         this.addMessageToConversation(toUser, {
@@ -214,6 +270,7 @@ class PrivateMessaging {
             toUser,
             text,
             image,
+            voice,
             time,
             type: 'sent'
         });
@@ -355,6 +412,11 @@ class PrivateMessaging {
                     addedImg.src = data.image;
                 }
             }, 10);
+        }
+        
+        // Add voice content if available
+        if (data.voice) {
+            contentHtml += `<div class="post__voice"><audio controls src="${data.voice}"></audio></div>`;
         }
         
         // Add text content if available

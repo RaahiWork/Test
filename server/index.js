@@ -260,7 +260,7 @@ io.on('connection', socket => {
     });
 
     // Add handler for private messages
-    socket.on('privateMessage', ({ fromUser, toUser, text, image = null }) => {
+    socket.on('privateMessage', ({ fromUser, toUser, text, image = null, voice = null }) => {
         //console.log('Private message received:', { fromUser, toUser, text: text ? 'Text message' : null, image: image ? 'Image data' : null });
         
         // Find the target user's socket
@@ -272,6 +272,7 @@ io.on('connection', socket => {
                 toUser,
                 text,
                 image,
+                voice,
                 time: new Intl.DateTimeFormat('default', {
                     hour: 'numeric',
                     minute: 'numeric',
@@ -396,6 +397,24 @@ io.on('connection', socket => {
         }
     });
     
+    // Add handler for voice messages in chat rooms
+    socket.on('voiceMessage', ({ name, voice }) => {
+        const room = getUser(socket.id)?.room;
+        if (room) {
+            if (!voice || !voice.startsWith('data:audio/')) {
+                socket.emit('message', buildMsg(ADMIN, "Invalid voice message format."));
+                return;
+            }
+            try {
+                io.to(room).emit('message', buildMsg(name, null, null, voice));
+            } catch (error) {
+                socket.emit('message', buildMsg(ADMIN, `Error sending voice message: ${error.message}`));
+            }
+        } else {
+            socket.emit('message', buildMsg(ADMIN, "You must join a room before sending voice messages"));
+        }
+    });
+    
     // Listen for activity 
     socket.on('activity', (name) => {
         const room = getUser(socket.id)?.room
@@ -405,11 +424,12 @@ io.on('connection', socket => {
     });
 });
 
-function buildMsg(name, text, image = null) {
+function buildMsg(name, text, image = null, voice = null) {
     return {
         name,
         text,
-        image, // Add image to the message object
+        image,
+        voice,
         time: new Intl.DateTimeFormat('default', {
             hour: 'numeric',
             minute: 'numeric',
