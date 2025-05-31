@@ -188,7 +188,7 @@ class RadioPlayer {
         if (this.currentStation !== null) {
             // Try the next station in the list
             const nextIndex = (this.currentStation + 1) % this.stations.length;
-            console.log(`Trying next station: ${this.stations[nextIndex].name}`);
+            //console.log(`Trying next station: ${this.stations[nextIndex].name}`);
             this.selectStation(nextIndex);
         }
     }
@@ -326,7 +326,7 @@ class RadioPlayer {
             
             if (playPromise !== undefined) {
                 playPromise.then(() => {
-                    console.log('Radio playback started successfully');
+                    //console.log('Radio playback started successfully');
                 }).catch(error => {
                     console.error('Failed to start radio playback:', error);
                     this.updateStatus('Playback failed - trying next...');

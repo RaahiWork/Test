@@ -818,7 +818,8 @@ document.addEventListener('DOMContentLoaded', function() {
         logoutBtn.addEventListener('click', handleLogout);
     }
     
-    // Add side panel toggle for mobile
+    // Add side panel toggle for mobile - This logic is now handled by mobile-sidepane.js
+    /*
     const leftPane = document.querySelector('.left-pane');
     const rightPane = document.querySelector('.right-pane');
     const leftToggle = document.querySelector('.left-toggle');
@@ -846,20 +847,21 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Close side panels when clicking outside
+    // Close side panels when clicking outside - This logic is now handled by mobile-sidepane.js
     document.addEventListener('click', (e) => {
         if (leftPane && leftPane.classList.contains('active') && 
             !leftPane.contains(e.target) && 
-            !leftToggle.contains(e.target)) {
+            leftToggle && !leftToggle.contains(e.target)) { // Added null check for leftToggle
             leftPane.classList.remove('active');
         }
         
         if (rightPane && rightPane.classList.contains('active') && 
             !rightPane.contains(e.target) && 
-            !rightToggle.contains(e.target)) {
+            rightToggle && !rightToggle.contains(e.target)) { // Added null check for rightToggle
             rightPane.classList.remove('active');
         }
     });
+    */
     
     // Initialize room display
     showRooms();
