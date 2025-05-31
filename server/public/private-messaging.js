@@ -49,23 +49,23 @@ class PrivateMessaging {
         // Wait for socket to be available
         const waitForSocket = () => {
             if (typeof socket !== 'undefined' && socket) {
-                console.log('Setting up private messaging socket handlers');
+                //console.log('Setting up private messaging socket handlers');
                 
                 // Handle incoming private messages
                 socket.on('privateMessage', (data) => {
-                    console.log('Received private message:', data);
+                    //console.log('Received private message:', data);
                     this.handleIncomingPrivateMessage(data);
                 });
                 
                 // Handle private message sent confirmation
                 socket.on('privateMessageSent', (data) => {
-                    console.log('Private message sent confirmation:', data);
+                    //console.log('Private message sent confirmation:', data);
                     this.handlePrivateMessageSent(data);
                 });
                 
                 // Handle private message errors
                 socket.on('privateMessageError', (data) => {
-                    console.log('Private message error:', data);
+                    //console.log('Private message error:', data);
                     this.handlePrivateMessageError(data);
                 });
             } else {
@@ -151,7 +151,7 @@ class PrivateMessaging {
             return;
         }
         
-        console.log('Sending private message:', { fromUser: nameInput.value, toUser, text, image: image ? 'Image data' : null });
+        //console.log('Sending private message:', { fromUser: nameInput.value, toUser, text, image: image ? 'Image data' : null });
         
         socket.emit('privateMessage', {
             fromUser: nameInput.value,
@@ -190,7 +190,7 @@ class PrivateMessaging {
     }
     
     handlePrivateMessageSent(data) {
-        console.log('Handling sent message:', data);
+        //console.log('Handling sent message:', data);
         const nameInput = document.querySelector('#name');
         const { toUser, text, image, time } = data;
         
@@ -206,7 +206,7 @@ class PrivateMessaging {
         
         // Update current chat display if viewing this conversation
         if (this.currentPrivateChat === toUser) {
-            console.log('Displaying sent message in current chat');
+            //console.log('Displaying sent message in current chat');
             this.displayMessage({
                 fromUser: nameInput?.value,
                 toUser,
@@ -260,7 +260,7 @@ class PrivateMessaging {
     }
     
     displayMessage(data, type) {
-        console.log('Displaying message:', { data, type });
+        //console.log('Displaying message:', { data, type });
         const chatContainer = document.getElementById('private-message-chat');
         if (!chatContainer) {
             console.error('Private message chat container not found');
@@ -361,7 +361,7 @@ class PrivateMessaging {
         li.innerHTML = contentHtml;
         chatContainer.appendChild(li);
         
-        console.log('Message added to chat container');
+        //console.log('Message added to chat container');
         
         // Scroll to bottom
         chatContainer.scrollTop = chatContainer.scrollHeight;
