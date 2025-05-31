@@ -1,0 +1,24 @@
+name: Auto Merge to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Create PR from main to production
+        uses: devops-infra/action-pull-request@v0.5.4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          source_branch: main
+          target_branch: production
+          title: "🔁 Auto PR: main → production"
+          body: "This PR was automatically created by GitHub Actions."
+          auto_approve: true
+          auto_merge: true
