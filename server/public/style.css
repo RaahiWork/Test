@@ -735,6 +735,10 @@ button {
         -webkit-tap-highlight-color: transparent;
         touch-action: manipulation;
     }
+
+    .message-input-container input {
+        font-size: 16px; /* Prevent iOS zoom on focus */
+    }
 }
 
 @media (max-width: 480px) {
@@ -2062,6 +2066,10 @@ body.swiping-left::after {
     .login-form button {
         -webkit-tap-highlight-color: transparent;
         touch-action: manipulation;
+    }
+
+    .message-input-container input {
+        font-size: 16px; /* Prevent iOS zoom on focus */
     }
 }
 
