@@ -4,14 +4,136 @@ class PrivateMessaging {
         this.privateConversations = new Map();
         this.currentPrivateChat = null;
         this.unreadCounts = new Map();
+        this.voiceCallModal = null;
+        this.peerConnection = null;
+        this.localStream = null;
+        this.remoteStream = null;
+        this.isCaller = false;
+        this.currentCallUser = null;
+        this.ringtoneAudio = null;
+        this.ringing = false;
         this.init();
     }
     
     init() {
         this.setupEventListeners();
         this.setupSocketHandlers();
+        this.setupVoiceCallUI();
+        this.setupRingtone();
     }
     
+    setupRingtone() {
+        // Use a pleasant, short, non-intrusive ringtone (public domain)
+        this.ringtoneAudio = document.createElement('audio');
+        this.ringtoneAudio.src = 'https://cdn.pixabay.com/audio/2022/07/26/audio_124bfae3e2.mp3'; // Example: "Soft Notification" by Lesfm (Pixabay, free)
+        this.ringtoneAudio.loop = true;
+        this.ringtoneAudio.preload = 'auto';
+        this.ringtoneAudio.volume = 0.7;
+        document.body.appendChild(this.ringtoneAudio);
+    }
+
+    playRingtone() {
+        if (this.ringtoneAudio && !this.ringing) {
+            this.ringing = true;
+            this.ringtoneAudio.currentTime = 0;
+            this.ringtoneAudio.play().catch(() => {});
+        }
+    }
+
+    stopRingtone() {
+        if (this.ringtoneAudio && this.ringing) {
+            this.ringing = false;
+            this.ringtoneAudio.pause();
+            this.ringtoneAudio.currentTime = 0;
+        }
+    }
+
+    setupVoiceCallUI() {
+        // Create modal if not present
+        let modal = document.getElementById('private-voice-call-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'private-voice-call-modal';
+            modal.style.display = 'none';
+            modal.style.position = 'fixed';
+            modal.style.top = '0';
+            modal.style.left = '0';
+            modal.style.width = '100vw';
+            modal.style.height = '100vh';
+            modal.style.background = 'rgba(0,0,0,0.7)';
+            modal.style.zIndex = '2000';
+            modal.style.alignItems = 'center';
+            modal.style.justifyContent = 'center';
+            modal.style.display = 'flex';
+            document.body.appendChild(modal);
+        }
+        modal.innerHTML = `
+            <div style="background:#222;padding:2em 2.5em;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.3);display:flex;flex-direction:column;align-items:center;gap:1.2em;min-width:260px;max-width:90vw;">
+                <div style="font-size:2.2em;margin-bottom:0.2em;" id="voice-call-icon">🔊</div>
+                <div id="voice-call-status" style="color:#fff;font-size:1.1em;text-align:center;">Calling...</div>
+                <audio id="voice-call-remote-audio" autoplay style="margin:1em 0;"></audio>
+                <div id="voice-call-actions" style="display:flex;gap:1.5em;">
+                    <button id="voice-call-end-btn" style="background:#ff6b6b;color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:1.5em;cursor:pointer;">⏹️</button>
+                    <button id="voice-call-mute-btn" style="background:#444;color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:1.3em;cursor:pointer;">🔇</button>
+                </div>
+            </div>
+        `;
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) this.endVoiceCall();
+        });
+        this.voiceCallModal = modal;
+
+        // End call button
+        modal.querySelector('#voice-call-end-btn').onclick = () => this.endVoiceCall();
+        // Mute button (toggle)
+        let muted = false;
+        modal.querySelector('#voice-call-mute-btn').onclick = () => {
+            muted = !muted;
+            if (this.localStream) {
+                this.localStream.getAudioTracks().forEach(track => track.enabled = !muted);
+            }
+            modal.querySelector('#voice-call-mute-btn').textContent = muted ? '🔈' : '🔇';
+        };
+    }
+
+    showVoiceCallModal(username, statusText = "Calling...", isIncoming = false) {
+        if (!this.voiceCallModal) this.setupVoiceCallUI();
+        const status = this.voiceCallModal.querySelector('#voice-call-status');
+        const icon = this.voiceCallModal.querySelector('#voice-call-icon');
+        const actions = this.voiceCallModal.querySelector('#voice-call-actions');
+        if (status) status.textContent = statusText || `Calling ${username}...`;
+        if (icon) icon.textContent = isIncoming ? '📞' : '🔊';
+
+        // If incoming, show Accept/Decline, else show End/Mute
+        if (isIncoming) {
+            actions.innerHTML = `
+                <button id="voice-call-accept-btn" style="background:#2ecc71;color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:1.5em;cursor:pointer;">✅</button>
+                <button id="voice-call-decline-btn" style="background:#ff6b6b;color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:1.5em;cursor:pointer;">❌</button>
+            `;
+            actions.querySelector('#voice-call-accept-btn').onclick = () => this.acceptIncomingCall();
+            actions.querySelector('#voice-call-decline-btn').onclick = () => this.declineIncomingCall();
+        } else {
+            actions.innerHTML = `
+                <button id="voice-call-end-btn" style="background:#ff6b6b;color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:1.5em;cursor:pointer;">⏹️</button>
+                <button id="voice-call-mute-btn" style="background:#444;color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:1.3em;cursor:pointer;">🔇</button>
+            `;
+            actions.querySelector('#voice-call-end-btn').onclick = () => this.endVoiceCall();
+            let muted = false;
+            actions.querySelector('#voice-call-mute-btn').onclick = () => {
+                muted = !muted;
+                if (this.localStream) {
+                    this.localStream.getAudioTracks().forEach(track => track.enabled = !muted);
+                }
+                actions.querySelector('#voice-call-mute-btn').textContent = muted ? '🔈' : '🔇';
+            };
+        }
+        this.voiceCallModal.style.display = 'flex';
+    }
+
+    hideVoiceCallModal() {
+        if (this.voiceCallModal) this.voiceCallModal.style.display = 'none';
+    }
+
     setupEventListeners() {
         // Close private message modal
         const closeBtn = document.getElementById('close-private-message');
@@ -158,6 +280,16 @@ class PrivateMessaging {
                 }, 100);
             });
         }
+
+        // Voice call button in private message modal
+        const voiceCallBtn = document.getElementById('private-voice-call-btn');
+        if (voiceCallBtn) {
+            voiceCallBtn.addEventListener('click', () => {
+                if (this.currentPrivateChat) {
+                    this.startVoiceCall(this.currentPrivateChat);
+                }
+            });
+        }
     }
     
     setupSocketHandlers() {
@@ -183,6 +315,45 @@ class PrivateMessaging {
                     //console.log('Private message error:', data);
                     this.handlePrivateMessageError(data);
                 });
+
+                // WebRTC signaling handlers
+                socket.on('voiceCallOffer', async (data) => {
+                    if (data.to !== this.getMyName()) return;
+                    this.currentCallUser = data.from;
+                    this.isCaller = false;
+                    this.incomingCallData = data;
+                    this.playRingtone();
+                    this.showVoiceCallModal(data.from, `${data.from} is calling...`, true);
+                });
+
+                socket.on('voiceCallAnswer', async (data) => {
+                    if (data.to !== this.getMyName()) return;
+                    this.stopRingtone();
+                    await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                });
+
+                socket.on('voiceCallCandidate', async (data) => {
+                    if (data.to !== this.getMyName()) return;
+                    if (this.peerConnection) {
+                        try {
+                            await this.peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                        } catch (e) {}
+                    }
+                });
+
+                socket.on('voiceCallEnd', (data) => {
+                    if (data.to !== this.getMyName()) return;
+                    this.stopRingtone();
+                    this.endVoiceCall(true);
+                });
+
+                socket.on('voiceCallDeclined', (data) => {
+                    if (data.to !== this.getMyName()) return;
+                    this.stopRingtone();
+                    this.endVoiceCall(true);
+                    alert(`${data.from} declined your call.`);
+                });
+
             } else {
                 // Retry after 100ms if socket not ready
                 setTimeout(waitForSocket, 100);
@@ -629,6 +800,246 @@ class PrivateMessaging {
         };
         
         reader.readAsDataURL(file);
+    }
+
+    setupVoiceCallUI() {
+        // Create modal if not present
+        let modal = document.getElementById('private-voice-call-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'private-voice-call-modal';
+            modal.style.display = 'none';
+            modal.style.position = 'fixed';
+            modal.style.top = '0';
+            modal.style.left = '0';
+            modal.style.width = '100vw';
+            modal.style.height = '100vh';
+            modal.style.background = 'rgba(0,0,0,0.7)';
+            modal.style.zIndex = '2000';
+            modal.style.alignItems = 'center';
+            modal.style.justifyContent = 'center';
+            modal.style.display = 'flex';
+            document.body.appendChild(modal);
+        }
+        modal.innerHTML = `
+            <div style="background:#222;padding:2em 2.5em;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.3);display:flex;flex-direction:column;align-items:center;gap:1.2em;min-width:260px;max-width:90vw;">
+                <div style="font-size:2.2em;margin-bottom:0.2em;" id="voice-call-icon">🔊</div>
+                <div id="voice-call-status" style="color:#fff;font-size:1.1em;text-align:center;">Calling...</div>
+                <audio id="voice-call-remote-audio" autoplay style="margin:1em 0;"></audio>
+                <div id="voice-call-actions" style="display:flex;gap:1.5em;">
+                    <button id="voice-call-end-btn" style="background:#ff6b6b;color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:1.5em;cursor:pointer;">⏹️</button>
+                    <button id="voice-call-mute-btn" style="background:#444;color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:1.3em;cursor:pointer;">🔇</button>
+                </div>
+            </div>
+        `;
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) this.endVoiceCall();
+        });
+        this.voiceCallModal = modal;
+
+        // End call button
+        modal.querySelector('#voice-call-end-btn').onclick = () => this.endVoiceCall();
+        // Mute button (toggle)
+        let muted = false;
+        modal.querySelector('#voice-call-mute-btn').onclick = () => {
+            muted = !muted;
+            if (this.localStream) {
+                this.localStream.getAudioTracks().forEach(track => track.enabled = !muted);
+            }
+            modal.querySelector('#voice-call-mute-btn').textContent = muted ? '🔈' : '🔇';
+        };
+    }
+
+    showVoiceCallModal(username, statusText = "Calling...", isIncoming = false) {
+        if (!this.voiceCallModal) this.setupVoiceCallUI();
+        const status = this.voiceCallModal.querySelector('#voice-call-status');
+        const icon = this.voiceCallModal.querySelector('#voice-call-icon');
+        const actions = this.voiceCallModal.querySelector('#voice-call-actions');
+        if (status) status.textContent = statusText || `Calling ${username}...`;
+        if (icon) icon.textContent = isIncoming ? '📞' : '🔊';
+
+        // If incoming, show Accept/Decline, else show End/Mute
+        if (isIncoming) {
+            actions.innerHTML = `
+                <button id="voice-call-accept-btn" style="background:#2ecc71;color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:1.5em;cursor:pointer;">✅</button>
+                <button id="voice-call-decline-btn" style="background:#ff6b6b;color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:1.5em;cursor:pointer;">❌</button>
+            `;
+            actions.querySelector('#voice-call-accept-btn').onclick = () => this.acceptIncomingCall();
+            actions.querySelector('#voice-call-decline-btn').onclick = () => this.declineIncomingCall();
+        } else {
+            actions.innerHTML = `
+                <button id="voice-call-end-btn" style="background:#ff6b6b;color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:1.5em;cursor:pointer;">⏹️</button>
+                <button id="voice-call-mute-btn" style="background:#444;color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:1.3em;cursor:pointer;">🔇</button>
+            `;
+            actions.querySelector('#voice-call-end-btn').onclick = () => this.endVoiceCall();
+            let muted = false;
+            actions.querySelector('#voice-call-mute-btn').onclick = () => {
+                muted = !muted;
+                if (this.localStream) {
+                    this.localStream.getAudioTracks().forEach(track => track.enabled = !muted);
+                }
+                actions.querySelector('#voice-call-mute-btn').textContent = muted ? '🔈' : '🔇';
+            };
+        }
+        this.voiceCallModal.style.display = 'flex';
+    }
+
+    hideVoiceCallModal() {
+        if (this.voiceCallModal) this.voiceCallModal.style.display = 'none';
+    }
+
+    getMyName() {
+        const nameInput = document.querySelector('#name');
+        return nameInput?.value;
+    }
+
+    async startVoiceCall(username) {
+        if (this.peerConnection) {
+            this.endVoiceCall();
+        }
+        this.isCaller = true;
+        this.currentCallUser = username;
+        await this.createPeerConnection();
+
+        // Get local audio
+        try {
+            this.localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            this.localStream.getTracks().forEach(track => this.peerConnection.addTrack(track, this.localStream));
+        } catch (err) {
+            alert('Could not access microphone: ' + err.message);
+            this.endVoiceCall();
+            return;
+        }
+
+        this.showVoiceCallModal(username, `Calling ${username}...`, false);
+        this.playRingtone();
+
+        // Create offer
+        const offer = await this.peerConnection.createOffer();
+        await this.peerConnection.setLocalDescription(offer);
+
+        socket.emit('voiceCallOffer', {
+            from: this.getMyName(),
+            to: username,
+            offer
+        });
+    }
+
+    async acceptIncomingCall() {
+        this.stopRingtone();
+        this.showVoiceCallModal(this.currentCallUser, `In call with ${this.currentCallUser}`, false);
+        await this.handleIncomingCall(this.incomingCallData);
+        this.incomingCallData = null;
+    }
+
+    declineIncomingCall() {
+        this.stopRingtone();
+        this.hideVoiceCallModal();
+        socket.emit('voiceCallDeclined', {
+            from: this.getMyName(),
+            to: this.currentCallUser
+        });
+        this.currentCallUser = null;
+        this.incomingCallData = null;
+    }
+
+    async handleIncomingCall(data) {
+        await this.createPeerConnection();
+
+        try {
+            this.localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            this.localStream.getTracks().forEach(track => this.peerConnection.addTrack(track, this.localStream));
+        } catch (err) {
+            alert('Could not access microphone: ' + err.message);
+            this.endVoiceCall();
+            return;
+        }
+
+        await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+        const answer = await this.peerConnection.createAnswer();
+        await this.peerConnection.setLocalDescription(answer);
+
+        socket.emit('voiceCallAnswer', {
+            from: this.getMyName(),
+            to: data.from,
+            answer
+        });
+    }
+
+    async createPeerConnection() {
+        if (this.peerConnection) {
+            this.peerConnection.close();
+            this.peerConnection = null;
+        }
+        const config = {
+            iceServers: [
+                { urls: "stun:stun.l.google.com:19302" }
+            ]
+        };
+        this.peerConnection = new RTCPeerConnection(config);
+
+        // ICE candidates
+        this.peerConnection.onicecandidate = (event) => {
+            if (event.candidate && this.currentCallUser) {
+                socket.emit('voiceCallCandidate', {
+                    from: this.getMyName(),
+                    to: this.currentCallUser,
+                    candidate: event.candidate
+                });
+            }
+        };
+
+        // Remote stream
+        this.peerConnection.ontrack = (event) => {
+            if (!this.remoteStream) {
+                this.remoteStream = new MediaStream();
+                const remoteAudio = document.getElementById('voice-call-remote-audio');
+                if (remoteAudio) {
+                    remoteAudio.srcObject = this.remoteStream;
+                }
+            }
+            this.remoteStream.addTrack(event.track);
+        };
+
+        // Connection state
+        this.peerConnection.onconnectionstatechange = () => {
+            if (this.peerConnection.connectionState === "disconnected" || this.peerConnection.connectionState === "failed" || this.peerConnection.connectionState === "closed") {
+                this.endVoiceCall();
+            }
+        };
+    }
+
+    endVoiceCall(remote = false) {
+        this.stopRingtone();
+        if (this.peerConnection) {
+            this.peerConnection.onicecandidate = null;
+            this.peerConnection.ontrack = null;
+            this.peerConnection.onconnectionstatechange = null;
+            this.peerConnection.close();
+            this.peerConnection = null;
+        }
+        if (this.localStream) {
+            this.localStream.getTracks().forEach(track => track.stop());
+            this.localStream = null;
+        }
+        if (this.remoteStream) {
+            this.remoteStream.getTracks().forEach(track => track.stop());
+            this.remoteStream = null;
+        }
+        const remoteAudio = document.getElementById('voice-call-remote-audio');
+        if (remoteAudio) {
+            remoteAudio.srcObject = null;
+        }
+        this.hideVoiceCallModal();
+        if (!remote && this.currentCallUser) {
+            socket.emit('voiceCallEnd', {
+                from: this.getMyName(),
+                to: this.currentCallUser
+            });
+        }
+        this.currentCallUser = null;
+        this.isCaller = false;
+        this.incomingCallData = null;
     }
 }
 

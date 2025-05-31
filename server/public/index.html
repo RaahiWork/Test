@@ -143,7 +143,10 @@
         <div class="private-message-content">
             <div class="private-message-header">
                 <h3 id="private-message-title">Private Message</h3>
-                <button id="close-private-message" class="close-btn">×</button>
+                <div style="display:flex;gap:0.5em;align-items:center;">
+                    <button id="private-voice-call-btn" class="voice-call-btn" title="Start voice call" style="font-size:1.3em;padding:0.2em 0.5em;border-radius:50%;background:none;border:none;cursor:pointer;">📞</button>
+                    <button id="close-private-message" class="close-btn">×</button>
+                </div>
             </div>
             
             <div class="private-message-chat" id="private-message-chat">
@@ -166,6 +169,10 @@
         </div>
     </div>
 
+    <!-- Voice call modal for private messaging -->
+    <div id="private-voice-call-modal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);z-index:2000;align-items:center;justify-content:center;">
+        <!-- Modal content will be injected by JS -->
+    </div>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="app.js"></script>
     <script src="emoji-handler.js"></script>

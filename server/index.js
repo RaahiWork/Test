@@ -422,6 +422,42 @@ io.on('connection', socket => {
             socket.broadcast.to(room).emit('activity', name)
         }
     });
+
+    // --- WebRTC signaling for private voice calls ---
+    socket.on('voiceCallOffer', ({ from, to, offer }) => {
+        const targetUser = UsersState.users.find(user => user.name === to);
+        if (targetUser) {
+            io.to(targetUser.id).emit('voiceCallOffer', { from, to, offer });
+        }
+    });
+
+    socket.on('voiceCallAnswer', ({ from, to, answer }) => {
+        const targetUser = UsersState.users.find(user => user.name === to);
+        if (targetUser) {
+            io.to(targetUser.id).emit('voiceCallAnswer', { from, to, answer });
+        }
+    });
+
+    socket.on('voiceCallCandidate', ({ from, to, candidate }) => {
+        const targetUser = UsersState.users.find(user => user.name === to);
+        if (targetUser) {
+            io.to(targetUser.id).emit('voiceCallCandidate', { from, to, candidate });
+        }
+    });
+
+    socket.on('voiceCallEnd', ({ from, to }) => {
+        const targetUser = UsersState.users.find(user => user.name === to);
+        if (targetUser) {
+            io.to(targetUser.id).emit('voiceCallEnd', { from, to });
+        }
+    });
+
+    socket.on('voiceCallDeclined', ({ from, to }) => {
+        const targetUser = UsersState.users.find(user => user.name === to);
+        if (targetUser) {
+            io.to(targetUser.id).emit('voiceCallDeclined', { from, to });
+        }
+    });
 });
 
 function buildMsg(name, text, image = null, voice = null) {
