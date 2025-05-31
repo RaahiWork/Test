@@ -79,7 +79,7 @@
                     <audio id="voice-audio-preview" controls style="vertical-align:middle;"></audio>
                     <button type="button" id="voice-send-btn">Send</button>
                     <button type="button" id="voice-cancel-btn">Cancel</button>
-                    <button type="button" id="voice-download-btn">Download</button>
+                    <button type="button" id="voice-download-btn">Download as MP3</button>
                 </div>
                 <button type="submit" id="send-button">Send</button>
             </form>
@@ -117,12 +117,60 @@
 
     <div class="login-overlay">
         <form class="login-form" id="login-form">
-            <div class="login-logo">
+            <div style="text-align:center;margin-bottom:0.15em;">
+                <div style="
+                    font-size:1em;
+                    font-weight:600;
+                    color:#fff;
+                    background: linear-gradient(90deg, #6c63ff 0%, #a084ee 100%);
+                    border-radius:6px;
+                    padding:0.32em 0.7em;
+                    box-shadow:0 1px 6px rgba(108,99,255,0.08);
+                    text-shadow:0 1px 4px #6c63ff22,0 1px 0 #fff2;
+                    border:1px solid #a084ee33;
+                    display:inline-block;
+                    margin-bottom:0.08em;
+                    letter-spacing:0.01em;
+                    max-width: 100%;
+                    overflow: visible;
+                    white-space: nowrap;
+                ">
+                    <span style="font-size:1.1em;vertical-align:-0.1em;margin-right:0.18em;">✨</span>
+                    Lightweight, real-time chat fun — <span style="color:#ffe066;">no clutter</span>, just 
+                    <span style="
+                        font-weight:bold;
+                        font-size:1.18em;
+                        color:#fff;
+                        letter-spacing:0.02em;
+                        padding:0 0.08em;
+                        display:inline;
+                        filter: drop-shadow(0 1px 6px #a084ee88);
+                    ">vibes</span>.
+                </div>
+            </div>
+            <div class="login-logo" style="margin-bottom:0.09em;">
                 <img src="images/logo.png" alt="Vyb Chat Logo" class="logo-image">
             </div>
-            <h2>Welcome to Vyb Chat!</h2>
-            <input type="text" id="login-username" name="name" placeholder="Your username" required autocomplete="off">
-            <input type="password" id="login-password" name="password" placeholder="Your password" required autocomplete="off">
+            <div style="text-align:center;margin-bottom:0.18em;">
+                <span style="
+                    display:inline-block;
+                    font-size:1.5em;
+                    font-weight:800;
+                    letter-spacing:0.01em;
+                    color:#6c63ff;
+                    text-shadow:0 1px 6px #a084ee33,0 1px 0 #fff2;
+                    background: linear-gradient(90deg, #6c63ff 0%, #a084ee 100%);
+                    -webkit-background-clip:text;
+                    -webkit-text-fill-color:transparent;
+                    background-clip:text;
+                ">
+                    Welcome to Vyb Chat!
+                </span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;">
+                <input type="text" id="login-username" name="name" placeholder="Your username" required autocomplete="off" style="text-align:center;">
+                <input type="password" id="login-password" name="password" placeholder="Your password" required autocomplete="off" style="text-align:center;margin-top:0.5em;">
+            </div>
             <div id="login-message" class="login-message"></div>
             <div class="login-instructions">
                 <p>🆕 New user? Just enter username + password to register<br>
@@ -130,6 +178,9 @@
                 <small>Username: 3-20 chars (letters, numbers, underscore only) • Password: 6+ chars</small>
             </div>
             <button type="submit" onclick="handleLoginSubmit(event)" id="login-button" class="login-button">Enter Chat</button>
+            <div class="login-support" style="margin-top:0.8em;text-align:center;font-size:0.93em;color:#a084ee;">
+                💬 Need help? Reach us at <a href="mailto:support@vybchat.com" style="color:#6c63ff;text-decoration:underline;">support@vybchat.com</a>
+            </div>
         </form>
     </div>
 
