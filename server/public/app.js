@@ -422,7 +422,7 @@ socket.on("message", (data) => {
             onmouseover="this.style.background='#27ae60'"
             onmouseout="this.style.background='#2ecc71'"
             title="Download voice message as MP3"
-            >⬇️ Download</a>`;
+            >⬇️ Download as MP3</a>`;
         contentHtml += `<div class="post__voice"><audio controls src="${voice}"></audio>${downloadMp3Btn}</div>`;
     }
     
@@ -1192,7 +1192,7 @@ socket.on("message", (data) => {
             onmouseover="this.style.background='#27ae60'"
             onmouseout="this.style.background='#2ecc71'"
             title="Download voice message as MP3"
-            >⬇️ Download</a>`;
+            >⬇️ Download as MP3</a>`;
         contentHtml += `<div class="post__voice"><audio controls src="${voice}"></audio>${downloadMp3Btn}</div>`;
     }
     // ...existing code...
