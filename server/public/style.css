@@ -79,22 +79,30 @@ main {
 }
 
 /* Give each section appropriate flex properties */
-.current-room-header,
-.typing-container,
-.form-msg,
+.current-room-header {
+    flex-shrink: 0; /* Prevent these elements from shrinking */
+}
+
+.typing-container {
+    flex-shrink: 0;
+    min-height: 24px; /* Reserve minimum space for typing indicator */
+}
+
+.form-msg {
+    flex-shrink: 0; /* Keep message form at bottom */
+    margin-top: auto; /* Push to bottom */
+}
+
 .emoji-picker {
     flex-shrink: 0; /* Prevent these elements from shrinking */
 }
 
 /* Fixed height chat display with controlled scrolling */
 .chat-display {
-    height: calc(100vh - 265px); /* Adjusted height calculation */
-    min-height: 200px; /* Reduced minimum height */
-    max-height: calc(100vh - 265px); /* Adjusted maximum height to match */
+    flex-grow: 1; /* Take up all available space */
+    min-height: 0; /* Allow flexbox to shrink below content size */
     overflow-y: auto; /* Enable vertical scrolling */
     overflow-x: hidden; /* Prevent horizontal scrolling */
-    flex-grow: 0; /* Don't let it grow beyond specified height */
-    flex-shrink: 0; /* Don't let it shrink below specified height */
     background-color: rgba(255, 255, 255, 0.08);
     border-radius: 14px;
     margin: 0.25rem 0;
@@ -855,11 +863,13 @@ button {
     display: flex;
     gap: 0.75rem;
     margin-top: 0.5rem; /* Reduced top margin */
-    margin-bottom: 0.5rem; /* Reduced bottom margin */
+    margin-bottom: 0; /* Remove bottom margin to align to bottom */
     width: 100%;
     flex-shrink: 0; /* Prevent shrinking */
+    padding-bottom: 0.5rem; /* Add small padding at bottom */
 }
 
+/* Enhanced message form button styling */
 .form-msg button[type="submit"] {
     background: #6c63ff;
     color: white;
@@ -1040,70 +1050,74 @@ button {
 
 /* Adjust activity section to make room for header */
 .activity {
-    min-height: 1.2rem; /* Reduced from 1.5rem */
-    padding: 0.3rem 0.2rem; /* Reduced padding */
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 0.75rem; /* Reduced from 0.9rem */
+    min-height: 1.5rem; /* Ensure consistent height */
+    padding: 0.25rem 0.5rem;
+    font-style: italic;
+    color: #ccc;
+    display: flex;
+    align-items: center;
 }
 
 /* Create a dedicated container for typing indicator with improved visibility */
 .typing-container {
-    width: 100%;
-    min-height: 24px; /* Reduced height */
-    position: relative;
-    margin-bottom: 0.2rem; /* Reduced margin */
-    pointer-events: none; /* Allow clicking through when not active */
     flex-shrink: 0;
+    min-height: 24px;
+    display: flex;
+    align-items: center;
+    padding: 0 0.75rem;
 }
 
 /* Enhanced typing indicator styling */
 .activity {
-    width: auto;
-    max-width: 80%;
-    min-height: 0;
-    padding: 0.25rem 0.5rem; /* Reduced padding */
+    min-height: 1.5rem;
+    padding: 0.25rem 0;
     font-style: italic;
-    color: rgba(255, 255, 255, 0.95);
-    font-size: 0.75rem; /* Reduced from 0.9rem */
-    display: inline-flex;
+    color: #ccc;
+    display: flex;
     align-items: center;
-    transition: all 0.3s ease;
-    position: absolute;
-    bottom: 0;
-    left: 10px;
-    border-radius: 12px;
-    opacity: 0;
-    transform: translateY(10px);
-    z-index: 15;
-    background: rgba(108, 99, 255, 0.25);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    border-left: 3px solid rgba(160, 132, 238, 0.6);
-    pointer-events: none;
+    font-size: 0.8rem;
+    transition: opacity 0.3s ease;
 }
 
 .activity.typing {
+    color: #a084ee;
     opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto; /* Re-enable pointer events when visible */
 }
 
 /* Improved typing animation dots */
 .typing-indicator {
     display: inline-flex;
     align-items: center;
-    margin-left: 0.4rem;
-    height: 1em;
+    margin-left: 0.5rem;
 }
 
 .typing-indicator span {
-    display: inline-block;
-    width: 4px; /* Reduced from 6px */
-    height: 4px; /* Reduced from 6px */
-    background: #a084ee;
+    height: 4px;
+    width: 4px;
+    background-color: #a084ee;
     border-radius: 50%;
-    margin: 0 0.08rem; /* Reduced from 0.1rem */
-    opacity: 0.9;
-    animation: typingDot 1.4s infinite ease-in-out;
+    display: inline-block;
+    margin: 0 1px;
+    animation: typing-dots 1.4s infinite ease-in-out;
+}
+
+.typing-indicator span:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.typing-indicator span:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+@keyframes typing-dots {
+    0%, 80%, 100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 /* Enhanced Mobile Responsive Styles and Slidable Panels */
@@ -2177,11 +2191,13 @@ body.swiping-left::after {
     display: flex;
     gap: 0.75rem;
     margin-top: 0.5rem; /* Reduced top margin */
-    margin-bottom: 0.5rem; /* Reduced bottom margin */
+    margin-bottom: 0; /* Remove bottom margin to align to bottom */
     width: 100%;
     flex-shrink: 0; /* Prevent shrinking */
+    padding-bottom: 0.5rem; /* Add small padding at bottom */
 }
 
+/* Enhanced message form button styling */
 .form-msg button[type="submit"] {
     background: #6c63ff;
     color: white;
@@ -2228,6 +2244,7 @@ body.swiping-left::after {
     color: #fff;
 }
 
+/* Power logout button styling */
 .power-logout-btn {
     background: none;
     border: none;
@@ -2361,70 +2378,74 @@ body.swiping-left::after {
 
 /* Adjust activity section to make room for header */
 .activity {
-    min-height: 1.2rem; /* Reduced from 1.5rem */
-    padding: 0.3rem 0.2rem; /* Reduced padding */
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 0.75rem; /* Reduced from 0.9rem */
+    min-height: 1.5rem; /* Ensure consistent height */
+    padding: 0.25rem 0.5rem;
+    font-style: italic;
+    color: #ccc;
+    display: flex;
+    align-items: center;
 }
 
 /* Create a dedicated container for typing indicator with improved visibility */
 .typing-container {
-    width: 100%;
-    min-height: 24px; /* Reduced height */
-    position: relative;
-    margin-bottom: 0.2rem; /* Reduced margin */
-    pointer-events: none; /* Allow clicking through when not active */
     flex-shrink: 0;
+    min-height: 24px;
+    display: flex;
+    align-items: center;
+    padding: 0 0.75rem;
 }
 
 /* Enhanced typing indicator styling */
 .activity {
-    width: auto;
-    max-width: 80%;
-    min-height: 0;
-    padding: 0.25rem 0.5rem; /* Reduced padding */
+    min-height: 1.5rem;
+    padding: 0.25rem 0;
     font-style: italic;
-    color: rgba(255, 255, 255, 0.95);
-    font-size: 0.75rem; /* Reduced from 0.9rem */
-    display: inline-flex;
+    color: #ccc;
+    display: flex;
     align-items: center;
-    transition: all 0.3s ease;
-    position: absolute;
-    bottom: 0;
-    left: 10px;
-    border-radius: 12px;
-    opacity: 0;
-    transform: translateY(10px);
-    z-index: 15;
-    background: rgba(108, 99, 255, 0.25);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    border-left: 3px solid rgba(160, 132, 238, 0.6);
-    pointer-events: none;
+    font-size: 0.8rem;
+    transition: opacity 0.3s ease;
 }
 
 .activity.typing {
+    color: #a084ee;
     opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto; /* Re-enable pointer events when visible */
 }
 
 /* Improved typing animation dots */
 .typing-indicator {
     display: inline-flex;
     align-items: center;
-    margin-left: 0.4rem;
-    height: 1em;
+    margin-left: 0.5rem;
 }
 
 .typing-indicator span {
-    display: inline-block;
-    width: 4px; /* Reduced from 6px */
-    height: 4px; /* Reduced from 6px */
-    background: #a084ee;
+    height: 4px;
+    width: 4px;
+    background-color: #a084ee;
     border-radius: 50%;
-    margin: 0 0.08rem; /* Reduced from 0.1rem */
-    opacity: 0.9;
-    animation: typingDot 1.4s infinite ease-in-out;
+    display: inline-block;
+    margin: 0 1px;
+    animation: typing-dots 1.4s infinite ease-in-out;
+}
+
+.typing-indicator span:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.typing-indicator span:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+@keyframes typing-dots {
+    0%, 80%, 100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 /* Enhanced Mobile Responsive Styles and Slidable Panels */
