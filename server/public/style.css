@@ -618,8 +618,6 @@ button {
     }
 }
 
-/* ...existing code... */
-
 /* Improved loading/error states */
 .image-loading, .image-error {
     padding: 12px;
@@ -1697,6 +1695,25 @@ body.swiping-left::after {
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+/* Custom scrollbar styling for WebKit browsers (Chrome, Safari) */
+.station-list::-webkit-scrollbar {
+    width: 5px; 
+}
+
+.station-list::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+}
+
+.station-list::-webkit-scrollbar-thumb {
+    background: rgba(160, 132, 238, 0.4);
+    border-radius: 4px;
+}
+
+.station-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(160, 132, 238, 0.6);
+}
+
 /* Station section headers - smaller and more attractive */
 .station-section-header {
     font-size: 0.4rem; /* Reduced from 0.5rem */
@@ -1867,7 +1884,7 @@ body.swiping-left::after {
     }
     
     .station-list {
-        max-height: 70px;
+        max-height: 120px; /* Increased from 70px */
     }
     
     .station-section-header {
@@ -1925,7 +1942,7 @@ body.swiping-left::after {
     }
     
     .station-list {
-        max-height: 60px;
+        max-height: 100px; /* Increased from 60px */
     }
     
     .station-item {
