@@ -17,6 +17,31 @@
             <h3>Chat Rooms</h3>
             <div id="rooms-list-container"></div>
             <div class="connection-status">Connecting...</div>
+            
+            <!-- Add radio station section -->
+            <div class="radio-section">
+                <h4>🎵 Radio Stations</h4>
+                <div class="radio-player">
+                    <div class="radio-controls">
+                        <button id="play-pause-btn" class="radio-btn play-btn" title="Play/Pause">
+                            <span class="play-icon">▶️</span>
+                        </button>
+                        <button id="volume-btn" class="radio-btn volume-btn" title="Volume">
+                            <span class="volume-icon">🔊</span>
+                        </button>
+                        <input type="range" id="volume-slider" class="volume-slider" min="0" max="100" value="50">
+                    </div>
+                    
+                    <div class="station-info">
+                        <div class="current-station">Select a station</div>
+                        <div class="station-status">Ready to play</div>
+                    </div>
+                    
+                    <div class="station-list" id="station-list">
+                        <!-- Radio stations will be populated here -->
+                    </div>
+                </div>
+            </div>
         </aside>
 
         <div class="side-pane-toggle left-toggle">☰</div>
@@ -137,6 +162,7 @@
     <script src="touch-handler.js"></script>
     <script src="auth.js"></script>
     <script src="private-messaging.js"></script>
+    <script src="radio-player.js"></script>
 
 </body>
 

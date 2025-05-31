@@ -52,6 +52,10 @@ main {
     width: 220px;
     min-width: 180px;
     max-width: 220px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
 }
 
 /* Right pane specific styling */
@@ -710,6 +714,10 @@ button {
     box-sizing: border-box;
     padding: 0; 
     margin: 0.5rem 0;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 120px;
+    margin-bottom: 0.5rem;
 }
 
 /* Ensure room items fit within the container */
@@ -1139,13 +1147,14 @@ button {
 }
 
 .left-indicator {
-    left: 10px;
-    transform: translateY(-50%) translateX(-100%);
+    right: -15px;
+    border-radius: 0 8px 8px 0;
 }
 
 .right-indicator {
-    right: 10px;
-    transform: translateY(-50%) translateX(100%);
+    left: -15px;
+    border-radius: 8px 0 0 8px;
+    display: none; /* Hide by default, show only on mobile */
 }
 
 .indicator-content {
@@ -1531,127 +1540,415 @@ body.swiping-left::after {
     font-style: italic;
 }
 
-/* Mobile responsive styles for private messaging */
+/* Radio Player Styles - Improved and Compact */
+.radio-section {
+    flex-shrink: 0;
+    width: 100%;
+    background: linear-gradient(135deg, rgba(108, 99, 255, 0.1), rgba(160, 132, 238, 0.05));
+    border-radius: 8px;
+    padding: 0.5rem;
+    border: 1px solid rgba(160, 132, 238, 0.3);
+    box-shadow: 0 2px 12px rgba(108, 99, 255, 0.1);
+}
+
+.radio-section h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.75rem;
+    color: #a084ee;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 0.5px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.radio-player {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+    padding: 0.4rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.radio-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-bottom: 0.4rem;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.3rem;
+    border-radius: 4px;
+}
+
+.radio-btn {
+    background: linear-gradient(135deg, rgba(108, 99, 255, 0.4), rgba(160, 132, 238, 0.3));
+    border: 1px solid rgba(108, 99, 255, 0.6);
+    color: white;
+    padding: 0.15rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.65rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.radio-btn:hover {
+    background: linear-gradient(135deg, rgba(108, 99, 255, 0.6), rgba(160, 132, 238, 0.5));
+    transform: scale(1.1);
+    box-shadow: 0 3px 8px rgba(108, 99, 255, 0.3);
+}
+
+.radio-btn:active {
+    transform: scale(0.95);
+}
+
+.volume-slider {
+    flex-grow: 1;
+    height: 3px;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.2), rgba(160, 132, 238, 0.3));
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0 0.3rem;
+    max-width: 50px;
+}
+
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    background: linear-gradient(135deg, #a084ee, #8c75ea);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s;
+}
+
+.volume-slider::-webkit-slider-thumb:hover {
+    background: linear-gradient(135deg, #8c75ea, #7266d3);
+    transform: scale(1.2);
+    box-shadow: 0 2px 8px rgba(160, 132, 238, 0.5);
+}
+
+.station-info {
+    margin-bottom: 0.4rem;
+    padding: 0.3rem 0.4rem;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    border-radius: 5px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
+}
+
+.current-station {
+    font-weight: 600;
+    color: #fff;
+    font-size: 0.65rem;
+    margin-bottom: 0.1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.station-status {
+    font-size: 0.55rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-style: italic;
+    font-weight: 500;
+}
+
+.station-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    max-height: 90px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(160, 132, 238, 0.4) rgba(0, 0, 0, 0.1);
+    padding: 0.1rem;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.station-list::-webkit-scrollbar {
+    width: 3px;
+}
+
+.station-list::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+}
+
+.station-list::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(160, 132, 238, 0.6), rgba(108, 99, 255, 0.4));
+    border-radius: 2px;
+}
+
+.station-list::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(160, 132, 238, 0.8), rgba(108, 99, 255, 0.6));
+}
+
+/* Station section headers - smaller and more attractive */
+.station-section-header {
+    font-size: 0.5rem;
+    font-weight: 700;
+    color: rgba(160, 132, 238, 0.9);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 0.2rem 0.1rem 0.1rem;
+    margin: 0.05rem 0;
+    border-bottom: 1px solid rgba(160, 132, 238, 0.3);
+    background: linear-gradient(90deg, rgba(108, 99, 255, 0.15), rgba(160, 132, 238, 0.1));
+    border-radius: 3px;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.station-item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.15rem 0.25rem;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    min-height: 20px;
+    font-size: 0.6rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.station-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.station-item:hover::before {
+    left: 100%;
+}
+
+.station-item:hover {
+    background: linear-gradient(135deg, rgba(108, 99, 255, 0.25), rgba(160, 132, 238, 0.15));
+    border-color: rgba(108, 99, 255, 0.5);
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 3px 8px rgba(108, 99, 255, 0.2);
+}
+
+.station-item.active {
+    background: linear-gradient(135deg, rgba(108, 99, 255, 0.4), rgba(160, 132, 238, 0.25));
+    border-color: rgba(108, 99, 255, 0.7);
+    box-shadow: 0 3px 12px rgba(108, 99, 255, 0.4);
+    transform: scale(1.02);
+}
+
+.station-item.active .station-status-dot {
+    background: #4CAF50;
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.8);
+    animation: pulse-radio 1.2s infinite;
+}
+
+@keyframes pulse-radio {
+    0%, 100% { 
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% { 
+        transform: scale(1.4);
+        opacity: 0.7;
+        box-shadow: 0 0 12px rgba(76, 175, 80, 1);
+    }
+}
+
+.station-icon {
+    font-size: 0.65rem;
+    flex-shrink: 0;
+    width: 16px;
+    text-align: center;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+}
+
+.station-details {
+    flex-grow: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.station-name {
+    font-weight: 600;
+    color: #fff;
+    font-size: 0.6rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.1;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.station-genre {
+    font-size: 0.5rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-style: italic;
+    line-height: 1;
+    font-weight: 500;
+}
+
+.station-status-dot {
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Mobile responsive styles for radio player */
 @media (max-width: 768px) {
-    .private-message-content {
-        width: 95%;
-        height: 80%;
-        max-height: none;
-    }
-    
-    .private-message-header {
-        padding: 0.8rem 1rem;
-    }
-    
-    .private-message-header h3 {
-        font-size: 1rem;
-    }
-    
-    .private-message-form {
-        padding: 0.8rem 1rem;
-        gap: 0.5rem;
-    }
-    
-    .private-message-input-container {
-        padding: 0.25rem 0.5rem;
-    }
-    
-    .private-message-input-container input {
+    .radio-section {
         padding: 0.4rem;
-        font-size: 0.85rem;
     }
     
-    .private-message-form button[type="submit"] {
-        padding: 0.5rem 1rem;
-        font-size: 0.85rem;
-        min-width: 70px;
-    }
-    
-    .private-message-notification {
-        top: 10px;
-        right: 10px;
-        left: 10px;
-        max-width: none;
-        padding: 0.8rem 1rem;
-    }
-    
-    .private-messaging-section {
-        margin-top: 0.8rem;
-        padding-top: 0.6rem;
-    }
-    
-    .private-messaging-section h4 {
-        font-size: 0.9rem;
-        margin-bottom: 0.5rem;
-    }
-    
-    .private-conversations {
-        max-height: 150px;
-        gap: 0.25rem;
-    }
-    
-    .private-conversation-tab {
-        padding: 0.4rem 0.5rem;
-    }
-    
-    .private-conversation-name {
-        font-size: 0.8rem;
-        margin-bottom: 0.15rem;
-    }
-    
-    .private-conversation-preview {
+    .radio-section h4 {
         font-size: 0.7rem;
+        margin-bottom: 0.4rem;
     }
     
-    .private-conversations-empty {
-        font-size: 0.75rem;
-        padding: 0.8rem 0.4rem;
+    .radio-player {
+        padding: 0.3rem;
+    }
+    
+    .radio-controls {
+        gap: 0.2rem;
+        margin-bottom: 0.3rem;
+        padding: 0.25rem;
+    }
+    
+    .radio-btn {
+        min-width: 18px;
+        height: 18px;
+        font-size: 0.6rem;
+    }
+    
+    .volume-slider {
+        max-width: 35px;
+    }
+    
+    .station-info {
+        padding: 0.25rem 0.3rem;
+        margin-bottom: 0.3rem;
+    }
+    
+    .current-station {
+        font-size: 0.6rem;
+    }
+    
+    .station-status {
+        font-size: 0.5rem;
+    }
+    
+    .station-list {
+        max-height: 70px;
+    }
+    
+    .station-section-header {
+        font-size: 0.45rem;
+        padding: 0.15rem 0.05rem 0.05rem;
+    }
+    
+    .station-item {
+        padding: 0.1rem 0.2rem;
+        gap: 0.2rem;
+        min-height: 16px;
+    }
+    
+    .station-icon {
+        font-size: 0.6rem;
+        width: 14px;
+    }
+    
+    .station-name {
+        font-size: 0.55rem;
+    }
+    
+    .station-genre {
+        font-size: 0.45rem;
+    }
+    
+    .station-status-dot {
+        width: 4px;
+        height: 4px;
     }
 }
 
 @media (max-width: 480px) {
-    .private-message-content {
-        width: 98%;
-        height: 85%;
-        border-radius: 8px;
+    .radio-section {
+        padding: 0.3rem;
     }
     
-    .private-message-header {
-        padding: 0.6rem 0.8rem;
-    }
-    
-    .private-message-chat {
-        padding: 0.8rem;
-    }
-    
-    .private-message-form {
-        padding: 0.6rem 0.8rem;
-    }
-    
-    .private-messaging-section h4 {
-        font-size: 0.85rem;
-        margin-bottom: 0.4rem;
-    }
-    
-    .private-conversations {
-        max-height: 120px;
-        gap: 0.2rem;
-    }
-    
-    .private-conversation-tab {
-        padding: 0.35rem 0.4rem;
-    }
-    
-    .private-conversation-name {
-        font-size: 0.75rem;
-    }
-    
-    .private-conversation-preview {
+    .radio-section h4 {
         font-size: 0.65rem;
+        margin-bottom: 0.3rem;
     }
     
-    .private-conversations-empty {
-        font-size: 0.7rem;
-        padding: 0.6rem 0.3rem;
+    .radio-player {
+        padding: 0.25rem;
+    }
+    
+    .radio-btn {
+        min-width: 16px;
+        height: 16px;
+        font-size: 0.55rem;
+    }
+    
+    .volume-slider {
+        max-width: 25px;
+    }
+    
+    .station-list {
+        max-height: 60px;
+    }
+    
+    .station-item {
+        padding: 0.08rem 0.15rem;
+        min-height: 14px;
+    }
+    
+    .station-icon {
+        font-size: 0.55rem;
+        width: 12px;
+    }
+    
+    .station-name {
+        font-size: 0.5rem;
+    }
+    
+    .station-genre {
+        font-size: 0.4rem;
+    }
+    
+    .station-status-dot {
+        width: 3px;
+        height: 3px;
     }
 }
