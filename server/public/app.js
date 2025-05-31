@@ -25,11 +25,11 @@ try {
     // Add error handler for socket connection
     socket.on('connect_error', (error) => {
         console.error('Socket connection error:', error);
-        alert('Unable to connect to chat server. Please check your connection and try again.');
+        //alert('Unable to connect to chat server. Please check your connection and try again.');
     });
 } catch (e) {
     console.error('Failed to initialize Socket.io:', e);
-    alert('Chat functionality is unavailable. Please make sure you\'re connected to the internet.');
+    //alert('Chat functionality is unavailable. Please make sure you\'re connected to the internet.');
     // Create a dummy socket object to prevent errors
     var socket = {
         on: function() {},
@@ -72,7 +72,7 @@ window.sendMessage = function(e) {
     
     
     if (!currentRoom) {
-        alert('Please join a room before sending messages');
+        //alert('Please join a room before sending messages');
         return;
     }
     
@@ -607,7 +607,7 @@ socket.on('reconnecting', (attemptNumber) => {
 });
 
 socket.on('reconnect_failed', () => {
-    alert('Connection to server lost. Please refresh the page.');
+    //alert('Connection to server lost. Please refresh the page.');
 });
 
 // Login overlay logic
@@ -758,7 +758,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (roomSelect.value) {
                 joinRoom(roomSelect.value);
             } else {
-                alert('Please select a room to join');
+                //alert('Please select a room to join');
             }
         });
     }
@@ -871,7 +871,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const featureList = upcomingFeatures.join('\n');
             
             // Show alert with upcoming features
-            alert(`✨ Coming Soon ✨\n\n${featureList}`);
+            //alert(`✨ Coming Soon ✨\n\n${featureList}`);
         });
         
         // Add visual indication it's clickable
@@ -932,21 +932,21 @@ function setupEmojiAndImageHandlers() {
                 
                 // Validate file type and size
                 if (!file.type.match('image.*')) {
-                    alert('Please select a valid image file.');
+                    //alert('Please select a valid image file.');
                     this.value = '';
                     return;
                 }
                 
                 if (file.size > 5 * 1024 * 1024) // 5MB limit
                 {
-                    alert('Image file is too large. Please select an image less than 5MB.');
+                    //alert('Image file is too large. Please select an image less than 5MB.');
                     this.value = '';
                     return;
                 }
                 
                 // Check if user is in a room
                 if (!currentRoom) {
-                    alert('Please join a room before sending images');
+                    //alert('Please join a room before sending images');
                     this.value = '';
                     return;
                 }
@@ -973,7 +973,7 @@ function setupEmojiAndImageHandlers() {
                 
                 reader.onerror = function(err) {
                     console.error('Error reading image file:', err);
-                    alert('Failed to read image file. Please try again.');
+                    //alert('Failed to read image file. Please try again.');
                     imageFileInput.value = '';
                     activity.textContent = '';
                 };
@@ -997,7 +997,7 @@ function setupEmojiAndImageHandlers() {
                     
                     // Check if user is in a room
                     if (!currentRoom) {
-                        alert('Please join a room before sending images');
+                        //alert('Please join a room before sending images');
                         return;
                     }
                     
@@ -1021,7 +1021,7 @@ function setupEmojiAndImageHandlers() {
                     
                     reader.onerror = function(err) {
                         console.error('Error reading pasted image:', err);
-                        alert('Failed to process pasted image. Please try again.');
+                        //alert('Failed to process pasted image. Please try again.');
                         activity.textContent = '';
                     };
                     
