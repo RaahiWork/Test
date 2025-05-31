@@ -3,6 +3,12 @@ import { Server } from "socket.io"
 import path from 'path'
 import { fileURLToPath } from 'url'
 import fs from 'fs/promises'
+import dotenv from 'dotenv'
+import connectDB from './config/database.js'
+import User from './models/User.js'
+
+// Load environment variables
+dotenv.config()
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -11,6 +17,13 @@ const PORT = process.env.PORT || 3500
 const ADMIN = "System"
 
 const app = express()
+
+// Connect to MongoDB
+connectDB()
+
+// Add JSON parsing middleware
+app.use(express.json({ limit: '10mb' }))
+app.use(express.urlencoded({ extended: true }))
 
 // Add CORS middleware before other routes - hardcode the specific origin
 app.use((req, res, next) => {
@@ -31,8 +44,6 @@ app.use((req, res, next) => {
 const publicPath = path.join(__dirname, "public");
 const emojisPath = path.join(publicPath, 'emojis');
 const imagesPath = path.join(publicPath, 'images');
-
-// Remove console logs for normal operations - only keep error logs
 
 // Ensure both emojis and images directories exist
 try {
@@ -81,8 +92,121 @@ app.get('/api/emojis', async (req, res) => {
     }
 });
 
+// User authentication endpoints
+app.post('/api/register', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        
+        // Validate input
+        if (!username || !password) {
+            return res.status(400).json({ 
+                error: 'Username and password are required' 
+            });
+        }
+        
+        // Check if user already exists
+        const existingUser = await User.findByUsername(username);
+        if (existingUser) {
+            return res.status(409).json({ 
+                error: 'Username already taken' 
+            });
+        }
+        
+        // Create new user
+        const user = new User({
+            username: username.toLowerCase(),
+            password
+        });
+        
+        await user.save();
+        
+        res.status(201).json({
+            message: 'User registered successfully',
+            user: {
+                id: user._id,
+                username: user.username,
+                createdAt: user.createdAt
+            }
+        });
+        
+    } catch (error) {
+        if (error.name === 'ValidationError') {
+            const errorMessages = Object.values(error.errors).map(err => err.message);
+            return res.status(400).json({ 
+                error: 'Validation failed',
+                details: errorMessages 
+            });
+        }
+        
+        console.error('Registration error:', error);
+        res.status(500).json({ 
+            error: 'Internal server error during registration' 
+        });
+    }
+});
+
+app.post('/api/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        
+        // Validate input
+        if (!username || !password) {
+            return res.status(400).json({ 
+                error: 'Username and password are required' 
+            });
+        }
+        
+        // Find user
+        const user = await User.findByUsername(username);
+        if (!user) {
+            return res.status(401).json({ 
+                error: 'Invalid username or password' 
+            });
+        }
+        
+        // Check password
+        const isPasswordValid = await user.comparePassword(password);
+        if (!isPasswordValid) {
+            return res.status(401).json({ 
+                error: 'Invalid username or password' 
+            });
+        }
+        
+        res.json({
+            message: 'Login successful',
+            user: {
+                id: user._id,
+                username: user.username,
+                createdAt: user.createdAt
+            }
+        });
+        
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({ 
+            error: 'Internal server error during login' 
+        });
+    }
+});
+
+// Get all users endpoint (for admin purposes)
+app.get('/api/users', async (req, res) => {
+    try {
+        const users = await User.find({}, 'username createdAt').sort({ createdAt: -1 });
+        res.json({
+            count: users.length,
+            users
+        });
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        res.status(500).json({ 
+            error: 'Failed to fetch users' 
+        });
+    }
+});
+
 const expressServer = app.listen(PORT, () => {
-    
+    //console.log(`🚀 Server running on port ${PORT}`)
 })
 
 // state 
