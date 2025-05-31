@@ -245,8 +245,13 @@ function showRooms() {
 function showUsers(users) {
     usersList.innerHTML = '';
     if (users && users.length) {
+        // Remove duplicates by name as an extra safety measure
+        const uniqueUsers = users.filter((user, index, self) => 
+            index === self.findIndex(u => u.name === user.name)
+        );
+        
         usersList.innerHTML = `<ul>` +
-            users.map(user =>
+            uniqueUsers.map(user =>
                 `<li class="user-list-item">
                     <span style="display:inline-block;width:1.3em;text-align:center;margin-right:0.5em;opacity:0.7;">👤</span>
                     <span>${user.name}</span>

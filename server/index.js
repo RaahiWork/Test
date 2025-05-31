@@ -354,9 +354,10 @@ function buildMsg(name, text, image = null) {
 // User functions 
 function activateUser(id, name, room) {
     const user = { id, name, room }
+    // Remove any existing user with the same ID first, then add the new user
     UsersState.setUsers([
         user,
-        ...UsersState.users.filter(user => user.id !== id),
+        ...UsersState.users.filter(user => user.id !== id)
     ])
     return user
 }
@@ -364,17 +365,26 @@ function activateUser(id, name, room) {
 function userLeavesApp(id) {
     UsersState.setUsers(
         UsersState.users.filter(user => user.id !== id)
-    );
+    )
 }
 
 function getUser(id) {
-    return UsersState.users.find(user => user.id === id);
+    return UsersState.users.find(user => user.id === id)
 }
 
 function getUsersInRoom(room) {
-    return UsersState.users.filter(user => user.room === room);
+    // Filter users by room and remove any duplicates by ID
+    const usersInRoom = UsersState.users.filter(user => user.room === room)
+    
+    // Remove duplicates by creating a Map with ID as key and keeping the last occurrence
+    const uniqueUsers = new Map()
+    usersInRoom.forEach(user => {
+        uniqueUsers.set(user.id, user)
+    })
+    
+    return Array.from(uniqueUsers.values())
 }
 
 function getAllActiveRooms() {
-    return Array.from(new Set(UsersState.users.map(user => user.room)));
+    return Array.from(new Set(UsersState.users.map(user => user.room)))
 }
