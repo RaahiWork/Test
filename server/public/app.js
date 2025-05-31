@@ -193,8 +193,8 @@ function showRooms() {
         roomItem.className = 'room-item' + (room.name === currentRoom ? ' active-room' : '');
         roomItem.dataset.room = room.name;
         
-        // Use standard title attribute for tooltip - browsers handle this natively
-        roomItem.title = `${room.name} - ${room.description}`;
+        // Use standard title attribute for tooltip - show only description
+        roomItem.title = room.description;
         
         // Create a more compact room item layout
         roomItem.innerHTML = `
