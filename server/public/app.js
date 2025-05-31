@@ -245,10 +245,17 @@ function showRooms() {
 function showUsers(users) {
     usersList.innerHTML = '';
     if (users && users.length) {
-        // Remove duplicates by name as an extra safety measure
-        const uniqueUsers = users.filter((user, index, self) => 
-            index === self.findIndex(u => u.name === user.name)
-        );
+        // Remove duplicates by name (case-insensitive) as an extra safety measure
+        const uniqueUsers = [];
+        const seenNames = new Set();
+        
+        users.forEach(user => {
+            const lowerName = user.name.toLowerCase();
+            if (!seenNames.has(lowerName)) {
+                seenNames.add(lowerName);
+                uniqueUsers.push(user);
+            }
+        });
         
         usersList.innerHTML = `<ul>` +
             uniqueUsers.map(user =>

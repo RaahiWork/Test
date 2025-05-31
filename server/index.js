@@ -104,7 +104,7 @@ app.post('/api/register', async (req, res) => {
             });
         }
         
-        // Check if user already exists
+        // Check if user already exists (case-insensitive check)
         const existingUser = await User.findByUsername(username);
         if (existingUser) {
             return res.status(409).json({ 
@@ -112,24 +112,40 @@ app.post('/api/register', async (req, res) => {
             });
         }
         
-        // Create new user
+        // Create new user - store username in lowercase, preserve original case in displayName
+        const trimmedUsername = username.trim();
+        
+        // console.log('Creating user with:', {
+        //     username: trimmedUsername.toLowerCase(),
+        //     displayName: trimmedUsername
+        // });
+        
         const user = new User({
-            username: username.toLowerCase(),
+            username: trimmedUsername.toLowerCase(), // Store in lowercase
+            displayName: trimmedUsername, // Preserve original case
             password
         });
         
         await user.save();
+        
+        // console.log('Saved user:', {
+        //     id: user._id,
+        //     username: user.username,
+        //     displayName: user.displayName
+        // });
         
         res.status(201).json({
             message: 'User registered successfully',
             user: {
                 id: user._id,
                 username: user.username,
+                displayName: user.displayName, // Return the display name with preserved case
                 createdAt: user.createdAt
             }
         });
         
     } catch (error) {
+        console.error('Registration error details:', error);
         if (error.name === 'ValidationError') {
             const errorMessages = Object.values(error.errors).map(err => err.message);
             return res.status(400).json({ 
@@ -177,6 +193,7 @@ app.post('/api/login', async (req, res) => {
             user: {
                 id: user._id,
                 username: user.username,
+                displayName: user.displayName, // Return the display name with preserved case
                 createdAt: user.createdAt
             }
         });
@@ -192,7 +209,7 @@ app.post('/api/login', async (req, res) => {
 // Get all users endpoint (for admin purposes)
 app.get('/api/users', async (req, res) => {
     try {
-        const users = await User.find({}, 'username createdAt').sort({ createdAt: -1 });
+        const users = await User.find({}, 'username displayName createdAt').sort({ createdAt: -1 });
         res.json({
             count: users.length,
             users
@@ -373,13 +390,18 @@ function getUser(id) {
 }
 
 function getUsersInRoom(room) {
-    // Filter users by room and remove any duplicates by ID
+    // Filter users by room
     const usersInRoom = UsersState.users.filter(user => user.room === room)
     
-    // Remove duplicates by creating a Map with ID as key and keeping the last occurrence
+    // Remove duplicates by name (case-insensitive) since username is now always lowercase
     const uniqueUsers = new Map()
+    
     usersInRoom.forEach(user => {
-        uniqueUsers.set(user.id, user)
+        const lowerName = user.name.toLowerCase()
+        
+        if (!uniqueUsers.has(lowerName)) {
+            uniqueUsers.set(lowerName, user)
+        }
     })
     
     return Array.from(uniqueUsers.values())
