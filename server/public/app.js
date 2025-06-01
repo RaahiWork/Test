@@ -268,7 +268,7 @@ function showUsers(users) {
                         <span>${user.name}</span>
                     </div>
                     ${user.name !== nameInput.value ? 
-                        `<button class="message-user-btn" onclick="window.privateMessaging?.openPrivateMessage('${user.name}')" title="Send private message">💬</button>` : 
+                        `<button class="message-user-btn" onclick="window.privateMessaging?.openPrivateMessage('${user.name}');window.handleHideRightPaneOnMobile && window.handleHideRightPaneOnMobile();" title="Send private message">💬</button>` : 
                         ''
                     }
                 </li>`
@@ -1290,3 +1290,31 @@ window.initializeSocketConnection = function(username) {
         updateRoomHeader('Vibe');
     }
 };
+
+// Hide right pane on mobile when opening private message
+window.handleHideRightPaneOnMobile = function() {
+    if (window.innerWidth <= 768) {
+        const rightPane = document.querySelector('.right-pane');
+        if (rightPane && rightPane.classList.contains('open')) {
+            rightPane.classList.remove('open');
+        }
+    }
+};
+
+// Also handle private conversation tab clicks (sidebar private messages)
+document.addEventListener('DOMContentLoaded', function() {
+    // ...existing code...
+    // Observe clicks on private conversation tabs to hide right pane on mobile
+    const privateConversations = document.getElementById('private-conversations');
+    if (privateConversations) {
+        privateConversations.addEventListener('click', function(e) {
+            if (window.innerWidth <= 768) {
+                const rightPane = document.querySelector('.right-pane');
+                if (rightPane && rightPane.classList.contains('open')) {
+                    rightPane.classList.remove('open');
+                }
+            }
+        });
+    }
+    // ...existing code...
+});
