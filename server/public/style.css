@@ -2945,3 +2945,21 @@ body.swiping-left::after {
     font-size: 0.7rem; /* Reduced from 0.8rem */
     font-style: italic;
 }
+
+.admin-crown {
+  font-size: 1.2rem;
+  display: inline-block;
+  line-height: 1;
+  margin-left: 0.25em;
+  transform: translateY(-2px); /* Lifts it slightly above the baseline */
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.1));
+}
+
+.registered-icon {
+  font-size: 1.1rem;
+  margin-left: 0.35em;
+  color: #6c63ff;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.1));
+  cursor: default;
+  transform: translateY(-1px); /* lifts slightly to align better */
+}

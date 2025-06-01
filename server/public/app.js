@@ -338,7 +338,8 @@ socket.on("message", (data) => {
             ? 'post__header--user'
             : 'post__header--reply'
         }">
-    <span class="post__header--name">${name}</span> 
+    <span class="post__header--name">
+    ${name} <span class="registered-icon" title="Registered">✅</span>
     <span class="post__header--time">${localTime}</span> 
     </div>`;
 
