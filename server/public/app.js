@@ -332,104 +332,106 @@ socket.on("message", (data) => {
     if (name !== 'System') {
         // Convert server time to local time
         const localTime = formatLocalTime(time);
-        
+
+        // Always initialize contentHtml with the header, even if no text/image
         let contentHtml = `<div class="post__header ${name === nameInput.value
-        ? 'post__header--user'
-        : 'post__header--reply'
+            ? 'post__header--user'
+            : 'post__header--reply'
         }">
     <span class="post__header--name">${name}</span> 
     <span class="post__header--time">${localTime}</span> 
     </div>`;
-    
-    // Add text or image based on what's available
-    if (image) {
-        // Create a proper image element with loading state
-        const imgElement = document.createElement('img');
-        imgElement.alt = 'Shared image';
-        imgElement.style.maxWidth = '100%';
-        imgElement.style.maxHeight = '300px';
-        imgElement.style.borderRadius = '5px';
-        imgElement.style.marginTop = '5px';
-        imgElement.style.display = 'none'; // Hide until loaded
-        
-        // Add loading indicator
-        const loadingDiv = document.createElement('div');
-        loadingDiv.className = 'image-loading';
-        loadingDiv.textContent = 'Loading image...';
-        
-        // Create image container
-        const imageContainer = document.createElement('div');
-        imageContainer.className = 'post__image';
-        imageContainer.appendChild(loadingDiv);
-        imageContainer.appendChild(imgElement);
-        
-        // Add to content
-        if (name !== 'System') {
+
+        // Add image if present
+        if (image) {
+            // Create a proper image element with loading state
+            const imgElement = document.createElement('img');
+            imgElement.alt = 'Shared image';
+            imgElement.style.maxWidth = '100%';
+            imgElement.style.maxHeight = '300px';
+            imgElement.style.borderRadius = '5px';
+            imgElement.style.marginTop = '5px';
+            imgElement.style.display = 'none'; // Hide until loaded
+
+            // Add loading indicator
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'image-loading';
+            loadingDiv.textContent = 'Loading image...';
+
+            // Create image container
+            const imageContainer = document.createElement('div');
+            imageContainer.className = 'post__image';
+            imageContainer.appendChild(loadingDiv);
+            imageContainer.appendChild(imgElement);
+
+            // Add to content
             contentHtml += imageContainer.outerHTML;
+
+            // Set image source after adding to DOM to track loading state
+            setTimeout(() => {
+                const addedImg = li.querySelector('.post__image img');
+                if (addedImg) {
+                    addedImg.onload = function() {
+                        this.style.display = 'block';
+                        const loadingEl = this.parentNode.querySelector('.image-loading');
+                        if (loadingEl) loadingEl.style.display = 'none';
+                    };
+                    
+                    addedImg.onerror = function() {
+                        const loadingEl = this.parentNode.querySelector('.image-loading');
+                        if (loadingEl) {
+                            loadingEl.textContent = 'Failed to load image';
+                            loadingEl.className = 'image-error';
+                        }
+                    };
+                    
+                    addedImg.src = image;
+                }
+            }, 10);
         }
-        
-        // Set image source after adding to DOM to track loading state
-        setTimeout(() => {
-            const addedImg = li.querySelector('.post__image img');
-            if (addedImg) {
-                addedImg.onload = function() {
-                    this.style.display = 'block';
-                    const loadingEl = this.parentNode.querySelector('.image-loading');
-                    if (loadingEl) loadingEl.style.display = 'none';
-                };
-                
-                addedImg.onerror = function() {
-                    const loadingEl = this.parentNode.querySelector('.image-loading');
-                    if (loadingEl) {
-                        loadingEl.textContent = 'Failed to load image';
-                        loadingEl.className = 'image-error';
-                    }
-                };
-                
-                addedImg.src = image;
-            }
-        }, 10);
-    } else if (text) {
-        // Process emoji markers in text with improved regex and error handling
-        let processedText = text;
-        const emojiRegex = /\[emoji:([^\]]+)\]/g;
-        
-        processedText = processedText.replace(emojiRegex, (match, emojiFile) => {
-            // Create direct relative URL to ensure consistent rendering across environments
-            return `<img class="emoji" src="/emojis/${emojiFile}" alt="emoji" 
-                data-emoji="${emojiFile}"
-                onerror="console.error('Failed to load emoji in message:', this.getAttribute('data-emoji')); this.style.display='none'; this.insertAdjacentText('afterend', '😊');">`;
-        });
-        
-        contentHtml += `<div class="post__text">${processedText}</div>`;
-    }
-    
-    if (voice) {
-        // Attractive download button for voice message
-        const downloadMp3Btn = `
-            <a href="${voice}" download="voice-message.mp3" 
-               style="
-                display:inline-block;
-                margin-left:10px;
-                padding:4px 14px;
-                background:#2ecc71;
-                color:#fff;
-                border-radius:18px;
-                font-size:0.97em;
-                font-weight:500;
-                text-decoration:none;
-                box-shadow:0 2px 6px rgba(46,204,113,0.12);
-                transition:background 0.2s;
-                vertical-align:middle;
-            "
-            onmouseover="this.style.background='#27ae60'"
-            onmouseout="this.style.background='#2ecc71'"
-            title="Download voice message as MP3"
-            >⬇️ Download as MP3</a>`;
-        contentHtml += `<div class="post__voice"><audio controls src="${voice}"></audio>${downloadMp3Btn}</div>`;
-    }
-    
-    li.innerHTML = contentHtml;
+
+        // Add text if present
+        if (text) {
+            // Process emoji markers in text with improved regex and error handling
+            let processedText = text;
+            const emojiRegex = /\[emoji:([^\]]+)\]/g;
+            
+            processedText = processedText.replace(emojiRegex, (match, emojiFile) => {
+                // Create direct relative URL to ensure consistent rendering across environments
+                return `<img class="emoji" src="/emojis/${emojiFile}" alt="emoji" 
+                    data-emoji="${emojiFile}"
+                    onerror="console.error('Failed to load emoji in message:', this.getAttribute('data-emoji')); this.style.display='none'; this.insertAdjacentText('afterend', '😊');">`;
+            });
+            
+            contentHtml += `<div class="post__text">${processedText}</div>`;
+        }
+
+        // Add voice if present
+        if (voice) {
+            const downloadMp3Btn = `
+                <a href="${voice}" download="voice-message.mp3" 
+                   style="
+                    display:inline-block;
+                    margin-left:10px;
+                    padding:4px 14px;
+                    background:#2ecc71;
+                    color:#fff;
+                    border-radius:18px;
+                    font-size:0.97em;
+                    font-weight:500;
+                    text-decoration:none;
+                    box-shadow:0 2px 6px rgba(46,204,113,0.12);
+                    transition:background 0.2s;
+                    vertical-align:middle;
+                "
+                onmouseover="this.style.background='#27ae60'"
+                onmouseout="this.style.background='#2ecc71'"
+                title="Download voice message as MP3"
+                >⬇️ Download as MP3</a>`;
+            contentHtml += `<div class="post__voice"><audio controls src="${voice}"></audio>${downloadMp3Btn}</div>`;
+        }
+
+        li.innerHTML = contentHtml;
     } else {
         li.innerHTML = `<div class="post__text">${text || ''}</div>`;
     }
@@ -1177,38 +1179,6 @@ function setupVoiceMessageHandlers() {
 document.addEventListener('DOMContentLoaded', function() {
     // ...existing code...
     setupVoiceMessageHandlers();
-    // ...existing code...
-});
-
-// Display voice messages in chat
-socket.on("message", (data) => {
-    // ...existing code...
-    const { name, text, time, image, voice } = data;
-    // ...existing code...
-    if (voice) {
-        // Attractive download button for voice message
-        const downloadMp3Btn = `
-            <a href="${voice}" download="voice-message.mp3" 
-               style="
-                display:inline-block;
-                margin-left:10px;
-                padding:4px 14px;
-                background:#2ecc71;
-                color:#fff;
-                border-radius:18px;
-                font-size:0.97em;
-                font-weight:500;
-                text-decoration:none;
-                box-shadow:0 2px 6px rgba(46,204,113,0.12);
-                transition:background 0.2s;
-                vertical-align:middle;
-            "
-            onmouseover="this.style.background='#27ae60'"
-            onmouseout="this.style.background='#2ecc71'"
-            title="Download voice message as MP3"
-            >⬇️ Download as MP3</a>`;
-        contentHtml += `<div class="post__voice"><audio controls src="${voice}"></audio>${downloadMp3Btn}</div>`;
-    }
     // ...existing code...
 });
 
