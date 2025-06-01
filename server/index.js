@@ -115,11 +115,6 @@ app.post('/api/register', async (req, res) => {
         // Create new user - store username in lowercase, preserve original case in displayName
         const trimmedUsername = username.trim();
         
-        // console.log('Creating user with:', {
-        //     username: trimmedUsername.toLowerCase(),
-        //     displayName: trimmedUsername
-        // });
-        
         const user = new User({
             username: trimmedUsername.toLowerCase(), // Store in lowercase
             displayName: trimmedUsername, // Preserve original case

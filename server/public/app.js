@@ -440,7 +440,11 @@ socket.on("message", (data) => {
     }
     
     chatDisplay.appendChild(li);
-    chatDisplay.scrollTop = chatDisplay.scrollHeight;
+
+    // Only scroll to bottom if user is already near the bottom
+    if (autoScroll) {
+        chatDisplay.scrollTop = chatDisplay.scrollHeight;
+    }
 });
 
 let activityTimer;
@@ -1333,3 +1337,15 @@ window.addEventListener('beforeunload', function (e) {
     e.preventDefault();
     e.returnValue = 'Are you sure you want to leave? Your chat session will be disconnected.';
 });
+
+// Track if user is near the bottom of chat
+let autoScroll = true;
+function handleChatScroll() {
+    const el = chatDisplay;
+    if (!el) return;
+    // If user is within 100px of the bottom, enable auto-scroll
+    autoScroll = (el.scrollHeight - el.scrollTop - el.clientHeight < 100);
+}
+if (chatDisplay) {
+    chatDisplay.addEventListener('scroll', handleChatScroll);
+}

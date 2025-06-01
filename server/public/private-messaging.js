@@ -675,11 +675,12 @@ class PrivateMessaging {
         
         li.innerHTML = contentHtml;
         chatContainer.appendChild(li);
-        
-        //console.log('Message added to chat container');
-        
-        // Scroll to bottom
-        chatContainer.scrollTop = chatContainer.scrollHeight;
+
+        // Only scroll to bottom if user is already near the bottom
+        const nearBottom = (chatContainer.scrollHeight - chatContainer.scrollTop - chatContainer.clientHeight < 100);
+        if (nearBottom) {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
     }
     
     // Add utility function to format time (same as main chat)
