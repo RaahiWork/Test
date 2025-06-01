@@ -896,6 +896,17 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Also initialize emoji and image buttons
     setupEmojiAndImageHandlers();
+    
+    // Ensure message input is visible on focus (mobile keyboard)
+    const msgInput = document.getElementById('message');
+    if (msgInput) {
+        msgInput.addEventListener('focus', function() {
+            setTimeout(() => {
+                // Scroll input into view if needed (mobile)
+                msgInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 200);
+        });
+    }
 });
 
 // Add a function to set up emoji and image handlers

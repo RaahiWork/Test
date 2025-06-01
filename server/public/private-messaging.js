@@ -25,7 +25,8 @@ class PrivateMessaging {
     setupRingtone() {
         // Use a pleasant, short, non-intrusive ringtone (public domain)
         this.ringtoneAudio = document.createElement('audio');
-        this.ringtoneAudio.src = 'https://cdn.pixabay.com/audio/2022/07/26/audio_124bfae3e2.mp3'; // Example: "Soft Notification" by Lesfm (Pixabay, free)
+        // Changed to a working, hotlink-friendly public domain ringtone
+        this.ringtoneAudio.src = 'https://cdn.jsdelivr.net/gh/naptha/tinysound@master/ringtone.mp3';
         this.ringtoneAudio.loop = true;
         this.ringtoneAudio.preload = 'auto';
         this.ringtoneAudio.volume = 0.7;

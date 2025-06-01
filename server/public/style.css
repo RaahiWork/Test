@@ -618,292 +618,66 @@ button {
     }
 }
 
-/* Improved loading/error states */
-.image-loading, .image-error {
-    padding: 12px;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    text-align: center;
-    margin: 8px;
-}
-
-.image-loading {
-    background: rgba(100, 100, 100, 0.08);
-    color: #777;
-}
-
-.image-error {
-    background: rgba(255, 107, 107, 0.08);
-    color: #ff6b6b;
-}
-
-.user-list,
-.room-list,
-.activity {
-    width: 100%;
-    min-height: 2.65rem;
-    margin: 0 auto;
-    max-width: none; /* Remove max-width limitation */
-    padding: .75rem .25rem;
-    font-style: italic;
-}
-
-.login-overlay {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.85);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    opacity: 1;
-    pointer-events: all;
-    transition: opacity 0.6s cubic-bezier(.4,2,.6,1);
-}
-
-.login-overlay.hide {
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.6s cubic-bezier(.4,2,.6,1);
-}
-
-.login-form {
-    background: #222;
-    padding: 2rem 2.5rem;
-    border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-    display: flex;
-    flex-direction: column;
-    gap: 1.2rem;
-    align-items: center;
-    animation: popin 0.7s cubic-bezier(.4,2,.6,1);
-}
-
-@keyframes popin {
-    0% { transform: scale(0.7); opacity: 0; }
-    80% { transform: scale(1.05); opacity: 1; }
-    100% { transform: scale(1); }
-}
-
-.login-form input[type="text"] {
-    padding: .6rem 0.9rem; /* Reduced padding */
-    border-radius: 8px;
-    border: none;
-    font-size: 0.95rem; /* Reduced from 1.1rem */
-    width: 220px;
-    outline: none;
-    transition: box-shadow 0.3s;
-}
-
-.login-form button {
-    padding: .6rem 1.3rem; /* Reduced padding */
-    border-radius: 8px;
-    border: none;
-    background: linear-gradient(90deg, #6c63ff 60%, #a084ee 100%);
-    color: #fff;
-    font-size: 0.95rem; /* Reduced from 1.1rem */
-    font-weight: bold;
-    cursor: pointer;
-    transition: background 0.3s;
-    width: 100%;
-    max-width: 250px;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    height: auto;
-    min-height: 40px; /* Reduced from 44px */
-    text-align: center;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Add hover effect only for non-touch devices */
-@media (hover: hover) {
-    .login-form button:hover {
-        background: linear-gradient(90deg, #5a52e5 60%, #9173e0 100%);
-    }
-}
-
-/* Mobile-specific enhancements */
+/* --- Mobile message input fixes --- */
 @media (max-width: 768px) {
-    /* ...existing code... */
-    
-    .login-form button {
-        -webkit-tap-highlight-color: transparent;
-        touch-action: manipulation;
+    .form-msg {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1003;
+        background: #fff;
+        padding: 0.5rem 0.5rem env(safe-area-inset-bottom, 0.5rem) 0.5rem;
+        margin: 0;
+        border-radius: 0;
+        box-shadow: 0 -2px 12px rgba(0,0,0,0.12);
+        width: 100vw;
+        max-width: 100vw;
+        /* Prevent shrinking */
+        flex-shrink: 0;
     }
-
+    .main-content {
+        padding-bottom: 4.5rem !important; /* Height of form-msg + some buffer */
+    }
     .message-input-container input {
-        font-size: 16px; /* Prevent iOS zoom on focus */
+        font-size: 16px !important; /* Prevent iOS zoom on focus */
+        min-height: 2.2em;
+        background: transparent;
+    }
+    .message-input-container {
+        background: #f8f8fa;
+        border: 1px solid #ddd;
+    }
+    /* Make emoji picker appear above the input */
+    #emoji-picker {
+        bottom: 4.5rem !important;
+        top: auto !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        position: fixed !important;
+        z-index: 1100 !important;
     }
 }
 
+/* For very small screens, adjust further */
 @media (max-width: 480px) {
-    /* ...existing code... */
-    
-    .login-form {
-        padding: 1.5rem 1.2rem;
+    .form-msg {
+        padding: 0.3rem 0.2rem env(safe-area-inset-bottom, 0.2rem) 0.2rem;
     }
-    
-    .login-form button {
-        padding: 0.8rem 1rem;
-        font-size: 1.1rem;
-        min-width: 200px;
-        margin-top: 0.5rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
-    
-    .login-form button:active {
-        transform: translateY(1px);
-        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    .main-content {
+        padding-bottom: 5.2rem !important;
     }
 }
 
-.side-pane ul {
-    list-style: none;
-    padding-left: 0;
-    margin: 0;
-    width: 100%;
+/* Prevent input zoom on focus for all platforms */
+.message-input-container input,
+.private-message-input-container input {
+    font-size: 16px !important;
 }
 
-.side-pane ul li {
-    background: rgba(160, 132, 238, 0.13);
-    color: #fff;
-    border-radius: 7px;
-    margin-bottom: 0.5em; /* Reduced from 0.7em */
-    padding: 0.5em 0.8em; /* Reduced padding */
-    font-size: 0.9rem; /* Reduced from 1.08rem */
-    letter-spacing: 0.3px; /* Reduced from 0.5px */
-    transition: background 0.2s;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-    display: flex;
-    align-items: center;
-    gap: 0.4em; /* Reduced from 0.5em */
-}
-
-.side-pane ul li:last-child {
-    margin-bottom: 0;
-}
-
-.rooms-header {
-    font-weight: bold;
-    margin-bottom: 0.4rem; /* Reduced from 0.5rem */
-    color: #a084ee;
-    font-size: 0.9rem; /* Reduced from 1.05rem */
-}
-
-/* Enhanced room list styling */
-.rooms-container {
-    width: 100%;
-    box-sizing: border-box; /* Ensure padding is included in width calculation */
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    margin: 0;
-    max-height: 70vh;
-    overflow-y: auto;
-    padding: 0.4rem;
-    scrollbar-width: thin;
-    border-radius: 8px;
-    background: rgba(0, 0, 0, 0.1);
-    -webkit-overflow-scrolling: touch; /* For smoother scrolling on iOS */
-    touch-action: pan-y; /* Optimize touch handling for vertical scrolling */
-}
-
-/* Set consistent width for rooms list container */
-#rooms-list-container {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 0; 
-    margin: 0.5rem 0;
-    flex: 1;
-    overflow-y: auto;
-    min-height: 120px;
+/* Ensure chat display does not go under the fixed form */
+.chat-display {
     margin-bottom: 0.5rem;
-}
-
-/* Ensure room items fit within the container */
-.room-item {
-    width: 100%;
-    box-sizing: border-box;
-    background: rgba(108, 99, 255, 0.15);
-    border-radius: 8px;
-    padding: 0.4rem 0.4rem; /* Reduced padding */
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.2rem; /* Reduced from 0.25rem */
-    transition: all 0.2s ease;
-    border: 1px solid rgba(160, 132, 238, 0.1);
-    cursor: pointer;
-    margin: 0 0 0.25rem 0; /* Reduced margin */
-}
-
-/* Add special styling for default room to make it stand out */
-.room-item[data-room="Vibe Room"] {
-    background: rgba(128, 112, 255, 0.25);
-    border-left: 3px solid #a084ee;
-}
-
-.room-item[data-room="Vibe Room"]:not(.active-room):hover {
-    background: rgba(128, 112, 255, 0.3);
-}
-
-.room-item[data-room="Vibe Room"].active-room {
-    background: rgba(128, 112, 255, 0.4);
-    border-color: #8c75ea;
-}
-
-/* Make room info take up appropriate space */
-.room-info {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem; /* Reduce gap between icon and name */
-    overflow: hidden;
-    text-overflow: ellipsis;
-    flex-grow: 1;
-    cursor: inherit;
-    min-width: 0; /* Allow text truncation */
-}
-
-.room-icon {
-    font-size: 0.8rem; /* Reduced from 0.95rem */
-    opacity: 0.8;
-    flex-shrink: 0;
-}
-
-.room-name {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-weight: 500;
-    font-size: 0.75rem; /* Reduced from 0.9rem */
-    letter-spacing: 0.01em;
-    color: #fff;
-    max-width: calc(100% - 25px);
-}
-
-.join-room-btn {
-    border: none;
-    background: rgba(108, 99, 255, 0.7);
-    color: white;
-    padding: 0.15rem 0.25rem; /* Reduced padding */
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.65rem; /* Reduced from 0.75rem */
-    font-weight: bold;
-    transition: background-color 0.2s;
-    flex-shrink: 0;
-    white-space: nowrap;
-    min-width: 30px; /* Reduced from 35px */
-    max-width: 35px; /* Reduced from 40px */
-}
-
-/* Remove dropdown-related styles */
-.room-dropdown-container,
-.room-dropdown {
-    display: none; /* Hide these elements */
 }
 
 /* Custom scrollbar styling */
@@ -2033,7 +1807,69 @@ body.swiping-left::after {
     }
 }
 
-/* Improved loading/error states */
+/* --- Mobile message input fixes --- */
+@media (max-width: 768px) {
+    .form-msg {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1003;
+        background: #fff;
+        padding: 0.5rem 0.5rem env(safe-area-inset-bottom, 0.5rem) 0.5rem;
+        margin: 0;
+        border-radius: 0;
+        box-shadow: 0 -2px 12px rgba(0,0,0,0.12);
+        width: 100vw;
+        max-width: 100vw;
+        /* Prevent shrinking */
+        flex-shrink: 0;
+    }
+    .main-content {
+        padding-bottom: 4.5rem !important; /* Height of form-msg + some buffer */
+    }
+    .message-input-container input {
+        font-size: 16px !important; /* Prevent iOS zoom on focus */
+        min-height: 2.2em;
+        background: transparent;
+    }
+    .message-input-container {
+        background: #f8f8fa;
+        border: 1px solid #ddd;
+    }
+    /* Make emoji picker appear above the input */
+    #emoji-picker {
+        bottom: 4.5rem !important;
+        top: auto !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        position: fixed !important;
+        z-index: 1100 !important;
+    }
+}
+
+/* For very small screens, adjust further */
+@media (max-width: 480px) {
+    .form-msg {
+        padding: 0.3rem 0.2rem env(safe-area-inset-bottom, 0.2rem) 0.2rem;
+    }
+    .main-content {
+        padding-bottom: 5.2rem !important;
+    }
+}
+
+/* Prevent input zoom on focus for all platforms */
+.message-input-container input,
+.private-message-input-container input {
+    font-size: 16px !important;
+}
+
+/* Ensure chat display does not go under the fixed form */
+.chat-display {
+    margin-bottom: 0.5rem;
+}
+
+/* Enhanced loading/error states */
 .image-loading, .image-error {
     padding: 12px;
     border-radius: 8px;
@@ -2303,7 +2139,7 @@ body.swiping-left::after {
     border: none;
     background: rgba(108, 99, 255, 0.7);
     color: white;
-    padding: 0.15rem 0.25rem; /* Reduced padding */
+       padding: 0.15rem 0.25rem; /* Reduced padding */
     border-radius: 6px;
     cursor: pointer;
     font-size: 0.65rem; /* Reduced from 0.75rem */
@@ -2319,6 +2155,68 @@ body.swiping-left::after {
 .room-dropdown-container,
 .room-dropdown {
     display: none; /* Hide these elements */
+}
+
+/* --- Mobile message input fixes --- */
+@media (max-width: 768px) {
+    .form-msg {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1003;
+        background: #fff;
+        padding: 0.5rem 0.5rem env(safe-area-inset-bottom, 0.5rem) 0.5rem;
+        margin: 0;
+        border-radius: 0;
+        box-shadow: 0 -2px 12px rgba(0,0,0,0.12);
+        width: 100vw;
+        max-width: 100vw;
+        /* Prevent shrinking */
+        flex-shrink: 0;
+    }
+    .main-content {
+        padding-bottom: 4.5rem !important; /* Height of form-msg + some buffer */
+    }
+    .message-input-container input {
+        font-size: 16px !important; /* Prevent iOS zoom on focus */
+        min-height: 2.2em;
+        background: transparent;
+    }
+    .message-input-container {
+        background: #f8f8fa;
+        border: 1px solid #ddd;
+    }
+    /* Make emoji picker appear above the input */
+    #emoji-picker {
+        bottom: 4.5rem !important;
+        top: auto !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        position: fixed !important;
+        z-index: 1100 !important;
+    }
+}
+
+/* For very small screens, adjust further */
+@media (max-width: 480px) {
+    .form-msg {
+        padding: 0.3rem 0.2rem env(safe-area-inset-bottom, 0.2rem) 0.2rem;
+    }
+    .main-content {
+        padding-bottom: 5.2rem !important;
+    }
+}
+
+/* Prevent input zoom on focus for all platforms */
+.message-input-container input,
+.private-message-input-container input {
+    font-size: 16px !important;
+}
+
+/* Ensure chat display does not go under the fixed form */
+.chat-display {
+    margin-bottom: 0.5rem;
 }
 
 /* Custom scrollbar styling */
