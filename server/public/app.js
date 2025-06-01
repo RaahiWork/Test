@@ -1,4 +1,6 @@
 // Update server URL detection to be more robust
+let isLoggingout = false;
+
 const serverUrl = (() => {
     // Check if we're in development mode
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
@@ -715,6 +717,7 @@ loginForm.addEventListener('submit', function (e) {
 function handleLogout() {
     // Confirm before logout
     if (confirm('Are you sure you want to logout?')) {
+        isLoggingout = true;
         // Clear username from localStorage
         localStorage.removeItem('vybchat-username');
         
@@ -1318,4 +1321,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     // ...existing code...
+});
+
+// Warn user before leaving or reloading the page
+window.addEventListener('beforeunload', function (e) {
+    if (isLoggingout) {
+        // If logging out, don't show the confirmation dialog
+        return;
+    }
+    // Standard message is ignored by most browsers, but returning a string triggers the dialog
+    e.preventDefault();
+    e.returnValue = 'Are you sure you want to leave? Your chat session will be disconnected.';
 });
