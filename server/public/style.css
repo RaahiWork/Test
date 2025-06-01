@@ -2963,3 +2963,12 @@ body.swiping-left::after {
   cursor: default;
   transform: translateY(-1px); /* lifts slightly to align better */
 }
+
+.current-user-highlight {
+    color: #6c63ff !important;
+    font-weight: 900;
+    background: linear-gradient(90deg, #a084ee22 0%, #6c63ff11 100%);
+    border-radius: 4px;
+    padding: 0 0.18em;
+    text-shadow: 0 1px 6px #a084ee33, 0 1px 0 #fff2;
+}

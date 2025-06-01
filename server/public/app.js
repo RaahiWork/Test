@@ -340,7 +340,7 @@ socket.on("message", (data) => {
             ? 'post__header--user'
             : 'post__header--reply'
         }">
-    <span class="post__header--name">
+    <span class="post__header--name${name === nameInput.value ? ' current-user' : ''}">
     ${name} <span class="registered-icon" title="Registered">✅</span>
     <span class="post__header--time">${localTime}</span> 
     </div>`;
@@ -438,7 +438,26 @@ socket.on("message", (data) => {
     } else {
         li.innerHTML = `<div class="post__text">${text || ''}</div>`;
     }
-    
+
+    // Highlight all occurrences of the current user's name in received messages only
+    const myName = nameInput.value;
+    if (myName && name !== myName && name !== 'System') {
+        // Helper to highlight in all text nodes
+        function highlightUserName(node) {
+            if (node.nodeType === 3) { // Text node
+                const regex = new RegExp(`\\b${myName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'g');
+                if (regex.test(node.nodeValue)) {
+                    const span = document.createElement('span');
+                    span.innerHTML = node.nodeValue.replace(regex, `<span class="current-user-highlight">${myName}</span>`);
+                    node.replaceWith(...span.childNodes);
+                }
+            } else if (node.nodeType === 1 && node.childNodes) {
+                node.childNodes.forEach(highlightUserName);
+            }
+        }
+        highlightUserName(li);
+    }
+
     chatDisplay.appendChild(li);
 
     // Only scroll to bottom if user is already near the bottom
