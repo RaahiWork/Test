@@ -248,6 +248,14 @@ button {
     color: rgba(0, 0, 0, 0.8);
     border-bottom-left-radius: 3px;
     border-bottom-right-radius: 12px;
+    cursor: pointer;
+    transition: background 0.15s, box-shadow 0.15s;
+}
+
+.post__header--reply:hover, .post__header--reply:focus {
+    background: linear-gradient(135deg, #a084ee33 40%, #6c63ff22 100%);
+    box-shadow: 0 2px 8px #a084ee22;
+    outline: 2px solid #a084ee88;
 }
 
 .post__header--name {

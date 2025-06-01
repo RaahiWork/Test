@@ -339,7 +339,7 @@ socket.on("message", (data) => {
         let contentHtml = `<div class="post__header ${name === nameInput.value
             ? 'post__header--user'
             : 'post__header--reply'
-        }">
+        }" ${name !== nameInput.value ? 'tabindex="0" role="button" aria-label="Reply to this user"' : ''}>
     <span class="post__header--name${name === nameInput.value ? ' current-user' : ''}">
     ${name} <span class="registered-icon" title="Registered">✅</span>
     <span class="post__header--time">${localTime}</span> 
@@ -1368,3 +1368,42 @@ function handleChatScroll() {
 if (chatDisplay) {
     chatDisplay.addEventListener('scroll', handleChatScroll);
 }
+
+// Make any post header clickable to insert username at cursor position in message input
+chatDisplay.addEventListener('click', function(e) {
+    const header = e.target.closest('.post__header');
+    if (header) {
+        const nameSpan = header.querySelector('.post__header--name');
+        if (nameSpan) {
+            const username = nameSpan.textContent.trim().split(' ')[0];
+            if (msgInput) {
+                const start = msgInput.selectionStart;
+                const end = msgInput.selectionEnd;
+                const value = msgInput.value;
+                // Only add a space if not already present before or after
+                let insertText = username;
+                // Add a space before if not at start and not already a space
+                if (start > 0 && value[start - 1] !== ' ') {
+                    insertText = ' ' + insertText;
+                }
+                // Add a space after if not already a space
+                if (value[end] !== ' ') {
+                    insertText = insertText + ' ';
+                }
+                msgInput.value = value.slice(0, start) + insertText + value.slice(end);
+                const cursorPos = start + insertText.length;
+                msgInput.setSelectionRange(cursorPos, cursorPos);
+                msgInput.focus();
+            }
+        }
+    }
+});
+
+// Keyboard accessibility: Enter/Space triggers reply
+chatDisplay.addEventListener('keydown', function(e) {
+    const header = e.target.closest('.post__header');
+    if ((e.key === 'Enter' || e.key === ' ') && header) {
+        e.preventDefault();
+        header.click();
+    }
+});
