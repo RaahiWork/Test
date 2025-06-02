@@ -2980,19 +2980,3 @@ body.swiping-left::after {
     padding: 0 0.18em;
     text-shadow: 0 1px 6px #a084ee33, 0 1px 0 #fff2;
 }
-
-@media (max-width: 600px) {
-  #private-voice-call-modal button,
-  #private-voice-call-modal [id^="voice-call-"] {
-    background: #ff69b4 !important; /* Pink */
-    color: #fff !important;
-    border: none !important;
-    box-shadow: none !important;
-  }
-  /* Fix for emoji and other round icon buttons */
-  #private-voice-call-modal button.emoji-btn,
-  #private-voice-call-modal .emoji-btn {
-    background: transparent !important;
-    color: #ff69b4 !important;
-  }
-}
