@@ -1282,6 +1282,12 @@ style.textContent = `
 .room-item:hover {
     background-color: rgba(255,255,255,0.05);
 }
+
+/* Make chat-display background fully transparent but keep text visible */
+.chat-display {
+    background: transparent;
+    opacity: 1; /* Ensure text is fully visible */
+}
 `;
 document.head.appendChild(style);
 
