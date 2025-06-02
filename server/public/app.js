@@ -1494,7 +1494,8 @@ const themeList = [
     'fireworks.gif',
     'forest.gif',
     'freedom.gif',
-    'halloween.gif'
+    'halloween.gif',
+    'fireflies.gif' // Added fireflies theme
 ];
 
 function setThemeBackground(themeFile) {
