@@ -229,6 +229,10 @@ const UsersState = {
     }
 }
 
+// --- Room message history ---
+const roomMessages = {};
+const MAX_ROOM_HISTORY = 50;
+
 const io = new Server(expressServer, {
     cors: {
         origin: process.env.NODE_ENV === "production" ? false : ["http://localhost:5500", "http://127.0.0.1:5500"]
@@ -329,6 +333,14 @@ io.on('connection', socket => {
         // To user who joined 
         socket.emit('message', buildMsg(ADMIN, `You have joined the ${user.room} chat room`))
 
+        // Send last 50 messages to the user
+        if (roomMessages[user.room]) {
+            const lastMsgs = roomMessages[user.room].slice(-50);
+            lastMsgs.forEach(msg => {
+                socket.emit('message', msg);
+            });
+        }
+
         // To everyone else 
         socket.broadcast.to(user.room).emit('message', buildMsg(ADMIN, `${user.name} has joined the room`))
 
@@ -365,7 +377,14 @@ io.on('connection', socket => {
     socket.on('message', ({ name, text }) => {
         const room = getUser(socket.id)?.room
         if (room) {
-            io.to(room).emit('message', buildMsg(name, text))
+            const msg = buildMsg(name, text);
+            // Store in room history
+            if (!roomMessages[room]) roomMessages[room] = [];
+            roomMessages[room].push(msg);
+            if (roomMessages[room].length > MAX_ROOM_HISTORY) {
+                roomMessages[room].splice(0, roomMessages[room].length - MAX_ROOM_HISTORY);
+            }
+            io.to(room).emit('message', msg)
         }
     });
 
@@ -379,10 +398,15 @@ io.on('connection', socket => {
                 socket.emit('message', buildMsg(ADMIN, "Invalid image format. Please try again."));
                 return;
             }
-            
             try {
-                // Send to everyone in the room including sender
-                io.to(room).emit('message', buildMsg(name, null, image));
+                const msg = buildMsg(name, null, image);
+                // Store in room history
+                if (!roomMessages[room]) roomMessages[room] = [];
+                roomMessages[room].push(msg);
+                if (roomMessages[room].length > MAX_ROOM_HISTORY) {
+                    roomMessages[room].splice(0, roomMessages[room].length - MAX_ROOM_HISTORY);
+                }
+                io.to(room).emit('message', msg);
             } catch (error) {
                 console.error('Error sending image message:', error);
                 socket.emit('message', buildMsg(ADMIN, `Error sending image: ${error.message}`));
@@ -391,7 +415,7 @@ io.on('connection', socket => {
             socket.emit('message', buildMsg(ADMIN, "You must join a room before sending images"));
         }
     });
-    
+
     // Add handler for voice messages in chat rooms
     socket.on('voiceMessage', ({ name, voice }) => {
         const room = getUser(socket.id)?.room;
@@ -401,7 +425,14 @@ io.on('connection', socket => {
                 return;
             }
             try {
-                io.to(room).emit('message', buildMsg(name, null, null, voice));
+                const msg = buildMsg(name, null, null, voice);
+                // Store in room history
+                if (!roomMessages[room]) roomMessages[room] = [];
+                roomMessages[room].push(msg);
+                if (roomMessages[room].length > MAX_ROOM_HISTORY) {
+                    roomMessages[room].splice(0, roomMessages[room].length - MAX_ROOM_HISTORY);
+                }
+                io.to(room).emit('message', msg);
             } catch (error) {
                 socket.emit('message', buildMsg(ADMIN, `Error sending voice message: ${error.message}`));
             }

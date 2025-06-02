@@ -67,6 +67,7 @@ const DEFAULT_ROOM = "Vibe";
 
 // Use a single currentRoom variable
 let currentRoom = '';
+let lastDisplayedRoom = '';
 
 // Expose sendMessage function globally to ensure it's accessible
 window.sendMessage = function(e) {
@@ -100,10 +101,8 @@ window.sendMessage = function(e) {
 // Join room function
 function joinRoom(roomName) {
     if (!roomName || !nameInput.value) return;
-    
     // Don't join if already in this room
     if (roomName === currentRoom) return;
-    
     // Clear any previous joining indicators first
     document.querySelectorAll('.room-item').forEach(item => {
         const roomBtn = item.querySelector('.join-room-btn');
@@ -111,46 +110,37 @@ function joinRoom(roomName) {
             roomBtn.textContent = 'Join';
         }
     });
-    
     // No need to update connection status text since it's now an indicator dot
-    
     // Emit room join event
     socket.emit('enterRoom', {
         name: nameInput.value,
         room: roomName
     });
-    
     // Store current room
     currentRoom = roomName;
-    
     // Update room header with name and description
     updateRoomHeader(roomName);
-    
     // Update UI to show we're joining with a more compact indicator
     document.querySelectorAll('.room-item').forEach(item => {
         const roomBtn = item.querySelector('.join-room-btn');
         item.classList.remove('active-room');
-        
         if (roomBtn) {
             roomBtn.textContent = 'Join';
         }
-        
         if (item.dataset.room === roomName) {
             item.classList.add('active-room');
             if (roomBtn) {
                 roomBtn.textContent = 'Joining...';
                 setTimeout(() => {
                     // Only update this specific button
-                    if (item.dataset.room === currentRoom && roomBtn) {
+                    if (item.dataset.room === currentRoom) {
                         roomBtn.textContent = '✓';
                     }
                 }, 1000);
             }
         }
     });
-    
-    // Clear chat history when changing rooms
-    chatDisplay.innerHTML = '';
+    // Do NOT clear chat history here; let message handler do it on first message for new room
 }
 
 // Add a function to update the room header
@@ -249,7 +239,7 @@ function showRooms() {
 // Update users display
 function showUsers(users) {
     usersList.innerHTML = '';
-    if (users && users.length) {
+    if (users?.length) {
         // Remove duplicates by name (case-insensitive) as an extra safety measure
         const uniqueUsers = [];
         const seenNames = new Set();
@@ -295,34 +285,31 @@ const processedMessages = new Set();
 
 // Only keep one socket.on('message') handler
 socket.on("message", (data) => {
-    
-    
+    // If switching rooms, clear chat and reset deduplication
+    if (currentRoom !== lastDisplayedRoom) {
+        chatDisplay.innerHTML = '';
+        processedMessages.clear();
+        lastDisplayedRoom = currentRoom;
+    }
+    renderMessage(data);
+});
+
+// Helper function to render a message
+function renderMessage(data) {
     // Create a unique identifier for this message
     const messageId = `${data.name}-${data.time}-${data.text?.substring(0, 20) || 'image'}`;
-    
-    // Check if we've already processed this message
     if (processedMessages.has(messageId)) {
-        
         return;
     }
-    
-    // Add to processed messages
     processedMessages.add(messageId);
-    
-    // Limit the size of the Set to prevent memory leaks
     if (processedMessages.size > 100) {
-        // Remove the oldest entry (first one)
         const firstValue = processedMessages.values().next().value;
         processedMessages.delete(firstValue);
     }
-    
-    // Reset activity indicator
     activity.textContent = "";
     const { name, text, time, image, voice } = data;
-    
     const li = document.createElement('li');
     li.className = 'post';
-    
     if (name === nameInput.value) {
         li.className = 'post post--left';
     } else if (name !== 'System') {
@@ -330,47 +317,29 @@ socket.on("message", (data) => {
     } else {
         li.className = 'post post--admin';
     }
-    
     if (name !== 'System') {
-        // Convert server time to local time
         const localTime = formatLocalTime(time);
-
-        // Always initialize contentHtml with the header, even if no text/image
-        let contentHtml = `<div class="post__header ${name === nameInput.value
-            ? 'post__header--user'
-            : 'post__header--reply'
-        }" ${name !== nameInput.value ? 'tabindex="0" role="button" aria-label="Reply to this user"' : ''}>
-    <span class="post__header--name${name === nameInput.value ? ' current-user' : ''}">
-    ${name} <span class="verified-icon" title="Registered User">✔️</span>
-    <span class="post__header--time">${localTime}</span> 
-    </div>`;
-
-        // Add image if present
+        let contentHtml = `<div class="post__header ${name === nameInput.value ? 'post__header--user' : 'post__header--reply'}" ${name !== nameInput.value ? 'tabindex="0" role="button" aria-label="Reply to this user"' : ''}>
+<span class="post__header--name${name === nameInput.value ? ' current-user' : ''}">
+${name} <span class="verified-icon" title="Registered User">✔️</span>
+<span class="post__header--time">${localTime}</span> 
+</div>`;
         if (image) {
-            // Create a proper image element with loading state
             const imgElement = document.createElement('img');
             imgElement.alt = 'Shared image';
             imgElement.style.maxWidth = '100%';
             imgElement.style.maxHeight = '300px';
             imgElement.style.borderRadius = '5px';
             imgElement.style.marginTop = '5px';
-            imgElement.style.display = 'none'; // Hide until loaded
-
-            // Add loading indicator
+            imgElement.style.display = 'none';
             const loadingDiv = document.createElement('div');
             loadingDiv.className = 'image-loading';
             loadingDiv.textContent = 'Loading image...';
-
-            // Create image container
             const imageContainer = document.createElement('div');
             imageContainer.className = 'post__image';
             imageContainer.appendChild(loadingDiv);
             imageContainer.appendChild(imgElement);
-
-            // Add to content
             contentHtml += imageContainer.outerHTML;
-
-            // Set image source after adding to DOM to track loading state
             setTimeout(() => {
                 const addedImg = li.querySelector('.post__image img');
                 if (addedImg) {
@@ -379,7 +348,6 @@ socket.on("message", (data) => {
                         const loadingEl = this.parentNode.querySelector('.image-loading');
                         if (loadingEl) loadingEl.style.display = 'none';
                     };
-                    
                     addedImg.onerror = function() {
                         const loadingEl = this.parentNode.querySelector('.image-loading');
                         if (loadingEl) {
@@ -387,29 +355,20 @@ socket.on("message", (data) => {
                             loadingEl.className = 'image-error';
                         }
                     };
-                    
                     addedImg.src = image;
                 }
             }, 10);
         }
-
-        // Add text if present
         if (text) {
-            // Process emoji markers in text with improved regex and error handling
             let processedText = text;
             const emojiRegex = /\[emoji:([^\]]+)\]/g;
-            
             processedText = processedText.replace(emojiRegex, (match, emojiFile) => {
-                // Create direct relative URL to ensure consistent rendering across environments
                 return `<img class="emoji" src="/emojis/${emojiFile}" alt="emoji" 
                     data-emoji="${emojiFile}"
                     onerror="console.error('Failed to load emoji in message:', this.getAttribute('data-emoji')); this.style.display='none'; this.insertAdjacentText('afterend', '😊');">`;
             });
-            
             contentHtml += `<div class="post__text">${processedText}</div>`;
         }
-
-        // Add voice if present
         if (voice) {
             const downloadMp3Btn = `
                 <a href="${voice}" download="voice-message.mp3" 
@@ -433,19 +392,15 @@ socket.on("message", (data) => {
                 >⬇️ Download as MP3</a>`;
             contentHtml += `<div class="post__voice"><audio controls src="${voice}"></audio>${downloadMp3Btn}</div>`;
         }
-
         li.innerHTML = contentHtml;
     } else {
         li.innerHTML = `<div class="post__text">${text || ''}</div>`;
     }
-
-    // Highlight all occurrences of the current user's name in received messages only
     const myName = nameInput.value;
     if (myName && name !== myName && name !== 'System') {
-        // Helper to highlight in all text nodes
         function highlightUserName(node) {
-            if (node.nodeType === 3) { // Text node
-                const regex = new RegExp(`\\b${myName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'g');
+            if (node.nodeType === 3) {
+                const regex = new RegExp(`\\b${myName.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\b`, 'g');
                 if (regex.test(node.nodeValue)) {
                     const span = document.createElement('span');
                     span.innerHTML = node.nodeValue.replace(regex, `<span class="current-user-highlight">${myName}</span>`);
@@ -457,14 +412,11 @@ socket.on("message", (data) => {
         }
         highlightUserName(li);
     }
-
     chatDisplay.appendChild(li);
-
-    // Only scroll to bottom if user is already near the bottom
     if (autoScroll) {
         chatDisplay.scrollTop = chatDisplay.scrollHeight;
     }
-});
+}
 
 let activityTimer;
 socket.on("activity", (name) => {
