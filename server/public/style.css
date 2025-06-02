@@ -2980,3 +2980,31 @@ body.swiping-left::after {
     padding: 0 0.18em;
     text-shadow: 0 1px 6px #a084ee33, 0 1px 0 #fff2;
 }
+
+.theme-picker-section {
+    margin-bottom: 1em;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+}
+
+.theme-picker-section label {
+    color: #a084ee;
+    font-weight: 600;
+    font-size: 1em;
+}
+
+#theme-picker {
+    padding: 0.2em 0.5em;
+    border-radius: 6px;
+    border: 1px solid #a084ee33;
+    background: #222;
+    color: #fff;
+    font-size: 1em;
+    outline: none;
+    transition: border 0.2s;
+}
+#theme-picker:focus {
+    border: 1.5px solid #a084ee;
+}

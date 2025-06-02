@@ -1477,3 +1477,34 @@ socket.on("message", (data) => {
     // Prevent zoom from resizing UI, but allow user scaling for accessibility
     meta.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=1';
 })();
+
+// === Theme Picker Logic ===
+const themePicker = document.getElementById('theme-picker');
+const themeList = [
+    'rain.gif',
+    'snowfall.gif',
+    'beach.gif',
+    'fantasy.gif',
+    'fireworks.gif',
+    'forest.gif',
+    'freedom.gif',
+    'halloween.gif'
+];
+
+function setThemeBackground(themeFile) {
+    document.body.style.background = `url('/themes/${themeFile}') center center fixed no-repeat`;
+    document.body.style.backgroundSize = 'cover';
+}
+
+if (themePicker) {
+    themePicker.addEventListener('change', function() {
+        setThemeBackground(this.value);
+        localStorage.setItem('vybchat-theme', this.value);
+    });
+    // On load, set theme from localStorage or default
+    const savedTheme = localStorage.getItem('vybchat-theme');
+    if (savedTheme && themeList.includes(savedTheme)) {
+        themePicker.value = savedTheme;
+        setThemeBackground(savedTheme);
+    }
+}
