@@ -29,10 +29,9 @@ class PrivateMessaging {
     }
     
     setupRingtone() {
-        // Use a pleasant, short, non-intrusive ringtone (public domain)
+        // Use the local ringtone for both calling and receiving
         this.ringtoneAudio = document.createElement('audio');
-        // Changed to a working, hotlink-friendly public domain ringtone
-        this.ringtoneAudio.src = 'https://cdn.jsdelivr.net/gh/naptha/tinysound@master/ringtone.mp3';
+        this.ringtoneAudio.src = '/assets/ringtone.mp3';
         this.ringtoneAudio.loop = true;
         this.ringtoneAudio.preload = 'auto';
         this.ringtoneAudio.volume = 0.7;
