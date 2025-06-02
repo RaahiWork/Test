@@ -1465,3 +1465,15 @@ socket.on("message", (data) => {
     }
     // ...existing code...
 });
+
+// Prevent UI zoom from changing the size of the UI on mobile by using viewport meta tag
+(function ensureViewportMetaTag() {
+    let meta = document.querySelector('meta[name="viewport"]');
+    if (!meta) {
+        meta = document.createElement('meta');
+        meta.name = 'viewport';
+        document.head.appendChild(meta);
+    }
+    // Prevent zoom from resizing UI, but allow user scaling for accessibility
+    meta.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=1';
+})();
