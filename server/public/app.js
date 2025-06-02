@@ -1283,10 +1283,10 @@ style.textContent = `
     background-color: rgba(255,255,255,0.05);
 }
 
-/* Make chat-display background fully transparent but keep text visible */
+/* Make chat-display background fully transparent but keep text and UI interactive */
 .chat-display {
     background: transparent;
-    opacity: 1; /* Ensure text is fully visible */
+    pointer-events: auto;
 }
 `;
 document.head.appendChild(style);
