@@ -861,7 +861,7 @@ document.addEventListener('DOMContentLoaded', function() {
             updateRoomHeader('Vibe');
         }
     } else {
-        main.style.opacity = '0.5';
+        main.style.opacity = '0';
         main.style.pointerEvents = 'none';
         nameInput.disabled = false;
         loginOverlay.classList.add('show');
