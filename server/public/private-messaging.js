@@ -12,6 +12,11 @@ class PrivateMessaging {
         this.currentCallUser = null;
         this.ringtoneAudio = null;
         this.ringing = false;
+        this.originalTitle = document.title;
+        this.originalFavicon = this.getFaviconHref();
+        this.tabFlashInterval = null;
+        this.tabFlashState = false;
+        this.windowFocused = true;
         this.init();
     }
     
@@ -20,6 +25,7 @@ class PrivateMessaging {
         this.setupSocketHandlers();
         this.setupVoiceCallUI();
         this.setupRingtone();
+        this.setupTabFocusHandlers();
     }
     
     setupRingtone() {
@@ -476,6 +482,8 @@ class PrivateMessaging {
             // Update the current chat display
             this.displayMessage(data, 'received');
         }
+
+        this.highlightTabForPrivateMessage(fromUser);
     }
     
     handlePrivateMessageSent(data) {
@@ -1042,6 +1050,50 @@ class PrivateMessaging {
         this.currentCallUser = null;
         this.isCaller = false;
         this.incomingCallData = null;
+    }
+
+    setupTabFocusHandlers() {
+        window.addEventListener('focus', () => {
+            this.windowFocused = true;
+            this.stopTabHighlight();
+        });
+        window.addEventListener('blur', () => {
+            this.windowFocused = false;
+        });
+    }
+
+    highlightTabForPrivateMessage(fromUser) {
+        if (this.windowFocused) return;
+        this.stopTabHighlight();
+        let flashTitle = `🔔 New message from ${fromUser}`;
+        let origTitle = this.originalTitle;
+        let origFavicon = this.originalFavicon;
+        let flashFavicon = '/images/logo.png'; // fallback
+        // Try to use a notification icon if available
+        if (document.querySelector('link[rel="icon"]')) {
+            flashFavicon = '/images/logo.png';
+        }
+        let link = document.querySelector('link[rel="icon"]');
+        this.tabFlashInterval = setInterval(() => {
+            this.tabFlashState = !this.tabFlashState;
+            document.title = this.tabFlashState ? flashTitle : origTitle;
+            if (link) link.href = this.tabFlashState ? flashFavicon : origFavicon;
+        }, 900);
+    }
+
+    stopTabHighlight() {
+        if (this.tabFlashInterval) {
+            clearInterval(this.tabFlashInterval);
+            this.tabFlashInterval = null;
+            document.title = this.originalTitle;
+            let link = document.querySelector('link[rel="icon"]');
+            if (link && this.originalFavicon) link.href = this.originalFavicon;
+        }
+    }
+
+    getFaviconHref() {
+        const link = document.querySelector('link[rel="icon"]');
+        return link ? link.href : '';
     }
 }
 

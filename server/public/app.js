@@ -1407,3 +1407,61 @@ chatDisplay.addEventListener('keydown', function(e) {
         header.click();
     }
 });
+
+// Add tab highlight for @mentions in main chat
+let origTitle = document.title;
+let origFavicon = (() => {
+    const link = document.querySelector('link[rel="icon"]');
+    return link ? link.href : '';
+})();
+let tabFlashInterval = null;
+let tabFlashState = false;
+let windowFocused = true;
+
+window.addEventListener('focus', () => {
+    windowFocused = true;
+    stopTabHighlight();
+});
+window.addEventListener('blur', () => {
+    windowFocused = false;
+});
+
+function highlightTabForMention(mentionSourceName) {
+    if (windowFocused) return;
+    stopTabHighlight();
+    let flashTitle = `🔔 Mentioned by ${mentionSourceName || 'Someone'}`;
+    let link = document.querySelector('link[rel="icon"]');
+    let flashFavicon = '/images/logo.png';
+    tabFlashInterval = setInterval(() => {
+        tabFlashState = !tabFlashState;
+        document.title = tabFlashState ? flashTitle : origTitle;
+        if (link) link.href = tabFlashState ? flashFavicon : origFavicon;
+    }, 900);
+}
+
+function stopTabHighlight() {
+    if (tabFlashInterval) {
+        clearInterval(tabFlashInterval);
+        tabFlashInterval = null;
+        document.title = origTitle;
+        let link = document.querySelector('link[rel="icon"]');
+        if (link && origFavicon) link.href = origFavicon;
+    }
+}
+
+// Highlight tab if message mentions current user and window is not focused
+socket.on("message", (data) => {
+    // ...existing code...
+    const myName = nameInput.value;
+    if (
+        myName &&
+        data.name !== myName &&
+        data.name !== 'System' &&
+        typeof data.text === 'string' &&
+        new RegExp(`\\b${myName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(data.text) &&
+        !windowFocused
+    ) {
+        highlightTabForMention(data.name);
+    }
+    // ...existing code...
+});
