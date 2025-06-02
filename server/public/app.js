@@ -269,6 +269,8 @@ function showUsers(users) {
     } else {
         usersList.innerHTML = `<em>No users in room</em>`;
     }
+    // Move clear room button here, below users list
+    addClearRoomButtonIfAdmin();
 }
 
 // Socket.io event handlers
@@ -1467,3 +1469,110 @@ if (themePicker) {
         setThemeBackground(savedTheme);
     }
 }
+
+// Add clear room button for Admin
+function addClearRoomButtonIfAdmin() {
+    const isAdmin = nameInput.value === 'Admin';
+    let clearBtn = document.getElementById('clear-room-btn');
+    if (isAdmin) {
+        if (!clearBtn) {
+            clearBtn = document.createElement('button');
+            clearBtn.id = 'clear-room-btn';
+            clearBtn.innerHTML = `
+                <span class="clear-room-icon" aria-hidden="true" style="vertical-align:middle;display:inline-block;margin-right:0.5em;">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;">
+                        <rect x="4" y="7" width="12" height="9" rx="2" fill="#fff" fill-opacity="0.15"/>
+                        <rect x="7" y="2" width="6" height="3" rx="1.5" fill="#fff" fill-opacity="0.25"/>
+                        <rect x="2" y="5" width="16" height="2" rx="1" fill="#fff" fill-opacity="0.25"/>
+                        <path d="M8 10V14" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+                        <path d="M12 10V14" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                </span>
+                <span class="clear-room-label">Clear Room</span>
+            `;
+            clearBtn.type = 'button';
+            clearBtn.setAttribute('tabindex', '0');
+            clearBtn.setAttribute('title', 'Remove all messages in this room');
+            clearBtn.onclick = function() {
+                if (confirm('Are you sure you want to clear all messages in this room?')) {
+                    socket.emit('clearRoom', { room: currentRoom });
+                }
+            };
+        }
+        // Inject modern style for the button only once
+        if (!document.getElementById('clear-room-btn-style')) {
+            const style = document.createElement('style');
+            style.id = 'clear-room-btn-style';
+            style.textContent = `
+                #clear-room-btn {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 0.5em;
+                    width: 100%;
+                    margin: 1.2em 0 0 0;
+                    padding: 0.7em 0;
+                    background: linear-gradient(90deg, #e74c3c 60%, #c0392b 100%);
+                    color: #fff;
+                    border: none;
+                    border-radius: 8px;
+                    font-size: 1.08em;
+                    font-weight: 600;
+                    letter-spacing: 0.02em;
+                    box-shadow: 0 2px 10px rgba(231,76,60,0.10);
+                    cursor: pointer;
+                    transition: background 0.18s, box-shadow 0.18s, transform 0.12s;
+                    outline: none;
+                    position: relative;
+                    z-index: 2;
+                }
+                #clear-room-btn:focus {
+                    box-shadow: 0 0 0 3px rgba(231,76,60,0.18);
+                    background: linear-gradient(90deg, #e74c3c 70%, #c0392b 100%);
+                }
+                #clear-room-btn:hover {
+                    background: linear-gradient(90deg, #c0392b 60%, #e74c3c 100%);
+                    box-shadow: 0 4px 16px rgba(231,76,60,0.16);
+                    transform: translateY(-1px) scale(1.025);
+                }
+                #clear-room-btn:active {
+                    background: #b93222;
+                    box-shadow: 0 1px 4px rgba(231,76,60,0.10);
+                    transform: scale(0.98);
+                }
+                #clear-room-btn .clear-room-icon {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                #clear-room-btn .clear-room-label {
+                    display: inline-block;
+                }
+                @media (max-width: 600px) {
+                    #clear-room-btn {
+                        font-size: 1em;
+                        padding: 0.6em 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        // Always move the button to just after the usersList
+        if (usersList && clearBtn.parentNode !== usersList.parentNode) {
+            usersList.parentNode.insertBefore(clearBtn, usersList.nextSibling);
+        }
+    } else if (clearBtn) {
+        clearBtn.remove();
+    }
+}
+// Call on room join and login
+socket.on('userList', ({ users }) => {
+    showUsers(users);
+});
+socket.on('roomList', () => {
+    showRooms();
+});
+socket.on('clearRoom', () => {
+    chatDisplay.innerHTML = '';
+    processedMessages.clear();
+});

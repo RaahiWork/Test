@@ -484,6 +484,16 @@ io.on('connection', socket => {
             io.to(targetUser.id).emit('voiceCallDeclined', { from, to });
         }
     });
+
+    // --- Add clearRoom event handler for Admin ---
+    socket.on('clearRoom', ({ room }) => {
+        // Only allow Admin to clear
+        const user = getUser(socket.id);
+        if (!user || user.name !== 'Admin') return;
+        if (!roomMessages[room]) return;
+        roomMessages[room] = [];
+        io.to(room).emit('clearRoom');
+    });
 });
 
 function buildMsg(name, text, image = null, voice = null) {
