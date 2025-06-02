@@ -341,7 +341,7 @@ socket.on("message", (data) => {
             : 'post__header--reply'
         }" ${name !== nameInput.value ? 'tabindex="0" role="button" aria-label="Reply to this user"' : ''}>
     <span class="post__header--name${name === nameInput.value ? ' current-user' : ''}">
-    ${name} <span class="registered-icon" title="Registered">✅</span>
+    ${name} <span class="verified-icon" title="Registered User">✔️</span>
     <span class="post__header--time">${localTime}</span> 
     </div>`;
 
