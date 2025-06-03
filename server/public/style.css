@@ -621,8 +621,7 @@ button {
         width: 220px !important;
         margin-right: 0.5rem !important;
         margin-left: 0 !important;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.12);
-        pointer-events: auto !important;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.12);        pointer-events: auto !important;
     }
 }
 
@@ -635,26 +634,37 @@ button {
         bottom: 0;
         z-index: 1003;
         background: #fff;
-        padding: 0.5rem 0.5rem env(safe-area-inset-bottom, 0.5rem) 0.5rem;
+        padding: 0.5rem calc(0.5rem + env(safe-area-inset-left, 0)) calc(0.5rem + env(safe-area-inset-bottom, 0)) calc(0.5rem + env(safe-area-inset-right, 0));
         margin: 0;
         border-radius: 0;
         box-shadow: 0 -2px 12px rgba(0,0,0,0.12);
         width: 100vw;
         max-width: 100vw;
+        box-sizing: border-box;
         /* Prevent shrinking */
         flex-shrink: 0;
     }
     .main-content {
         padding-bottom: 4.5rem !important; /* Height of form-msg + some buffer */
     }
+    .message-input-container {
+        background: #f8f8fa;
+        border: 1px solid #ddd;
+        margin: 0;
+        padding: 0.35rem 0.6rem;
+        min-height: 44px; /* Ensure minimum touch target size */
+        flex-grow: 1;
+        flex-shrink: 1;
+        min-width: 0; /* Allow shrinking */
+        border-radius: 10px;
+    }
     .message-input-container input {
         font-size: 16px !important; /* Prevent iOS zoom on focus */
         min-height: 2.2em;
         background: transparent;
-    }
-    .message-input-container {
-        background: #f8f8fa;
-        border: 1px solid #ddd;
+        padding: 0.3rem;
+        flex-grow: 1;
+        min-width: 0; /* Allow shrinking */
     }
     /* Make emoji picker appear above the input */
     #emoji-picker {
@@ -670,10 +680,14 @@ button {
 /* For very small screens, adjust further */
 @media (max-width: 480px) {
     .form-msg {
-        padding: 0.3rem 0.2rem env(safe-area-inset-bottom, 0.2rem) 0.2rem;
+        padding: 0.3rem calc(0.2rem + env(safe-area-inset-left, 0)) calc(0.2rem + env(safe-area-inset-bottom, 0)) calc(0.2rem + env(safe-area-inset-right, 0));
     }
     .main-content {
         padding-bottom: 5.2rem !important;
+    }
+    .message-input-container {
+        padding: 0.25rem 0.4rem;
+        gap: 0.3rem;
     }
 }
 
