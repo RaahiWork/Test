@@ -196,9 +196,9 @@ class RadioPlayer {
     renderStations() {
         const stationList = document.getElementById('station-list');
         if (!stationList) return;
-        
+
         stationList.innerHTML = '';
-        
+
         // Group stations by genre type
         const chillStations = this.stations.filter(s => ['Chill', 'Ambient', 'Chill Out'].includes(s.genre));
         const electronicStations = this.stations.filter(s => ['Electronic', 'Dance', 'Hardstyle'].includes(s.genre));
@@ -216,6 +216,19 @@ class RadioPlayer {
         this.addStationSection(stationList, 'Pop & Hits', popStations);
         this.addStationSection(stationList, 'Hip Hop & R&B', urbanStations);
         this.addStationSection(stationList, 'Indie & Alternative', indieStations);
+        
+        // Add credits at the end
+        const credits = document.createElement('div');
+        credits.className = 'radio-credits';
+        credits.innerHTML = `
+            <div style="margin-top:1.5em;font-size:0.95em;color:#888;text-align:center;">
+                <strong>Radio Credits:</strong>
+                <br>
+                Streams provided by <a href="https://www.ilovemusic.de/" target="_blank" rel="noopener">I Love Music</a> and <a href="https://www.infomaniak.com/en/radio" target="_blank" rel="noopener">Infomaniak</a>.
+                <br>
+            </div>
+        `;
+        stationList.appendChild(credits);
     }
     
     addStationSection(container, title, stations) {
@@ -486,3 +499,22 @@ document.addEventListener('DOMContentLoaded', function() {
     
     setupRadioSocketHandlers();
 });
+
+// Add minimal CSS for credits
+const radioCreditsStyle = document.createElement('style');
+radioCreditsStyle.textContent = `
+.radio-credits {
+    margin-top: 1.5em;
+    font-size: 0.95em;
+    color: #888;
+    text-align: center;
+}
+.radio-credits a {
+    color: #6c63ff;
+    text-decoration: none;
+}
+.radio-credits a:hover {
+    text-decoration: underline;
+}
+`;
+document.head.appendChild(radioCreditsStyle);
