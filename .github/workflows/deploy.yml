@@ -23,9 +23,12 @@ jobs:
       - name: Deploy over SSH
         run: |
           ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            set -e  # fail fast on errors
             cd ~/Test/server
+            git reset --hard  # discard any local changes
+            git clean -fd     # remove untracked files (optional)
             git pull origin main
-            npm install
+            npm ci            # faster & cleaner than `npm install`
             pm2 delete vybchat || true
             pm2 start npm --name vybchat -- run start
           EOF
