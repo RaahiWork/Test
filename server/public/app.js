@@ -897,32 +897,13 @@ function setupEmojiAndImageHandlers() {
     // Add emoji picker functionality
     const emojiBtn = document.getElementById('emoji-btn');
     const emojiPicker = document.getElementById('emoji-picker');
-    
-    if (emojiBtn && emojiPicker) {
-        emojiBtn.addEventListener('click', () => {
-            if (emojiPicker.style.display === 'none' || !emojiPicker.style.display) {
-                emojiPicker.style.display = 'flex';
-                loadEmojis();
-            } else {
-                emojiPicker.style.display = 'none';
-            }
-        });
-        
-        // Add close button functionality
-        const closeEmojiPickerBtn = document.getElementById('close-emoji-picker');
-        if (closeEmojiPickerBtn) {
-            closeEmojiPickerBtn.addEventListener('click', () => {
-                emojiPicker.style.display = 'none';
-            });
-        }
-        
-        // Close emoji picker when clicking outside
-        document.addEventListener('click', (e) => {
-            if (emojiPicker.style.display !== 'none' && 
-                !emojiPicker.contains(e.target) && 
-                e.target !== emojiBtn && 
-                !emojiBtn.contains(e.target)) {
-                emojiPicker.style.display = 'none';
+    const msgInput = document.getElementById('message');
+
+    if (emojiBtn && emojiPicker && msgInput) {
+        emojiBtn.addEventListener('click', function(e) {
+            // Use the new global function from emoji-handler.js
+            if (window.openEmojiPickerFor) {
+                window.openEmojiPickerFor(e, msgInput, emojiBtn);
             }
         });
     }

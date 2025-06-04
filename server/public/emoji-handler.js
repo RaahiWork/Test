@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const img = document.createElement('img');
             // Set data-src for lazy loading, and a placeholder or small initial src if desired
             img.setAttribute('data-src', `/emojis/${emojiFile}`);
-            img.src = '/emojis/placeholder.gif'; // Optional: replace with a real placeholder
+            img.src = '/images/placeholder.gif'; // Use a valid placeholder path
             img.alt = emojiFile.replace(/\.\w+$/, '');
             img.title = emojiFile.replace(/\.\w+$/, '');
             img.loading = 'lazy'; // Use native browser lazy loading
