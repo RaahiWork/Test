@@ -27,12 +27,13 @@ jobs:
             cd ~/Test/server
             git fetch origin
             git reset --hard origin/main
-            npm ci
+            npm install
             rm -rf dist build .next .cache tmp
-            npm run build || true  # if applicable
+            npm run build || true
             pm2 delete vybchat || true
             pm2 flush
             pm2 start npm --name vybchat -- run start
           EOF
+
 
 
