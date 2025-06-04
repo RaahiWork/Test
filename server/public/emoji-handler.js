@@ -7,11 +7,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Default elements for the main chat (if this script is also used for it)
     const mainChatEmojiBtn = document.getElementById('emoji-btn'); // The button in the main chat form
     const mainChatMessageInput = document.getElementById('message'); // The input in the main chat form
-    
-    // Pagination state
+      // Pagination state
     let allEmojis = [];
     let currentPage = 1;
-    const emojisPerPage = 10;
+    const emojisPerPage = 50;
 
     // Variables to store the current target for the emoji picker
     let currentTargetInput = null;
