@@ -15,21 +15,54 @@
     <main>
         <aside class="side-pane left-pane">
             <h3>Chat Rooms</h3>
+            <!-- Theme Picker -->
+            <div class="theme-picker-section" style="margin-bottom:1em;">
+                <label for="theme-picker" style="color:#a084ee;font-weight:600;">Theme:</label>
+                <select id="theme-picker" style="margin-left:0.5em;padding:0.2em 0.5em;border-radius:6px;border:1px solid #a084ee33;background:#222;color:#fff;font-size:1em;">
+                    <option value="fireflies.gif">Fireflies</option>
+                    <option value="rain.gif">Rain</option>
+                    <option value="snowfall.gif">Snowfall</option>
+                    <option value="beach.gif">Beach</option>
+                    <option value="fantasy.gif">Fantasy</option>
+                    <option value="fireworks.gif">Fireworks</option>
+                    <option value="forest.gif">Forest</option>
+                    <option value="freedom.gif">Freedom</option>
+                    <option value="halloween.gif">Halloween</option>
+                </select>
+            </div>
+            <!-- End Theme Picker -->
             <div id="rooms-list-container"></div>
             <div class="connection-status">Connecting...</div>
+            
+            <!-- Add radio station section -->
+            <div class="radio-section">
+                <h4>🎵 Radio Stations</h4>
+                <div class="radio-player">
+                    <div class="radio-controls">
+                        <button id="play-pause-btn" class="radio-btn play-btn" title="Play/Pause">
+                            <span class="play-icon">▶️</span>
+                        </button>
+                        <button id="volume-btn" class="radio-btn volume-btn" title="Volume">
+                            <span class="volume-icon">🔊</span>
+                        </button>
+                        <input type="range" id="volume-slider" class="volume-slider" min="0" max="100" value="50">
+                    </div>
+                    
+                    <div class="station-info">
+                        <div class="current-station">Select a station</div>
+                        <div class="station-status">Ready to play</div>
+                    </div>
+                    
+                    <div class="station-list" id="station-list">
+                        <!-- Radio stations will be populated here -->
+                    </div>
+                </div>
+            </div>
         </aside>
 
         <div class="side-pane-toggle left-toggle">☰</div>
         
         <div class="main-content">
-            <div class="dev-banner">
-                <div class="banner-content">
-                    <span class="banner-icon">🚀</span>
-                    <p>Site under development - Coming Soon: Voice Messages, File Sharing & Themes!</p>
-                    <span class="banner-icon">✨</span>
-                </div>
-            </div>
-            
             <div class="current-room-header">
                 <div class="room-info-container">
                     <h2 class="current-room-name">Select a room to join</h2>
@@ -43,6 +76,14 @@
                 <div class="activity"></div>
             </div>
 
+            <!-- Voice message action buttons, hidden by default -->
+            <div id="voice-action-container" style="display:none;gap:0.5em;margin-bottom:0.5em;">
+                <audio id="voice-audio-preview" controls style="vertical-align:middle;"></audio>
+                <button type="button" id="voice-send-btn">Send</button>
+                <button type="button" id="voice-cancel-btn">Cancel</button>
+                <button type="button" id="voice-download-btn">Download as MP3</button>
+            </div>
+
             <form class="form-msg" id="message-form" onsubmit="return window.sendMessage(event)">
                 <div class="message-input-container">
                     <input type="text" id="message" placeholder="Type a message..." autocomplete="off">
@@ -53,6 +94,9 @@
                         </svg>
                     </button>
                     <input type="file" id="image-file" accept="image/*" style="display:none">
+                    <!-- Voice message button and input -->
+                    <button type="button" id="voice-record-btn" class="voice-btn" aria-label="Record voice">🎤</button>
+                    <input type="file" id="voice-file" accept="audio/*" style="display:none">
                 </div>
                 <button type="submit" id="send-button">Send</button>
             </form>
@@ -74,6 +118,14 @@
                 </button>
             </div>
             <section class="user-list"></section>
+            
+            <!-- Add private messaging section -->
+            <div class="private-messaging-section">
+                <h4>Private Messages</h4>
+                <div class="private-conversations" id="private-conversations">
+                    <!-- Private conversation tabs will be added here -->
+                </div>
+            </div>
         </aside>
         
         <div class="side-pane-toggle right-toggle">👤</div>
@@ -82,12 +134,60 @@
 
     <div class="login-overlay">
         <form class="login-form" id="login-form">
-            <div class="login-logo">
+            <div style="text-align:center;margin-bottom:0.15em;">
+                <div style="
+                    font-size:1em;
+                    font-weight:600;
+                    color:#fff;
+                    background: linear-gradient(90deg, #6c63ff 0%, #a084ee 100%);
+                    border-radius:6px;
+                    padding:0.32em 0.7em;
+                    box-shadow:0 1px 6px rgba(108,99,255,0.08);
+                    text-shadow:0 1px 4px #6c63ff22,0 1px 0 #fff2;
+                    border:1px solid #a084ee33;
+                    display:inline-block;
+                    margin-bottom:0.08em;
+                    letter-spacing:0.01em;
+                    max-width: 100%;
+                    overflow: visible;
+                    white-space: nowrap;
+                ">
+                    <span style="font-size:1.1em;vertical-align:-0.1em;margin-right:0.18em;">✨</span>
+                    Real-time chat fun — <span style="color:#ffe066;">no clutter</span>, just 
+                    <span style="
+                        font-weight:bold;
+                        font-size:1.18em;
+                        color:#fff;
+                        letter-spacing:0.02em;
+                        padding:0 0.08em;
+                        display:inline;
+                        filter: drop-shadow(0 1px 6px #a084ee88);
+                    ">vibes</span>.
+                </div>
+            </div>
+            <div class="login-logo" style="margin-bottom:0.09em;">
                 <img src="images/logo.png" alt="Vyb Chat Logo" class="logo-image">
             </div>
-            <h2>Welcome to Vyb Chat!</h2>
-            <input type="text" id="login-username" name="name" placeholder="Your username" required autocomplete="off">
-            <input type="password" id="login-password" name="password" placeholder="Your password" required autocomplete="off">
+            <div style="text-align:center;margin-bottom:0.18em;">
+                <span style="
+                    display:inline-block;
+                    font-size:1.5em;
+                    font-weight:800;
+                    letter-spacing:0.01em;
+                    color:#6c63ff;
+                    text-shadow:0 1px 6px #a084ee33,0 1px 0 #fff2;
+                    background: linear-gradient(90deg, #6c63ff 0%, #a084ee 100%);
+                    -webkit-background-clip:text;
+                    -webkit-text-fill-color:transparent;
+                    background-clip:text;
+                ">
+                    Welcome to Vyb Chat!
+                </span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;">
+                <input type="text" id="login-username" name="name" placeholder="Your username" required autocomplete="off" style="text-align:center;">
+                <input type="password" id="login-password" name="password" placeholder="Your password" required autocomplete="off" style="text-align:center;margin-top:0.5em;">
+            </div>
             <div id="login-message" class="login-message"></div>
             <div class="login-instructions">
                 <p>🆕 New user? Just enter username + password to register<br>
@@ -95,6 +195,9 @@
                 <small>Username: 3-20 chars (letters, numbers, underscore only) • Password: 6+ chars</small>
             </div>
             <button type="submit" onclick="handleLoginSubmit(event)" id="login-button" class="login-button">Enter Chat</button>
+            <div class="login-support" style="margin-top:0.8em;text-align:center;font-size:0.93em;color:#a084ee;">
+                💬 Need help? Reach us at <a href="mailto:support@vybchat.com" style="color:#6c63ff;text-decoration:underline;">support@vybchat.com</a>
+            </div>
         </form>
     </div>
 
@@ -103,11 +206,61 @@
         <input type="hidden" name="name" id="name">
     </form>
 
+    <!-- Add private message modal -->
+    <div id="private-message-modal" class="private-message-modal" style="display: none;">
+        <div class="private-message-content">
+            <div class="private-message-header">
+                <h3 id="private-message-title">Private Message</h3>
+                <div style="display:flex;gap:0.5em;align-items:center;">
+                    <button id="private-voice-call-btn" class="voice-call-btn" title="Start voice call" style="font-size:1.3em;padding:0.2em 0.5em;border-radius:50%;background:none;border:none;cursor:pointer;">📞</button>
+                    <button id="close-private-message" class="close-btn">×</button>
+                </div>
+            </div>
+            
+            <div class="private-message-chat" id="private-message-chat">
+                <!-- Private messages will appear here -->
+            </div>
+            
+            <form class="private-message-form" id="private-message-form">
+                <div class="private-message-input-container">
+                    <input type="text" id="private-message-input" placeholder="Type a private message..." autocomplete="off">
+                    <button type="button" id="private-emoji-btn" class="emoji-btn" aria-label="Select emoji">😊</button>
+                    <button type="button" id="private-image-btn" class="image-btn" aria-label="Upload image">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                    </button>
+                    <input type="file" id="private-image-file" accept="image/*" style="display:none">
+                </div>
+                <button type="submit" id="private-send-button">Send</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Voice call modal for private messaging -->
+    <div id="private-voice-call-modal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);z-index:2000;align-items:center;justify-content:center;">
+        <!-- Modal content will be injected by JS -->
+    </div>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="app.js"></script>
     <script src="emoji-handler.js"></script>
     <script src="touch-handler.js"></script>
+    <script src="mobile-sidepane.js"></script> <!-- Add this line -->
     <script src="auth.js"></script>
+    <script src="private-messaging.js"></script>
+    <script src="radio-player.js"></script>
+    <script src="voice-message.js"></script>
+    <script>
+        // Remove any JS that does: msgInput.focus(); after sending a message
+        // Add this utility to conditionally set autofocus (optional, for clarity)
+        (function() {
+            var isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            var msgInput = document.getElementById('message');
+            if (msgInput && !isiOS) {
+                msgInput.setAttribute('autofocus', 'autofocus');
+            }
+        })();
+    </script>
 
 </body>
 

@@ -66,7 +66,8 @@ function findCachedUser(username) {
         return null;
     }
     return cachedUsers.find(user => 
-        user.username.toLowerCase() === username.toLowerCase()
+        (user.username && user.username.toLowerCase() === username.toLowerCase()) ||
+        (user.displayName && user.displayName.toLowerCase() === username.toLowerCase())
     );
 }
 
@@ -119,15 +120,17 @@ function attemptRegistration(username, password) {
         const registerData = JSON.parse(xhr.responseText);
         
         if (xhr.status === 200 || xhr.status === 201) {
-            showLoginMessage(`Welcome ${username}! Your account has been created.`, 'success');
+            const displayName = registerData.user.displayName || registerData.user.username;
+            showLoginMessage(`Welcome ${displayName}! Your account has been created.`, 'success');
             
             cachedUsers.push({
                 _id: registerData.user.id,
                 username: registerData.user.username,
+                displayName: displayName,
                 createdAt: registerData.user.createdAt
             });
             
-            setTimeout(() => proceedWithLogin(username), 1500);
+            setTimeout(() => proceedWithLogin(displayName), 1500);
             
         } else {
             if (xhr.status === 409) {
@@ -169,8 +172,9 @@ function attemptLogin(username, password) {
         const loginData = JSON.parse(xhr.responseText);
 
         if (xhr.status === 200) {
-            showLoginMessage(`Welcome back, ${username}!`, 'success');
-            setTimeout(() => proceedWithLogin(username), 1500);
+            const displayName = loginData.user.displayName || loginData.user.username;
+            showLoginMessage(`Welcome back, ${displayName}!`, 'success');
+            setTimeout(() => proceedWithLogin(displayName), 1500);
 
         } else {
             showLoginMessage('Incorrect password. Please try again.');
@@ -261,17 +265,21 @@ function handleLoginSubmit(e) {
     }
 }
 
-function proceedWithLogin(username) {
+function proceedWithLogin(displayName) {
     clearLoginMessage();
     
-    const nameField = document.querySelector('#name');
-    if (nameField) nameField.value = username;
+    // Use the database format for the username if available
+    const cachedUser = findCachedUser(displayName);
+    const dbDisplayName = cachedUser ? (cachedUser.displayName || cachedUser.username) : displayName;
     
-    localStorage.setItem('vybchat-username', username);
+    const nameField = document.querySelector('#name');
+    if (nameField) nameField.value = dbDisplayName;
+    
+    localStorage.setItem('vybchat-username', dbDisplayName);
     
     const nameInput = document.querySelector('#name');
     if (nameInput) {
-        nameInput.value = username;
+        nameInput.value = dbDisplayName;
         nameInput.disabled = true;
         nameInput.classList.add('disabled');
     }
@@ -290,7 +298,18 @@ function proceedWithLogin(username) {
         main.style.pointerEvents = 'auto';
         
         if (window.initializeSocketConnection) {
-            window.initializeSocketConnection(username);
+            window.initializeSocketConnection(dbDisplayName);
+        } else if (window.socket && window.socket.connected) {
+            // Auto-join Vibe room after login
+            window.socket.emit('enterRoom', {
+                name: dbDisplayName,
+                room: 'Vibe'
+            });
+            
+            // Update current room in app.js if available
+            if (window.currentRoom !== undefined) {
+                window.currentRoom = 'Vibe';
+            }
         }
     }, 600);
 }

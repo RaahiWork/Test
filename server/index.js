@@ -104,7 +104,7 @@ app.post('/api/register', async (req, res) => {
             });
         }
         
-        // Check if user already exists
+        // Check if user already exists (case-insensitive check)
         const existingUser = await User.findByUsername(username);
         if (existingUser) {
             return res.status(409).json({ 
@@ -112,24 +112,35 @@ app.post('/api/register', async (req, res) => {
             });
         }
         
-        // Create new user
+        // Create new user - store username in lowercase, preserve original case in displayName
+        const trimmedUsername = username.trim();
+        
         const user = new User({
-            username: username.toLowerCase(),
+            username: trimmedUsername.toLowerCase(), // Store in lowercase
+            displayName: trimmedUsername, // Preserve original case
             password
         });
         
         await user.save();
+        
+        // console.log('Saved user:', {
+        //     id: user._id,
+        //     username: user.username,
+        //     displayName: user.displayName
+        // });
         
         res.status(201).json({
             message: 'User registered successfully',
             user: {
                 id: user._id,
                 username: user.username,
+                displayName: user.displayName, // Return the display name with preserved case
                 createdAt: user.createdAt
             }
         });
         
     } catch (error) {
+        console.error('Registration error details:', error);
         if (error.name === 'ValidationError') {
             const errorMessages = Object.values(error.errors).map(err => err.message);
             return res.status(400).json({ 
@@ -177,6 +188,7 @@ app.post('/api/login', async (req, res) => {
             user: {
                 id: user._id,
                 username: user.username,
+                displayName: user.displayName, // Return the display name with preserved case
                 createdAt: user.createdAt
             }
         });
@@ -192,7 +204,7 @@ app.post('/api/login', async (req, res) => {
 // Get all users endpoint (for admin purposes)
 app.get('/api/users', async (req, res) => {
     try {
-        const users = await User.find({}, 'username createdAt').sort({ createdAt: -1 });
+        const users = await User.find({}, 'username displayName createdAt').sort({ createdAt: -1 });
         res.json({
             count: users.length,
             users
@@ -216,6 +228,10 @@ const UsersState = {
         this.users = newUsersArray
     }
 }
+
+// --- Room message history ---
+const roomMessages = {};
+const MAX_ROOM_HISTORY = 50;
 
 const io = new Server(expressServer, {
     cors: {
@@ -242,6 +258,57 @@ io.on('connection', socket => {
         });
     });
 
+    // Add handler for private messages
+    socket.on('privateMessage', ({ fromUser, toUser, text, image = null, voice = null }) => {
+        //console.log('Private message received:', { fromUser, toUser, text: text ? 'Text message' : null, image: image ? 'Image data' : null });
+        
+        // Find the target user's socket
+        const targetUser = UsersState.users.find(user => user.name === toUser);
+        
+        if (targetUser) {
+            const messageData = {
+                fromUser,
+                toUser,
+                text,
+                image,
+                voice,
+                time: new Intl.DateTimeFormat('default', {
+                    hour: 'numeric',
+                    minute: 'numeric',
+                    second: 'numeric',
+                }).format(new Date())
+            };
+            
+            // Send message to target user
+            io.to(targetUser.id).emit('privateMessage', messageData);
+            
+            // Send confirmation back to sender
+            socket.emit('privateMessageSent', messageData);
+            
+            //console.log(`Private message sent from ${fromUser} to ${toUser}`);
+        } else {
+            // User not found or offline
+            //console.log(`User ${toUser} not found or offline`);
+            socket.emit('privateMessageError', {
+                error: `User ${toUser} is not online`,
+                toUser
+            });
+        }
+    });
+
+    // Add handler for getting online users for private messaging
+    socket.on('getOnlineUsers', () => {
+        const currentUser = getUser(socket.id);
+        if (currentUser) {
+            // Get all online users except the current user
+            const onlineUsers = UsersState.users
+                .filter(user => user.name !== currentUser.name)
+                .map(user => ({ name: user.name, room: user.room }));
+            
+            socket.emit('onlineUsers', onlineUsers);
+        }
+    });
+
     socket.on('enterRoom', ({ name, room }) => {
         // leave previous room 
         const prevRoom = getUser(socket.id)?.room
@@ -265,6 +332,14 @@ io.on('connection', socket => {
 
         // To user who joined 
         socket.emit('message', buildMsg(ADMIN, `You have joined the ${user.room} chat room`))
+
+        // Send last 50 messages to the user
+        if (roomMessages[user.room]) {
+            const lastMsgs = roomMessages[user.room].slice(-50);
+            lastMsgs.forEach(msg => {
+                socket.emit('message', msg);
+            });
+        }
 
         // To everyone else 
         socket.broadcast.to(user.room).emit('message', buildMsg(ADMIN, `${user.name} has joined the room`))
@@ -302,7 +377,14 @@ io.on('connection', socket => {
     socket.on('message', ({ name, text }) => {
         const room = getUser(socket.id)?.room
         if (room) {
-            io.to(room).emit('message', buildMsg(name, text))
+            const msg = buildMsg(name, text);
+            // Store in room history
+            if (!roomMessages[room]) roomMessages[room] = [];
+            roomMessages[room].push(msg);
+            if (roomMessages[room].length > MAX_ROOM_HISTORY) {
+                roomMessages[room].splice(0, roomMessages[room].length - MAX_ROOM_HISTORY);
+            }
+            io.to(room).emit('message', msg)
         }
     });
 
@@ -316,16 +398,46 @@ io.on('connection', socket => {
                 socket.emit('message', buildMsg(ADMIN, "Invalid image format. Please try again."));
                 return;
             }
-            
             try {
-                // Send to everyone in the room including sender
-                io.to(room).emit('message', buildMsg(name, null, image));
+                const msg = buildMsg(name, null, image);
+                // Store in room history
+                if (!roomMessages[room]) roomMessages[room] = [];
+                roomMessages[room].push(msg);
+                if (roomMessages[room].length > MAX_ROOM_HISTORY) {
+                    roomMessages[room].splice(0, roomMessages[room].length - MAX_ROOM_HISTORY);
+                }
+                io.to(room).emit('message', msg);
             } catch (error) {
                 console.error('Error sending image message:', error);
                 socket.emit('message', buildMsg(ADMIN, `Error sending image: ${error.message}`));
             }
         } else {
             socket.emit('message', buildMsg(ADMIN, "You must join a room before sending images"));
+        }
+    });
+
+    // Add handler for voice messages in chat rooms
+    socket.on('voiceMessage', ({ name, voice }) => {
+        const room = getUser(socket.id)?.room;
+        if (room) {
+            if (!voice || !voice.startsWith('data:audio/')) {
+                socket.emit('message', buildMsg(ADMIN, "Invalid voice message format."));
+                return;
+            }
+            try {
+                const msg = buildMsg(name, null, null, voice);
+                // Store in room history
+                if (!roomMessages[room]) roomMessages[room] = [];
+                roomMessages[room].push(msg);
+                if (roomMessages[room].length > MAX_ROOM_HISTORY) {
+                    roomMessages[room].splice(0, roomMessages[room].length - MAX_ROOM_HISTORY);
+                }
+                io.to(room).emit('message', msg);
+            } catch (error) {
+                socket.emit('message', buildMsg(ADMIN, `Error sending voice message: ${error.message}`));
+            }
+        } else {
+            socket.emit('message', buildMsg(ADMIN, "You must join a room before sending voice messages"));
         }
     });
     
@@ -336,13 +448,60 @@ io.on('connection', socket => {
             socket.broadcast.to(room).emit('activity', name)
         }
     });
+
+    // --- WebRTC signaling for private voice calls ---
+    socket.on('voiceCallOffer', ({ from, to, offer }) => {
+        const targetUser = UsersState.users.find(user => user.name === to);
+        if (targetUser) {
+            io.to(targetUser.id).emit('voiceCallOffer', { from, to, offer });
+        }
+    });
+
+    socket.on('voiceCallAnswer', ({ from, to, answer }) => {
+        const targetUser = UsersState.users.find(user => user.name === to);
+        if (targetUser) {
+            io.to(targetUser.id).emit('voiceCallAnswer', { from, to, answer });
+        }
+    });
+
+    socket.on('voiceCallCandidate', ({ from, to, candidate }) => {
+        const targetUser = UsersState.users.find(user => user.name === to);
+        if (targetUser) {
+            io.to(targetUser.id).emit('voiceCallCandidate', { from, to, candidate });
+        }
+    });
+
+    socket.on('voiceCallEnd', ({ from, to }) => {
+        const targetUser = UsersState.users.find(user => user.name === to);
+        if (targetUser) {
+            io.to(targetUser.id).emit('voiceCallEnd', { from, to });
+        }
+    });
+
+    socket.on('voiceCallDeclined', ({ from, to }) => {
+        const targetUser = UsersState.users.find(user => user.name === to);
+        if (targetUser) {
+            io.to(targetUser.id).emit('voiceCallDeclined', { from, to });
+        }
+    });
+
+    // --- Add clearRoom event handler for Admin ---
+    socket.on('clearRoom', ({ room }) => {
+        // Only allow Admin to clear
+        const user = getUser(socket.id);
+        if (!user || user.name !== 'Admin') return;
+        if (!roomMessages[room]) return;
+        roomMessages[room] = [];
+        io.to(room).emit('clearRoom');
+    });
 });
 
-function buildMsg(name, text, image = null) {
+function buildMsg(name, text, image = null, voice = null) {
     return {
         name,
         text,
-        image, // Add image to the message object
+        image,
+        voice,
         time: new Intl.DateTimeFormat('default', {
             hour: 'numeric',
             minute: 'numeric',
@@ -354,9 +513,10 @@ function buildMsg(name, text, image = null) {
 // User functions 
 function activateUser(id, name, room) {
     const user = { id, name, room }
+    // Remove any existing user with the same ID first, then add the new user
     UsersState.setUsers([
         user,
-        ...UsersState.users.filter(user => user.id !== id),
+        ...UsersState.users.filter(user => user.id !== id)
     ])
     return user
 }
@@ -364,17 +524,31 @@ function activateUser(id, name, room) {
 function userLeavesApp(id) {
     UsersState.setUsers(
         UsersState.users.filter(user => user.id !== id)
-    );
+    )
 }
 
 function getUser(id) {
-    return UsersState.users.find(user => user.id === id);
+    return UsersState.users.find(user => user.id === id)
 }
 
 function getUsersInRoom(room) {
-    return UsersState.users.filter(user => user.room === room);
+    // Filter users by room
+    const usersInRoom = UsersState.users.filter(user => user.room === room)
+    
+    // Remove duplicates by name (case-insensitive) since username is now always lowercase
+    const uniqueUsers = new Map()
+    
+    usersInRoom.forEach(user => {
+        const lowerName = user.name.toLowerCase()
+        
+        if (!uniqueUsers.has(lowerName)) {
+            uniqueUsers.set(lowerName, user)
+        }
+    })
+    
+    return Array.from(uniqueUsers.values())
 }
 
 function getAllActiveRooms() {
-    return Array.from(new Set(UsersState.users.map(user => user.room)));
+    return Array.from(new Set(UsersState.users.map(user => user.room)))
 }

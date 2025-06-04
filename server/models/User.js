@@ -7,9 +7,19 @@ const userSchema = new mongoose.Schema({
         required: [true, 'Username is required'],
         unique: true,
         trim: true,
+        lowercase: true, // Store username in lowercase
         minlength: [3, 'Username must be at least 3 characters long'],
         maxlength: [20, 'Username cannot exceed 20 characters'],
         match: [/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores']
+    },
+    displayName: {
+        type: String,
+        required: false, // Make it optional for migration
+        trim: true,
+        minlength: [3, 'Display name must be at least 3 characters long'],
+        maxlength: [20, 'Display name cannot exceed 20 characters'],
+        match: [/^[a-zA-Z0-9_]+$/, 'Display name can only contain letters, numbers, and underscores']
+        // Remove the default function - we'll handle this in the server code
     },
     password: {
         type: String,
@@ -44,7 +54,7 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
     }
 };
 
-// Static method to find user by username
+// Static method to find user by username (now username is always lowercase)
 userSchema.statics.findByUsername = function(username) {
     return this.findOne({ username: username.toLowerCase() });
 };

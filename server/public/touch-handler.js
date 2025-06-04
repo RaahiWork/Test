@@ -26,6 +26,21 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Handle touch start - record initial position
     function handleTouchStart(e) {
+        // If a side pane is open and the touch starts inside it, disable swipe on mobile
+        if (window.innerWidth <= 768) {
+            const isOpenLeftPane = leftPane && leftPane.classList.contains('open');
+            const isOpenRightPane = rightPane && rightPane.classList.contains('open');
+
+            if (isOpenLeftPane && leftPane.contains(e.target)) {
+                touchStarted = false;
+                return;
+            }
+            if (isOpenRightPane && rightPane.contains(e.target)) {
+                touchStarted = false;
+                return;
+            }
+        }
+
         touchStartX = e.touches[0].clientX;
         touchStarted = true;
     }
@@ -63,14 +78,14 @@ document.addEventListener('DOMContentLoaded', function() {
             if (swipeDistance > 0) {
                 // Swipe right - show left panel
                 if (leftPane && window.innerWidth <= 768) {
-                    leftPane.classList.add('active');
-                    if (rightPane) rightPane.classList.remove('active');
+                    leftPane.classList.add('open');
+                    if (rightPane) rightPane.classList.remove('open');
                 }
             } else {
                 // Swipe left - show right panel
                 if (rightPane && window.innerWidth <= 768) {
-                    rightPane.classList.add('active');
-                    if (leftPane) leftPane.classList.remove('active');
+                    rightPane.classList.add('open');
+                    if (leftPane) leftPane.classList.remove('open');
                 }
             }
         }
@@ -80,22 +95,24 @@ document.addEventListener('DOMContentLoaded', function() {
         touchStarted = false;
     }
     
-    // Close panels when clicking/tapping outside
+    // Close panels when clicking/tapping outside - This logic is now handled by mobile-sidepane.js
+    /*
     document.addEventListener('click', function(e) {
         if (window.innerWidth <= 768) {
-            if (leftPane && leftPane.classList.contains('active') && 
+            if (leftPane && leftPane.classList.contains('open') && 
                 !leftPane.contains(e.target) && 
                 !e.target.closest('.left-toggle')) {
-                leftPane.classList.remove('active');
+                leftPane.classList.remove('open');
             }
             
-            if (rightPane && rightPane.classList.contains('active') && 
+            if (rightPane && rightPane.classList.contains('open') && 
                 !rightPane.contains(e.target) && 
                 !e.target.closest('.right-toggle')) {
-                rightPane.classList.remove('active');
+                rightPane.classList.remove('open');
             }
         }
     });
+    */
     
     // Add swipe indicators
     const swipeIndicatorLeft = document.createElement('div');

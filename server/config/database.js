@@ -8,6 +8,10 @@ const connectDB = async () => {
         const conn = await mongoose.connect(mongoURI, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
+            keepAlive: true,
+            keepAliveInitialDelay: 300000, // 5 minutes
+            socketTimeoutMS: 0, // No timeout
+            connectTimeoutMS: 30000 // 30 seconds
         });
 
         //console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
@@ -18,7 +22,18 @@ const connectDB = async () => {
         });
 
         mongoose.connection.on('disconnected', () => {
-            console.warn('⚠️ MongoDB disconnected');
+            console.warn('⚠️ MongoDB disconnected. Attempting to reconnect...');
+            // Try to reconnect automatically
+            mongoose.connect(mongoURI, {
+                useNewUrlParser: true,
+                useUnifiedTopology: true,
+                keepAlive: true,
+                keepAliveInitialDelay: 300000,
+                socketTimeoutMS: 0,
+                connectTimeoutMS: 30000
+            }).catch(err => {
+                console.error('❌ MongoDB reconnection error:', err);
+            });
         });
 
         // Graceful shutdown

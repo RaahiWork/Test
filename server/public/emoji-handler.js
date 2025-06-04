@@ -1,65 +1,73 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Get necessary elements
-    const emojiBtn = document.getElementById('emoji-btn');
+    // Get necessary elements for the picker UI
     const emojiPicker = document.getElementById('emoji-picker');
     const closeEmojiPicker = document.getElementById('close-emoji-picker');
     const emojiContainer = document.getElementById('emoji-container');
-    const messageInput = document.getElementById('message');
     
-    // Pagination state
+    // Default elements for the main chat (if this script is also used for it)
+    const mainChatEmojiBtn = document.getElementById('emoji-btn'); // The button in the main chat form
+    const mainChatMessageInput = document.getElementById('message'); // The input in the main chat form
+      // Pagination state
     let allEmojis = [];
     let currentPage = 1;
-    const emojisPerPage = 10;
+    const emojisPerPage = 50;
+
+    // Variables to store the current target for the emoji picker
+    let currentTargetInput = null;
+    let currentTriggerButton = null;
     
-    if (!emojiBtn || !emojiPicker || !emojiContainer) {
-        console.error('Emoji picker elements not found');
+    if (!emojiPicker || !emojiContainer) { // Check only core picker elements
+        console.error('Emoji picker core UI elements not found');
         return;
     }
     
     // Function to position the emoji picker properly
     function positionEmojiPicker() {
+        if (!currentTriggerButton) return; // Ensure a trigger button is set
+
         const isMobile = window.innerWidth <= 768;
+        const btnRect = currentTriggerButton.getBoundingClientRect();
         
         if (isMobile) {
-            // On mobile, center the picker
+            // On mobile, center the picker (CSS media queries handle width and max-width)
             emojiPicker.style.position = 'fixed';
             emojiPicker.style.left = '50%';
             emojiPicker.style.top = '50%';
             emojiPicker.style.transform = 'translate(-50%, -50%)';
             emojiPicker.style.bottom = 'auto';
-            emojiPicker.style.width = '90%';
         } else {
-            // On desktop, position above the emoji button
-            const btnRect = emojiBtn.getBoundingClientRect();
-            
+            // On desktop, position above the trigger button
             emojiPicker.style.position = 'fixed';
             emojiPicker.style.bottom = (window.innerHeight - btnRect.top + 10) + 'px';
-            emojiPicker.style.left = (btnRect.left - 150 + btnRect.width/2) + 'px';
+            const pickerWidth = emojiPicker.offsetWidth || 260; // Fallback to CSS width if offsetWidth is 0
+            emojiPicker.style.left = (btnRect.left - (pickerWidth / 2) + (btnRect.width / 2)) + 'px';
             emojiPicker.style.transform = 'none';
-            emojiPicker.style.width = '300px';
         }
     }
     
-    // Function to show emoji picker
-    function showEmojiPicker(e) {
-        e.preventDefault();
-        e.stopPropagation();
+    // Internal function to show emoji picker, now uses currentTargetInput and currentTriggerButton
+    function _internalShowEmojiPicker(event) {
+        event.preventDefault();
+        event.stopPropagation();
         
-        // Position the picker first (while hidden)
         emojiPicker.style.display = 'flex';
         emojiPicker.style.opacity = '0';
         
-        // Position it properly
-        positionEmojiPicker();
+        positionEmojiPicker(); // Uses currentTriggerButton
         
-        // Now show it with a fade in effect
         setTimeout(() => {
             emojiPicker.style.opacity = '1';
         }, 10);
         
-        // Load emojis from server
         loadEmojisFromServer();
     }
+
+    // Expose a function to be called from other scripts (like private-messaging.js)
+    window.openEmojiPickerFor = function(event, targetInput, triggerButton) {
+        currentTargetInput = targetInput;
+        currentTriggerButton = triggerButton;
+        _internalShowEmojiPicker(event); // Call the internal function
+    };
     
     // Function to hide emoji picker
     function hideEmojiPicker() {
@@ -221,30 +229,32 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
     
-    // Insert emoji at cursor position
+    // Insert emoji at cursor position of the currentTargetInput
     function insertEmoji(emoji) {
-        if (!messageInput) return;
+        if (!currentTargetInput) {
+            console.warn("No target input set for emoji insertion.");
+            return;
+        }
         
-        const cursorPos = messageInput.selectionStart || 0;
-        const textBefore = messageInput.value.substring(0, cursorPos);
-        const textAfter = messageInput.value.substring(messageInput.selectionEnd || cursorPos);
+        const cursorPos = currentTargetInput.selectionStart || 0;
+        const textBefore = currentTargetInput.value.substring(0, cursorPos);
+        const textAfter = currentTargetInput.value.substring(currentTargetInput.selectionEnd || cursorPos);
         
-        // Insert emoji at cursor position
-        messageInput.value = textBefore + emoji + textAfter;
+        currentTargetInput.value = textBefore + emoji + textAfter;
         
-        // Move cursor position after the inserted emoji
         const newCursorPos = cursorPos + emoji.length;
-        messageInput.setSelectionRange(newCursorPos, newCursorPos);
-        
-        // Focus on the input
-        messageInput.focus();
-        
-        // Hide picker
+        currentTargetInput.setSelectionRange(newCursorPos, newCursorPos);
+        currentTargetInput.focus();
         hideEmojiPicker();
     }
     
-    // Add event listeners
-    emojiBtn.addEventListener('click', showEmojiPicker);
+    // Add event listener for the main chat emoji button (if it exists)
+    if (mainChatEmojiBtn && mainChatMessageInput) {
+        mainChatEmojiBtn.addEventListener('click', function(e) {
+            // Call the new global function, passing the main chat elements
+            window.openEmojiPickerFor(e, mainChatMessageInput, mainChatEmojiBtn);
+        });
+    }
     
     if (closeEmojiPicker) {
         closeEmojiPicker.addEventListener('click', hideEmojiPicker);
@@ -254,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('click', function(e) {
         if (emojiPicker.style.display === 'flex' && 
             !emojiPicker.contains(e.target) && 
-            e.target !== emojiBtn) {
+            currentTriggerButton && !currentTriggerButton.contains(e.target)) { // Check against currentTriggerButton
             hideEmojiPicker();
         }
     });
@@ -262,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update position on window resize
     window.addEventListener('resize', function() {
         if (emojiPicker.style.display === 'flex') {
-            positionEmojiPicker();
+            positionEmojiPicker(); // Uses currentTriggerButton
         }
     });
     

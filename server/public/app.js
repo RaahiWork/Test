@@ -1,4 +1,6 @@
 // Update server URL detection to be more robust
+let isLoggingout = false;
+
 const serverUrl = (() => {
     // Check if we're in development mode
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
@@ -65,6 +67,7 @@ const DEFAULT_ROOM = "Vibe";
 
 // Use a single currentRoom variable
 let currentRoom = '';
+let lastDisplayedRoom = '';
 
 // Expose sendMessage function globally to ensure it's accessible
 window.sendMessage = function(e) {
@@ -89,16 +92,17 @@ window.sendMessage = function(e) {
     
     // Clear input field after sending
     msgInput.value = "";
-    msgInput.focus();
+    // Only focus if not iOS
+    if (!(/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream)) {
+        msgInput.focus();
+    }
 };
 
 // Join room function
 function joinRoom(roomName) {
     if (!roomName || !nameInput.value) return;
-    
     // Don't join if already in this room
     if (roomName === currentRoom) return;
-    
     // Clear any previous joining indicators first
     document.querySelectorAll('.room-item').forEach(item => {
         const roomBtn = item.querySelector('.join-room-btn');
@@ -106,46 +110,37 @@ function joinRoom(roomName) {
             roomBtn.textContent = 'Join';
         }
     });
-    
     // No need to update connection status text since it's now an indicator dot
-    
     // Emit room join event
     socket.emit('enterRoom', {
         name: nameInput.value,
         room: roomName
     });
-    
     // Store current room
     currentRoom = roomName;
-    
     // Update room header with name and description
     updateRoomHeader(roomName);
-    
     // Update UI to show we're joining with a more compact indicator
     document.querySelectorAll('.room-item').forEach(item => {
         const roomBtn = item.querySelector('.join-room-btn');
         item.classList.remove('active-room');
-        
         if (roomBtn) {
             roomBtn.textContent = 'Join';
         }
-        
         if (item.dataset.room === roomName) {
             item.classList.add('active-room');
             if (roomBtn) {
                 roomBtn.textContent = 'Joining...';
                 setTimeout(() => {
                     // Only update this specific button
-                    if (item.dataset.room === currentRoom && roomBtn) {
+                    if (item.dataset.room === currentRoom) {
                         roomBtn.textContent = '✓';
                     }
                 }, 1000);
             }
         }
     });
-    
-    // Clear chat history when changing rooms
-    chatDisplay.innerHTML = '';
+    // Do NOT clear chat history here; let message handler do it on first message for new room
 }
 
 // Add a function to update the room header
@@ -193,8 +188,8 @@ function showRooms() {
         roomItem.className = 'room-item' + (room.name === currentRoom ? ' active-room' : '');
         roomItem.dataset.room = room.name;
         
-        // Use standard title attribute for tooltip - browsers handle this natively
-        roomItem.title = `${room.name} - ${room.description}`;
+        // Use standard title attribute for tooltip - show only description
+        roomItem.title = room.description;
         
         // Create a more compact room item layout
         roomItem.innerHTML = `
@@ -244,18 +239,38 @@ function showRooms() {
 // Update users display
 function showUsers(users) {
     usersList.innerHTML = '';
-    if (users && users.length) {
+    if (users?.length) {
+        // Remove duplicates by name (case-insensitive) as an extra safety measure
+        const uniqueUsers = [];
+        const seenNames = new Set();
+        
+        users.forEach(user => {
+            const lowerName = user.name.toLowerCase();
+            if (!seenNames.has(lowerName)) {
+                seenNames.add(lowerName);
+                uniqueUsers.push(user);
+            }
+        });
+        
         usersList.innerHTML = `<ul>` +
-            users.map(user =>
+            uniqueUsers.map(user =>
                 `<li class="user-list-item">
-                    <span style="display:inline-block;width:1.3em;text-align:center;margin-right:0.5em;opacity:0.7;">👤</span>
-                    <span>${user.name}</span>
+                    <div class="user-info">
+                        <span style="display:inline-block;width:1.3em;text-align:center;margin-right:0.5em;opacity:0.7;">👤</span>
+                        <span>${user.name}</span>
+                    </div>
+                    ${user.name !== nameInput.value ? 
+                        `<button class="message-user-btn" onclick="window.privateMessaging?.openPrivateMessage('${user.name}');window.handleHideRightPaneOnMobile && window.handleHideRightPaneOnMobile();" title="Send private message">💬</button>` : 
+                        ''
+                    }
                 </li>`
             ).join('') +
             `</ul>`;
     } else {
         usersList.innerHTML = `<em>No users in room</em>`;
     }
+    // Move clear room button here, below users list
+    addClearRoomButtonIfAdmin();
 }
 
 // Socket.io event handlers
@@ -272,34 +287,31 @@ const processedMessages = new Set();
 
 // Only keep one socket.on('message') handler
 socket.on("message", (data) => {
-    
-    
+    // If switching rooms, clear chat and reset deduplication
+    if (currentRoom !== lastDisplayedRoom) {
+        chatDisplay.innerHTML = '';
+        processedMessages.clear();
+        lastDisplayedRoom = currentRoom;
+    }
+    renderMessage(data);
+});
+
+// Helper function to render a message
+function renderMessage(data) {
     // Create a unique identifier for this message
     const messageId = `${data.name}-${data.time}-${data.text?.substring(0, 20) || 'image'}`;
-    
-    // Check if we've already processed this message
     if (processedMessages.has(messageId)) {
-        
         return;
     }
-    
-    // Add to processed messages
     processedMessages.add(messageId);
-    
-    // Limit the size of the Set to prevent memory leaks
     if (processedMessages.size > 100) {
-        // Remove the oldest entry (first one)
         const firstValue = processedMessages.values().next().value;
         processedMessages.delete(firstValue);
     }
-    
-    // Reset activity indicator
     activity.textContent = "";
-    const { name, text, time, image } = data;
-    
+    const { name, text, time, image, voice } = data;
     const li = document.createElement('li');
     li.className = 'post';
-    
     if (name === nameInput.value) {
         li.className = 'post post--left';
     } else if (name !== 'System') {
@@ -307,90 +319,106 @@ socket.on("message", (data) => {
     } else {
         li.className = 'post post--admin';
     }
-    
     if (name !== 'System') {
-        // Convert server time to local time
         const localTime = formatLocalTime(time);
-        
-        let contentHtml = `<div class="post__header ${name === nameInput.value
-        ? 'post__header--user'
-        : 'post__header--reply'
-        }">
-    <span class="post__header--name">${name}</span> 
-    <span class="post__header--time">${localTime}</span> 
-    </div>`;
-    
-    // Add text or image based on what's available
-    if (image) {
-        // Create a proper image element with loading state
-        const imgElement = document.createElement('img');
-        imgElement.alt = 'Shared image';
-        imgElement.style.maxWidth = '100%';
-        imgElement.style.maxHeight = '300px';
-        imgElement.style.borderRadius = '5px';
-        imgElement.style.marginTop = '5px';
-        imgElement.style.display = 'none'; // Hide until loaded
-        
-        // Add loading indicator
-        const loadingDiv = document.createElement('div');
-        loadingDiv.className = 'image-loading';
-        loadingDiv.textContent = 'Loading image...';
-        
-        // Create image container
-        const imageContainer = document.createElement('div');
-        imageContainer.className = 'post__image';
-        imageContainer.appendChild(loadingDiv);
-        imageContainer.appendChild(imgElement);
-        
-        // Add to content
-        if (name !== 'System') {
+        let contentHtml = `<div class="post__header ${name === nameInput.value ? 'post__header--user' : 'post__header--reply'}" ${name !== nameInput.value ? 'tabindex="0" role="button" aria-label="Reply to this user"' : ''}>
+<span class="post__header--name${name === nameInput.value ? ' current-user' : ''}">
+${name} <span class="verified-icon" title="Registered User">✔️</span>
+<span class="post__header--time">${localTime}</span> 
+</div>`;
+        if (image) {
+            const imgElement = document.createElement('img');
+            imgElement.alt = 'Shared image';
+            imgElement.style.maxWidth = '100%';
+            imgElement.style.maxHeight = '300px';
+            imgElement.style.borderRadius = '5px';
+            imgElement.style.marginTop = '5px';
+            imgElement.style.display = 'none';
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'image-loading';
+            loadingDiv.textContent = 'Loading image...';
+            const imageContainer = document.createElement('div');
+            imageContainer.className = 'post__image';
+            imageContainer.appendChild(loadingDiv);
+            imageContainer.appendChild(imgElement);
             contentHtml += imageContainer.outerHTML;
+            setTimeout(() => {
+                const addedImg = li.querySelector('.post__image img');
+                if (addedImg) {
+                    addedImg.onload = function() {
+                        this.style.display = 'block';
+                        const loadingEl = this.parentNode.querySelector('.image-loading');
+                        if (loadingEl) loadingEl.style.display = 'none';
+                    };
+                    addedImg.onerror = function() {
+                        const loadingEl = this.parentNode.querySelector('.image-loading');
+                        if (loadingEl) {
+                            loadingEl.textContent = 'Failed to load image';
+                            loadingEl.className = 'image-error';
+                        }
+                    };
+                    addedImg.src = image;
+                }
+            }, 10);
         }
-        
-        // Set image source after adding to DOM to track loading state
-        setTimeout(() => {
-            const addedImg = li.querySelector('.post__image img');
-            if (addedImg) {
-                addedImg.onload = function() {
-                    this.style.display = 'block';
-                    const loadingEl = this.parentNode.querySelector('.image-loading');
-                    if (loadingEl) loadingEl.style.display = 'none';
-                };
-                
-                addedImg.onerror = function() {
-                    const loadingEl = this.parentNode.querySelector('.image-loading');
-                    if (loadingEl) {
-                        loadingEl.textContent = 'Failed to load image';
-                        loadingEl.className = 'image-error';
-                    }
-                };
-                
-                addedImg.src = image;
-            }
-        }, 10);
-    } else if (text) {
-        // Process emoji markers in text with improved regex and error handling
-        let processedText = text;
-        const emojiRegex = /\[emoji:([^\]]+)\]/g;
-        
-        processedText = processedText.replace(emojiRegex, (match, emojiFile) => {
-            // Create direct relative URL to ensure consistent rendering across environments
-            return `<img class="emoji" src="/emojis/${emojiFile}" alt="emoji" 
-                data-emoji="${emojiFile}"
-                onerror="console.error('Failed to load emoji in message:', this.getAttribute('data-emoji')); this.style.display='none'; this.insertAdjacentText('afterend', '😊');">`;
-        });
-        
-        contentHtml += `<div class="post__text">${processedText}</div>`;
-    }
-    
-    li.innerHTML = contentHtml;
+        if (text) {
+            let processedText = text;
+            const emojiRegex = /\[emoji:([^\]]+)\]/g;
+            processedText = processedText.replace(emojiRegex, (match, emojiFile) => {
+                return `<img class="emoji" src="/emojis/${emojiFile}" alt="emoji" 
+                    data-emoji="${emojiFile}"
+                    onerror="console.error('Failed to load emoji in message:', this.getAttribute('data-emoji')); this.style.display='none'; this.insertAdjacentText('afterend', '😊');">`;
+            });
+            contentHtml += `<div class="post__text">${processedText}</div>`;
+        }
+        if (voice) {
+            const downloadMp3Btn = `
+                <a href="${voice}" download="voice-message.mp3" 
+                   style="
+                    display:inline-block;
+                    margin-left:10px;
+                    padding:4px 14px;
+                    background:#2ecc71;
+                    color:#fff;
+                    border-radius:18px;
+                    font-size:0.97em;
+                    font-weight:500;
+                    text-decoration:none;
+                    box-shadow:0 2px 6px rgba(46,204,113,0.12);
+                    transition:background 0.2s;
+                    vertical-align:middle;
+                "
+                onmouseover="this.style.background='#27ae60'"
+                onmouseout="this.style.background='#2ecc71'"
+                title="Download voice message as MP3"
+                >⬇️ Download as MP3</a>`;
+            contentHtml += `<div class="post__voice"><audio controls src="${voice}"></audio>${downloadMp3Btn}</div>`;
+        }
+        li.innerHTML = contentHtml;
     } else {
         li.innerHTML = `<div class="post__text">${text || ''}</div>`;
     }
-    
+    const myName = nameInput.value;
+    if (myName && name !== myName && name !== 'System') {
+        function highlightUserName(node) {
+            if (node.nodeType === 3) {
+                const regex = new RegExp(`\\b${myName.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\b`, 'g');
+                if (regex.test(node.nodeValue)) {
+                    const span = document.createElement('span');
+                    span.innerHTML = node.nodeValue.replace(regex, `<span class="current-user-highlight">${myName}</span>`);
+                    node.replaceWith(...span.childNodes);
+                }
+            } else if (node.nodeType === 1 && node.childNodes) {
+                node.childNodes.forEach(highlightUserName);
+            }
+        }
+        highlightUserName(li);
+    }
     chatDisplay.appendChild(li);
-    chatDisplay.scrollTop = chatDisplay.scrollHeight;
-});
+    if (autoScroll) {
+        chatDisplay.scrollTop = chatDisplay.scrollHeight;
+    }
+}
 
 let activityTimer;
 socket.on("activity", (name) => {
@@ -465,8 +493,6 @@ function updateTypingIndicator() {
 
 // Reset typing users when receiving messages
 socket.on("message", (data) => {
-    // ...existing code...
-    
     // Clear typing indicator for the user who sent this message
     if (typingUsers.has(data.name)) {
         typingUsers.delete(data.name);
@@ -478,14 +504,10 @@ socket.on("message", (data) => {
             delete typingTimer[data.name];
         }
     }
-    
-    // ...existing code...
 });
 
 // Initialize typing timers as an object for better management
 document.addEventListener('DOMContentLoaded', function() {
-    // ...existing code...
-    
     // Initialize typing timer object to track per-user timeouts
     typingTimer = {};
     
@@ -535,8 +557,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
-    // ...existing code...
 });
 
 // Also update when users leave
@@ -568,10 +588,13 @@ socket.on('connect', () => {
     // Request room list immediately after connection
     socket.emit('getRooms');
     
+    // Request online users for private messaging
+    socket.emit('getOnlineUsers');
+    
     // If we were in a room before disconnection, try to rejoin it
     if (nameInput.value) {
-        // If we were in a room, rejoin it, otherwise join default room
-        const roomToJoin = currentRoom || DEFAULT_ROOM;
+        // Always join Vibe room as default for authenticated users
+        const roomToJoin = 'Vibe';
         
         socket.emit('enterRoom', {
             name: nameInput.value,
@@ -580,6 +603,9 @@ socket.on('connect', () => {
         
         // Update current room
         currentRoom = roomToJoin;
+        
+        // Update room header
+        updateRoomHeader(roomToJoin);
     }
     
     // Update UI for connected state - replace text with indicator dot
@@ -668,6 +694,7 @@ loginForm.addEventListener('submit', function (e) {
 function handleLogout() {
     // Confirm before logout
     if (confirm('Are you sure you want to logout?')) {
+        isLoggingout = true;
         // Clear username from localStorage
         localStorage.removeItem('vybchat-username');
         
@@ -712,7 +739,7 @@ function handleLogout() {
     }
 }
 
-// Update DOMContentLoaded to set up the logout button
+// Update DOMContentLoaded to set up auto-join for Vibe room
 document.addEventListener('DOMContentLoaded', function() {
     // Set up favicon
     const setFavicon = () => {
@@ -779,14 +806,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (socket.connected) {
             socket.emit('getRooms');
             
-            // Auto-join default room if not already in a room
-            if (!currentRoom && nameInput.value) {
-                socket.emit('enterRoom', {
-                    name: nameInput.value,
-                    room: DEFAULT_ROOM
-                });
-                currentRoom = DEFAULT_ROOM;
-            }
+            // Auto-join Vibe room for authenticated users
+            socket.emit('enterRoom', {
+                name: savedUsername,
+                room: 'Vibe'
+            });
+            currentRoom = 'Vibe';
+            updateRoomHeader('Vibe');
         }
     } else {
         main.style.opacity = '0.5';
@@ -803,7 +829,8 @@ document.addEventListener('DOMContentLoaded', function() {
         logoutBtn.addEventListener('click', handleLogout);
     }
     
-    // Add side panel toggle for mobile
+    // Add side panel toggle for mobile - This logic is now handled by mobile-sidepane.js
+    /*
     const leftPane = document.querySelector('.left-pane');
     const rightPane = document.querySelector('.right-pane');
     const leftToggle = document.querySelector('.left-toggle');
@@ -831,20 +858,21 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Close side panels when clicking outside
+    // Close side panels when clicking outside - This logic is now handled by mobile-sidepane.js
     document.addEventListener('click', (e) => {
         if (leftPane && leftPane.classList.contains('active') && 
             !leftPane.contains(e.target) && 
-            !leftToggle.contains(e.target)) {
+            leftToggle && !leftToggle.contains(e.target)) { // Added null check for leftToggle
             leftPane.classList.remove('active');
         }
         
         if (rightPane && rightPane.classList.contains('active') && 
             !rightPane.contains(e.target) && 
-            !rightToggle.contains(e.target)) {
+            rightToggle && !rightToggle.contains(e.target)) { // Added null check for rightToggle
             rightPane.classList.remove('active');
         }
     });
+    */
     
     // Initialize room display
     showRooms();
@@ -852,31 +880,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Also initialize emoji and image buttons
     setupEmojiAndImageHandlers();
     
-    // Make the banner interactive
-    const devBanner = document.querySelector('.dev-banner');
-    if (devBanner) {
-        // List of upcoming features
-        const upcomingFeatures = [
-            "🔊 Voice messages and audio chat",
-            "📁 File sharing and collaboration",
-            "🎨 Custom themes and personalization",
-            "🔍 Advanced search functionality",
-            "📱 Push notifications",
-            "👥 User profiles and status updates"
-        ];
-        
-        // Add click event to show details
-        devBanner.addEventListener('click', function() {
-            // Create formatted feature list
-            const featureList = upcomingFeatures.join('\n');
-            
-            // Show alert with upcoming features
-            //alert(`✨ Coming Soon ✨\n\n${featureList}`);
+    // Ensure message input is visible on focus (mobile keyboard)
+    const msgInput = document.getElementById('message');
+    if (msgInput) {
+        msgInput.addEventListener('focus', function() {
+            setTimeout(() => {
+                // Scroll input into view if needed (mobile)
+                msgInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 200);
         });
-        
-        // Add visual indication it's clickable
-        devBanner.style.cursor = 'pointer';
-        devBanner.title = 'Click to see all upcoming features';
     }
 });
 
@@ -1034,91 +1046,122 @@ function setupEmojiAndImageHandlers() {
     });
 }
 
-// Add function to load emojis that was referenced but missing
-function loadEmojis() {
-    const emojiContainer = document.getElementById('emoji-container');
-    if (!emojiContainer) return;
-    
-    // Show loading state
-    emojiContainer.innerHTML = '<div class="emoji-loading">Loading emojis...</div>';
-    
-    // Get base URL for emoji API
-    const baseUrl = serverUrl.replace('ws://', 'http://').replace('wss://', 'https://');
-    
-    // Fetch emoji list from server
-    fetch(`${baseUrl}/api/emojis`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`Server returned ${response.status}: ${response.statusText}`);
-            }
-            return response.json();
-        })
-        .then(emojis => {
-            if (!Array.isArray(emojis) || emojis.length === 0) {
-                emojiContainer.innerHTML = '<div class="emoji-message">No emojis available</div>';
+// Add voice message support
+function setupVoiceMessageHandlers() {
+    const voiceBtn = document.getElementById('voice-record-btn');
+    const voiceFileInput = document.getElementById('voice-file');
+    const voiceActionContainer = document.getElementById('voice-action-container');
+    const voiceAudioPreview = document.getElementById('voice-audio-preview');
+    const voiceSendBtn = document.getElementById('voice-send-btn');
+    const voiceCancelBtn = document.getElementById('voice-cancel-btn');
+    const voiceDownloadBtn = document.getElementById('voice-download-btn');
+    let recordedVoiceData = null;
+    let mediaRecorder, audioChunks = [];
+
+    if (!voiceBtn || !voiceFileInput || !voiceActionContainer || !voiceAudioPreview || !voiceSendBtn || !voiceCancelBtn) return;
+
+    voiceBtn.addEventListener('click', async () => {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+            voiceBtn.textContent = '🎤';
+            return;
+        }
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            alert('Voice recording not supported in this browser.');
+            return;
+        }
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    recordedVoiceData = e.target.result;
+                    voiceAudioPreview.src = recordedVoiceData;
+                    voiceActionContainer.style.display = 'flex';
+                };
+                reader.readAsDataURL(audioBlob);
+            };
+            mediaRecorder.start();
+            voiceBtn.textContent = '⏹️';
+        } catch (err) {
+            alert('Could not start recording: ' + err.message);
+        }
+    });
+
+    voiceSendBtn.addEventListener('click', function() {
+        if (recordedVoiceData) {
+            socket.emit('voiceMessage', {
+                name: nameInput.value,
+                voice: recordedVoiceData
+            });
+        }
+        voiceActionContainer.style.display = 'none';
+        voiceAudioPreview.src = '';
+        recordedVoiceData = null;
+    });
+
+    voiceCancelBtn.addEventListener('click', function() {
+        voiceActionContainer.style.display = 'none';
+        voiceAudioPreview.src = '';
+        recordedVoiceData = null;
+    });
+
+    voiceFileInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            const file = this.files[0];
+            if (!file.type.match('audio.*')) {
+                alert('Please select a valid audio file.');
+                this.value = '';
                 return;
             }
-            
-            // Note: This fallback function now delegates to the emoji-handler.js
-            // which has proper pagination. If emoji-handler.js is loaded, it will
-            // override this function. This is kept as a basic fallback only.
-            
-            // Clear container
-            emojiContainer.innerHTML = '';
-            
-            // Show only first 10 emojis as a basic fallback
-            const displayEmojis = emojis.slice(0, 10);
-            
-            // Add each emoji to the container
-            displayEmojis.forEach(emoji => {
-                const emojiItem = document.createElement('div');
-                emojiItem.className = 'emoji-item';
-                emojiItem.innerHTML = `<img src="/emojis/${emoji}" alt="${emoji}" title="${emoji.replace(/\.\w+$/, '')}">`;
-                
-                // Add click handler to insert emoji
-                emojiItem.addEventListener('click', () => {
-                    const emojiCode = `[emoji:${emoji}]`;
-                    
-                    // Insert at cursor position
-                    const cursorPos = msgInput.selectionStart;
-                    msgInput.value = msgInput.value.substring(0, cursorPos) + 
-                                   emojiCode + 
-                                   msgInput.value.substring(msgInput.selectionEnd);
-                    
-                    // Move cursor after inserted emoji
-                    msgInput.selectionStart = cursorPos + emojiCode.length;
-                    msgInput.selectionEnd = cursorPos + emojiCode.length;
-                    msgInput.focus();
-                    
-                    // Hide emoji picker
-                    document.getElementById('emoji-picker').style.display = 'none';
-                });
-                
-                emojiContainer.appendChild(emojiItem);
-            });
-            
-            // Add note if there are more emojis
-            if (emojis.length > 10) {
-                const moreNote = document.createElement('div');
-                moreNote.className = 'emoji-message';
-                moreNote.textContent = `Showing 10 of ${emojis.length} emojis (basic mode)`;
-                emojiContainer.appendChild(moreNote);
-            }
-        })
-        .catch(error => {
-            console.error('Error loading emojis:', error);
-            emojiContainer.innerHTML = `<div class="emoji-error">
-                Failed to load emojis: ${error.message}
-                <button class="retry-btn">Retry</button>
-            </div>`;
-            
-            // Add retry button functionality
-            const retryBtn = emojiContainer.querySelector('.retry-btn');
-            if (retryBtn) {
-                retryBtn.addEventListener('click', loadEmojis);
-            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                recordedVoiceData = e.target.result;
+                voiceAudioPreview.src = recordedVoiceData;
+                voiceActionContainer.style.display = 'flex';
+            };
+            reader.readAsDataURL(file);
+            this.value = '';
+        }
+    });
+    
+    if (voiceDownloadBtn) {
+        voiceDownloadBtn.addEventListener('click', function() {
+            if (!recordedVoiceData) return;
+            // Convert base64 to Blob
+            const arr = recordedVoiceData.split(',');
+            const mime = arr[0].match(/:(.*?);/)[1];
+            const bstr = atob(arr[1]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            while (n--) u8arr[n] = bstr.charCodeAt(n);
+            let blob = new Blob([u8arr], { type: mime });
+
+            // If browser supports, use webm-to-mp3 conversion (optional, fallback to webm)
+            // For simplicity, just rename to .mp3 for download
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'voice-message.mp3';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+                a.remove();
+            }, 100);
         });
+    }
 }
+document.addEventListener('DOMContentLoaded', function() {
+    // ...existing code...
+    setupVoiceMessageHandlers();
+    // ...existing code...
+});
 
 // Remove the window.addEventListener('load') section as it's causing duplicate handlers
 
@@ -1193,6 +1236,12 @@ style.textContent = `
 .room-item:hover {
     background-color: rgba(255,255,255,0.05);
 }
+
+/* Make chat-display background fully transparent but keep text and UI interactive */
+.chat-display {
+    background: transparent;
+    pointer-events: auto;
+}
 `;
 document.head.appendChild(style);
 
@@ -1215,3 +1264,315 @@ function formatLocalTime(timestamp) {
         return timestamp; // Return original on error
     }
 }
+
+// Create a global function to initialize socket connection for auth.js
+window.initializeSocketConnection = function(username) {
+    if (socket && socket.connected) {
+        // Auto-join Vibe room
+        socket.emit('enterRoom', {
+            name: username,
+            room: 'Vibe'
+        });
+        currentRoom = 'Vibe';
+        updateRoomHeader('Vibe');
+    }
+};
+
+// Hide right pane on mobile when opening private message
+window.handleHideRightPaneOnMobile = function() {
+    if (window.innerWidth <= 768) {
+        const rightPane = document.querySelector('.right-pane');
+        if (rightPane && rightPane.classList.contains('open')) {
+            rightPane.classList.remove('open');
+        }
+    }
+};
+
+// Also handle private conversation tab clicks (sidebar private messages)
+document.addEventListener('DOMContentLoaded', function() {
+    // ...existing code...
+    // Observe clicks on private conversation tabs to hide right pane on mobile
+    const privateConversations = document.getElementById('private-conversations');
+    if (privateConversations) {
+        privateConversations.addEventListener('click', function(e) {
+            if (window.innerWidth <= 768) {
+                const rightPane = document.querySelector('.right-pane');
+                if (rightPane && rightPane.classList.contains('open')) {
+                    rightPane.classList.remove('open');
+                }
+            }
+        });
+    }
+    // ...existing code...
+});
+
+// Warn user before leaving or reloading the page
+window.addEventListener('beforeunload', function (e) {
+    if (isLoggingout) {
+        // If logging out, don't show the confirmation dialog
+        return;
+    }
+    // Standard message is ignored by most browsers, but returning a string triggers the dialog
+    e.preventDefault();
+    e.returnValue = 'Are you sure you want to leave? Your chat session will be disconnected.';
+});
+
+// Track if user is near the bottom of chat
+let autoScroll = true;
+function handleChatScroll() {
+    const el = chatDisplay;
+    if (!el) return;
+    // If user is within 100px of the bottom, enable auto-scroll
+    autoScroll = (el.scrollHeight - el.scrollTop - el.clientHeight < 100);
+}
+if (chatDisplay) {
+    chatDisplay.addEventListener('scroll', handleChatScroll);
+}
+
+// Make any post header clickable to insert username at cursor position in message input
+chatDisplay.addEventListener('click', function(e) {
+    const header = e.target.closest('.post__header');
+    if (header) {
+        const nameSpan = header.querySelector('.post__header--name');
+        if (nameSpan) {
+            const username = nameSpan.textContent.trim().split(' ')[0];
+            if (msgInput) {
+                const start = msgInput.selectionStart;
+                const end = msgInput.selectionEnd;
+                const value = msgInput.value;
+                // Only add a space if not already present before or after
+                let insertText = username;
+                // Add a space before if not at start and not already a space
+                if (start > 0 && value[start - 1] !== ' ') {
+                    insertText = ' ' + insertText;
+                }
+                // Add a space after if not already a space
+                if (value[end] !== ' ') {
+                    insertText = insertText + ' ';
+                }
+                msgInput.value = value.slice(0, start) + insertText + value.slice(end);
+                const cursorPos = start + insertText.length;
+                msgInput.setSelectionRange(cursorPos, cursorPos);
+                msgInput.focus();
+            }
+        }
+    }
+});
+
+// Keyboard accessibility: Enter/Space triggers reply
+chatDisplay.addEventListener('keydown', function(e) {
+    const header = e.target.closest('.post__header');
+    if ((e.key === 'Enter' || e.key === ' ') && header) {
+        e.preventDefault();
+        header.click();
+    }
+});
+
+// Add tab highlight for @mentions in main chat
+let origTitle = document.title;
+let origFavicon = (() => {
+    const link = document.querySelector('link[rel="icon"]');
+    return link ? link.href : '';
+})();
+let tabFlashInterval = null;
+let tabFlashState = false;
+let windowFocused = true;
+
+window.addEventListener('focus', () => {
+    windowFocused = true;
+    stopTabHighlight();
+});
+window.addEventListener('blur', () => {
+    windowFocused = false;
+});
+
+function highlightTabForMention(mentionSourceName) {
+    if (windowFocused) return;
+    stopTabHighlight();
+    let flashTitle = `🔔 Mentioned by ${mentionSourceName || 'Someone'}`;
+    let link = document.querySelector('link[rel="icon"]');
+    let flashFavicon = '/images/logo.png';
+    tabFlashInterval = setInterval(() => {
+        tabFlashState = !tabFlashState;
+        document.title = tabFlashState ? flashTitle : origTitle;
+        if (link) link.href = tabFlashState ? flashFavicon : origFavicon;
+    }, 900);
+}
+
+function stopTabHighlight() {
+    if (tabFlashInterval) {
+        clearInterval(tabFlashInterval);
+        tabFlashInterval = null;
+        document.title = origTitle;
+        let link = document.querySelector('link[rel="icon"]');
+        if (link && origFavicon) link.href = origFavicon;
+    }
+}
+
+// Highlight tab if message mentions current user and window is not focused
+socket.on("message", (data) => {
+    // ...existing code...
+    const myName = nameInput.value;
+    if (
+        myName &&
+        data.name !== myName &&
+        data.name !== 'System' &&
+        typeof data.text === 'string' &&
+        new RegExp(`\\b${myName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(data.text) &&
+        !windowFocused
+    ) {
+        highlightTabForMention(data.name);
+    }
+    // ...existing code...
+});
+
+// Prevent UI zoom from changing the size of the UI on mobile by using viewport meta tag
+(function ensureViewportMetaTag() {
+    let meta = document.querySelector('meta[name="viewport"]');
+    if (!meta) {
+        meta = document.createElement('meta');
+        meta.name = 'viewport';
+        document.head.appendChild(meta);
+    }
+    // Prevent zoom from resizing UI, but allow user scaling for accessibility
+    meta.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=1';
+})();
+
+// === Theme Picker Logic ===
+const themePicker = document.getElementById('theme-picker');
+const themeList = [
+    'rain.gif',
+    'snowfall.gif',
+    'beach.gif',
+    'fantasy.gif',
+    'fireworks.gif',
+    'forest.gif',
+    'freedom.gif',
+    'halloween.gif',
+    'fireflies.gif' // Added fireflies theme
+];
+
+function setThemeBackground(themeFile) {
+    document.body.style.background = `url('/themes/${themeFile}') center center fixed no-repeat`;
+    document.body.style.backgroundSize = 'cover';
+}
+
+if (themePicker) {
+    themePicker.addEventListener('change', function() {
+        setThemeBackground(this.value);
+        localStorage.setItem('vybchat-theme', this.value);
+    });
+    // On load, set theme from localStorage or default
+    const savedTheme = localStorage.getItem('vybchat-theme');
+    if (savedTheme && themeList.includes(savedTheme)) {
+        themePicker.value = savedTheme;
+        setThemeBackground(savedTheme);
+    }
+}
+
+// Add clear room button for Admin
+function addClearRoomButtonIfAdmin() {
+    const isAdmin = nameInput.value === 'Admin';
+    let clearBtn = document.getElementById('clear-room-btn');
+    if (isAdmin) {
+        if (!clearBtn) {
+            clearBtn = document.createElement('button');
+            clearBtn.id = 'clear-room-btn';
+            clearBtn.innerHTML = `
+                <span class="clear-room-icon" aria-hidden="true" style="vertical-align:middle;display:inline-block;margin-right:0.5em;">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;">
+                        <rect x="4" y="7" width="12" height="9" rx="2" fill="#fff" fill-opacity="0.15"/>
+                        <rect x="7" y="2" width="6" height="3" rx="1.5" fill="#fff" fill-opacity="0.25"/>
+                        <rect x="2" y="5" width="16" height="2" rx="1" fill="#fff" fill-opacity="0.25"/>
+                        <path d="M8 10V14" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+                        <path d="M12 10V14" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                </span>
+                <span class="clear-room-label">Clear Room</span>
+            `;
+            clearBtn.type = 'button';
+            clearBtn.setAttribute('tabindex', '0');
+            clearBtn.setAttribute('title', 'Remove all messages in this room');
+            clearBtn.onclick = function() {
+                if (confirm('Are you sure you want to clear all messages in this room?')) {
+                    socket.emit('clearRoom', { room: currentRoom });
+                }
+            };
+        }
+        // Inject modern style for the button only once
+        if (!document.getElementById('clear-room-btn-style')) {
+            const style = document.createElement('style');
+            style.id = 'clear-room-btn-style';
+            style.textContent = `
+                #clear-room-btn {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 0.5em;
+                    width: 100%;
+                    margin: 1.2em 0 0 0;
+                    padding: 0.7em 0;
+                    background: linear-gradient(90deg, #e74c3c 60%, #c0392b 100%);
+                    color: #fff;
+                    border: none;
+                    border-radius: 8px;
+                    font-size: 1.08em;
+                    font-weight: 600;
+                    letter-spacing: 0.02em;
+                    box-shadow: 0 2px 10px rgba(231,76,60,0.10);
+                    cursor: pointer;
+                    transition: background 0.18s, box-shadow 0.18s, transform 0.12s;
+                    outline: none;
+                    position: relative;
+                    z-index: 2;
+                }
+                #clear-room-btn:focus {
+                    box-shadow: 0 0 0 3px rgba(231,76,60,0.18);
+                    background: linear-gradient(90deg, #e74c3c 70%, #c0392b 100%);
+                }
+                #clear-room-btn:hover {
+                    background: linear-gradient(90deg, #c0392b 60%, #e74c3c 100%);
+                    box-shadow: 0 4px 16px rgba(231,76,60,0.16);
+                    transform: translateY(-1px) scale(1.025);
+                }
+                #clear-room-btn:active {
+                    background: #b93222;
+                    box-shadow: 0 1px 4px rgba(231,76,60,0.10);
+                    transform: scale(0.98);
+                }
+                #clear-room-btn .clear-room-icon {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                #clear-room-btn .clear-room-label {
+                    display: inline-block;
+                }
+                @media (max-width: 600px) {
+                    #clear-room-btn {
+                        font-size: 1em;
+                        padding: 0.6em 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        // Always move the button to just after the usersList
+        if (usersList && clearBtn.parentNode !== usersList.parentNode) {
+            usersList.parentNode.insertBefore(clearBtn, usersList.nextSibling);
+        }
+    } else if (clearBtn) {
+        clearBtn.remove();
+    }
+}
+// Call on room join and login
+socket.on('userList', ({ users }) => {
+    showUsers(users);
+});
+socket.on('roomList', () => {
+    showRooms();
+});
+socket.on('clearRoom', () => {
+    chatDisplay.innerHTML = '';
+    processedMessages.clear();
+});
