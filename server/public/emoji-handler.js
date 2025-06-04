@@ -20,6 +20,10 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('Emoji picker core UI elements not found');
         return;
     }
+
+    // Apply styles to make the emoji container scrollable
+    emojiContainer.style.maxHeight = '200px'; // Adjust this value as needed (e.g., '25vh' or '250px')
+    emojiContainer.style.overflowY = 'auto';
     
     // Function to position the emoji picker properly
     function positionEmojiPicker() {
@@ -154,14 +158,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 
-                // Store all emojis and reset to first page
+                // Store all emojis
                 allEmojis = emojis;
-                // REMOVE: currentPage = 1;
+                // REMOVE: currentPage = 1; // Already removed in user's provided code
                 
                 // Render all emojis
                 renderEmojis();
                 
-                // REMOVE: createPaginationControls();
+                // REMOVE: createPaginationControls(); // Already removed in user's provided code
             })
             .catch(error => {
                 console.error('Error loading emojis:', error);
