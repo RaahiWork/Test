@@ -1631,7 +1631,7 @@ if (helpBtn) {
         modal.className = 'help-credits';
         modal.innerHTML = `
           <div style="font-size:1.3em;margin-bottom:20px;color:#ffd700;text-shadow:0 1px 3px rgba(0,0,0,0.3);"><strong>🔮 Info & Credits</strong></div>
-          <div style="margin-bottom:12px;"><strong>Credits:</strong> Emoji art powered by <a href='https://fonts.google.com/emoji' target='_blank' rel='noopener'>Google</a></div>
+          <div style="margin-bottom:12px;"><strong>Credits:</strong> Emoji art powered by <a href='https://fonts.google.com/emoji' target='_blank' rel='noopener'>Google</a><br>Theme images by <a href='https://pixabay.com/' target='_blank' rel='noopener'>Pixabay</a></div>
           <div style="margin-bottom:12px;"><strong>Need help?</strong> Email <a href='mailto:support@vybchat.com'>support@vybchat.com</a></div>
           <span class='thanks'>Thanks for using <strong>Vyb Chat</strong>! 🎉</span>
           <button id='close-help-modal' class='close-help-modal'>Close</button>
