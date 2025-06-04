@@ -26,5 +26,6 @@ jobs:
             cd ~/Test/server
             git pull origin main
             npm install
-            pm2 start npm --name vybchat -- run start || pm2 restart vybchat
+            pm2 delete vybchat || true
+            pm2 start npm --name vybchat -- run start
           EOF
