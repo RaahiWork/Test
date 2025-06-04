@@ -23,7 +23,7 @@
 .help-credits {
   margin: 0;
   padding: 24px 28px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
   color: #fff;
   border-radius: 16px;
   font-size: 1.05em;
@@ -42,15 +42,20 @@
   text-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 .help-credits a {
-  color: #87ceeb;
-  text-decoration: none;
+  color: #ffe066;
+  text-decoration: underline;
   font-weight: 600;
   transition: color 0.3s ease;
-  border-bottom: 1px solid rgba(135,206,235,0.3);
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+  background: none !important;
+  position: relative;
+  z-index: 1;
 }
 .help-credits a:hover {
   color: #fff;
   border-bottom: 1px solid #fff;
+  background: none !important;
+  z-index: 2;
 }
 .help-credits .thanks {
   display: block;
