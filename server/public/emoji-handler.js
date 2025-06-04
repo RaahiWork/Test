@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // Pagination state
     let allEmojis = [];
     let currentPage = 1;
-    const emojisPerPage = 50;
+    const emojisPerPage = 25;
 
     // Variables to store the current target for the emoji picker
     let currentTargetInput = null;
