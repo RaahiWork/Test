@@ -1,0 +1,89 @@
+/* custom.css: Styles for the new help button */
+
+.help-btn {
+  background: #6c63ff;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  cursor: pointer;
+  font-size: 18px;
+  transition: background 0.2s;
+}
+.help-btn:hover {
+  background: #5548c8;
+}
+
+/* --- Help & Credits Section --- */
+.help-credits {
+  margin: 0;
+  padding: 24px 28px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border-radius: 16px;
+  font-size: 1.05em;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  text-align: center;
+  line-height: 1.8;
+  font-family: 'Segoe UI', 'Arial', sans-serif;
+  min-width: 320px;
+  max-width: 400px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.help-credits strong {
+  color: #ffd700;
+  font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.help-credits a {
+  color: #87ceeb;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s ease;
+  border-bottom: 1px solid rgba(135,206,235,0.3);
+}
+.help-credits a:hover {
+  color: #fff;
+  border-bottom: 1px solid #fff;
+}
+.help-credits .thanks {
+  display: block;
+  margin-top: 16px;
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #ffd700;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+/* Close button in help popup */
+.close-help-modal {
+  margin-top: 20px !important;
+  padding: 12px 32px !important;
+  border: none !important;
+  border-radius: 25px !important;
+  background: linear-gradient(45deg, #ff6b6b, #ee5a52) !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+  font-size: 1em !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 15px rgba(238,90,82,0.4) !important;
+  transition: all 0.3s ease !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+.close-help-modal:hover {
+  background: linear-gradient(45deg, #ff5252, #d32f2f) !important;
+  box-shadow: 0 6px 20px rgba(238,90,82,0.6) !important;
+  transform: translateY(-2px) !important;
+}
