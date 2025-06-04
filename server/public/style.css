@@ -369,9 +369,9 @@ button {
 
 #emoji-picker #emoji-container {
     display: grid;
-    grid-template-columns: repeat(5, 1fr); /* Fixed 5 columns for 10 emojis (2 rows) */
+    grid-template-columns: repeat(10, 1fr); /* 10 columns for 10x5 grid layout */
     gap: 0.4rem; /* Reduced gap */
-    height: 120px; /* Fixed height for exactly 2 rows */
+    height: 240px; /* Adjusted height for exactly 5 rows (5 * 40px + gaps) */
     overflow: hidden;
     padding: 0.3rem; /* Reduced padding */
     border: 1px solid rgba(108, 99, 255, 0.1);
