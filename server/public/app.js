@@ -711,7 +711,7 @@ function handleLogout() {
             nameInput.classList.remove('disabled');
         }
         
-        // Show login overlay
+        // Hide login overlay
         if (loginOverlay) {
             loginOverlay.classList.remove('hide');
             loginOverlay.style.display = 'flex';
@@ -897,32 +897,13 @@ function setupEmojiAndImageHandlers() {
     // Add emoji picker functionality
     const emojiBtn = document.getElementById('emoji-btn');
     const emojiPicker = document.getElementById('emoji-picker');
-    
-    if (emojiBtn && emojiPicker) {
-        emojiBtn.addEventListener('click', () => {
-            if (emojiPicker.style.display === 'none' || !emojiPicker.style.display) {
-                emojiPicker.style.display = 'flex';
-                loadEmojis();
-            } else {
-                emojiPicker.style.display = 'none';
-            }
-        });
-        
-        // Add close button functionality
-        const closeEmojiPickerBtn = document.getElementById('close-emoji-picker');
-        if (closeEmojiPickerBtn) {
-            closeEmojiPickerBtn.addEventListener('click', () => {
-                emojiPicker.style.display = 'none';
-            });
-        }
-        
-        // Close emoji picker when clicking outside
-        document.addEventListener('click', (e) => {
-            if (emojiPicker.style.display !== 'none' && 
-                !emojiPicker.contains(e.target) && 
-                e.target !== emojiBtn && 
-                !emojiBtn.contains(e.target)) {
-                emojiPicker.style.display = 'none';
+    const msgInput = document.getElementById('message');
+
+    if (emojiBtn && emojiPicker && msgInput) {
+        emojiBtn.addEventListener('click', function(e) {
+            // Use the new global function from emoji-handler.js
+            if (window.openEmojiPickerFor) {
+                window.openEmojiPickerFor(e, msgInput, emojiBtn);
             }
         });
     }
@@ -1241,6 +1222,35 @@ style.textContent = `
 .chat-display {
     background: transparent;
     pointer-events: auto;
+}
+
+/* Help/Credits modal styles */
+.help-credits {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    max-width: 400px;
+    width: 90%;
+    margin: 0 auto;
+    z-index: 10000;
+    position: relative;
+}
+.help-credits strong {
+    color: #333;
+}
+.help-credits a {
+    color: #6c63ff;
+    text-decoration: none;
+}
+.help-credits a:hover {
+    text-decoration: underline;
+}
+.thanks {
+    display: block;
+    margin-top: 12px;
+    font-size: 0.9em;
+    color: #777;
 }
 `;
 document.head.appendChild(style);
@@ -1576,3 +1586,43 @@ socket.on('clearRoom', () => {
     chatDisplay.innerHTML = '';
     processedMessages.clear();
 });
+
+// Info/help button functionality
+const helpBtn = document.getElementById('help-btn');
+if (helpBtn) {
+    helpBtn.innerHTML = '<span class="info-icon">ℹ️</span>';
+    helpBtn.title = 'Info';
+    helpBtn.addEventListener('click', function() {
+        let overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            z-index: 9998;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        `;
+        
+        let modal = document.createElement('div');
+        modal.className = 'help-credits';
+        modal.innerHTML = `
+          <div style="font-size:1.3em;margin-bottom:20px;color:#ffd700;text-shadow:0 1px 3px rgba(0,0,0,0.3);"><strong>🔮 Info & Credits</strong></div>
+          <div style="margin-bottom:12px;"><strong>Credits:</strong> Emoji art powered by <a href='https://fonts.google.com/emoji' target='_blank' rel='noopener'>Google</a><br>Theme images by <a href='https://pixabay.com/' target='_blank' rel='noopener'>Pixabay</a></div>
+          <div style="margin-bottom:12px;"><strong>Need help?</strong> Email <a href='mailto:support@vybchat.com'>support@vybchat.com</a></div>
+          <span class='thanks'>Thanks for using <strong>Vyb Chat</strong>! 🎉</span>
+          <button id='close-help-modal' class='close-help-modal'>Close</button>
+        `;
+        
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+        
+        const closeModal = () => document.body.removeChild(overlay);
+        document.getElementById('close-help-modal').onclick = closeModal;
+        overlay.onclick = (e) => e.target === overlay && closeModal();
+    });
+}

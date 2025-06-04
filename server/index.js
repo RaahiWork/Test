@@ -58,6 +58,19 @@ try {
     if (files.length === 0) {
         console.warn('No emojis found. Add emoji images to:', emojisPath);
     }
+    
+    // Ensure placeholder.gif exists in images directory
+    const placeholderPath = path.join(imagesPath, 'placeholder.gif');
+    try {
+        await fs.access(placeholderPath);
+    } catch {
+        // Write a 1x1 transparent GIF if not present
+        const transparentGif = Buffer.from(
+            "R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==",
+            "base64"
+        );
+        await fs.writeFile(placeholderPath, transparentGif);
+    }
 } catch (error) {
     console.error('Error ensuring directories exist:', error);
 }

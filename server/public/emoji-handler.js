@@ -9,8 +9,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const mainChatMessageInput = document.getElementById('message'); // The input in the main chat form
       // Pagination state
     let allEmojis = [];
-    let currentPage = 1;
-    const emojisPerPage = 50;
+    // REMOVE: let currentPage = 1;
+    // REMOVE: const emojisPerPage = 25;
 
     // Variables to store the current target for the emoji picker
     let currentTargetInput = null;
@@ -20,6 +20,10 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('Emoji picker core UI elements not found');
         return;
     }
+
+    // Apply styles to make the emoji container scrollable
+    emojiContainer.style.maxHeight = '200px'; // Adjust this value as needed (e.g., '25vh' or '250px')
+    emojiContainer.style.overflowY = 'auto';
     
     // Function to position the emoji picker properly
     function positionEmojiPicker() {
@@ -77,96 +81,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 200);
     }
     
-    // Create pagination controls
-    function createPaginationControls() {
-        const existingPagination = emojiPicker.querySelector('.emoji-pagination');
-        if (existingPagination) {
-            existingPagination.remove();
-        }
-        
-        const paginationDiv = document.createElement('div');
-        paginationDiv.className = 'emoji-pagination';
-        
-        const totalPages = Math.ceil(allEmojis.length / emojisPerPage);
-        
-        paginationDiv.innerHTML = `
-            <div class="pagination-info">
-                Page ${currentPage} of ${totalPages} (${allEmojis.length} emojis)
-            </div>
-            <div class="pagination-controls">
-                <button class="pagination-btn" id="prev-page" ${currentPage === 1 ? 'disabled' : ''}>
-                    Previous
-                </button>
-                <button class="pagination-btn" id="next-page" ${currentPage === totalPages ? 'disabled' : ''}>
-                    Next
-                </button>
-            </div>
-        `;
-        
-        emojiPicker.appendChild(paginationDiv);
-        
-        // Add event listeners to pagination buttons
-        const prevBtn = document.getElementById('prev-page');
-        const nextBtn = document.getElementById('next-page');
-        
-        if (prevBtn) {
-            prevBtn.addEventListener('click', () => {
-                if (currentPage > 1) {
-                    currentPage--;
-                    renderCurrentPage();
-                    updatePaginationControls();
-                }
-            });
-        }
-        
-        if (nextBtn) {
-            nextBtn.addEventListener('click', () => {
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    renderCurrentPage();
-                    updatePaginationControls();
-                }
-            });
-        }
-    }
+    // REMOVE: createPaginationControls function
+    // REMOVE: updatePaginationControls function
     
-    // Update pagination controls
-    function updatePaginationControls() {
-        const totalPages = Math.ceil(allEmojis.length / emojisPerPage);
-        const prevBtn = document.getElementById('prev-page');
-        const nextBtn = document.getElementById('next-page');
-        const paginationInfo = emojiPicker.querySelector('.pagination-info');
+    // Render all emojis with lazy loading
+    function renderEmojis() {
+        emojiContainer.innerHTML = ''; // Clear previous emojis
         
-        if (prevBtn) {
-            prevBtn.disabled = currentPage === 1;
-        }
-        
-        if (nextBtn) {
-            nextBtn.disabled = currentPage === totalPages;
-        }
-        
-        if (paginationInfo) {
-            paginationInfo.textContent = `Page ${currentPage} of ${totalPages} (${allEmojis.length} emojis)`;
-        }
-    }
-    
-    // Render current page of emojis
-    function renderCurrentPage() {
-        emojiContainer.innerHTML = '';
-        
-        const startIndex = (currentPage - 1) * emojisPerPage;
-        const endIndex = Math.min(startIndex + emojisPerPage, allEmojis.length);
-        const pageEmojis = allEmojis.slice(startIndex, endIndex);
-        
-        pageEmojis.forEach(emojiFile => {
+        allEmojis.forEach(emojiFile => {
             const emojiItem = document.createElement('div');
             emojiItem.className = 'emoji-item';
             
             const img = document.createElement('img');
-            img.src = `/emojis/${emojiFile}`;
+            // Set data-src for lazy loading, and a placeholder or small initial src if desired
+            img.setAttribute('data-src', `/emojis/${emojiFile}`);
+            img.src = '/images/placeholder.gif'; // Use a valid placeholder path
             img.alt = emojiFile.replace(/\.\w+$/, '');
             img.title = emojiFile.replace(/\.\w+$/, '');
-            
+            img.loading = 'lazy'; // Use native browser lazy loading
+
             emojiItem.appendChild(img);
             
             // Add click handler
@@ -176,6 +109,28 @@ document.addEventListener('DOMContentLoaded', function() {
             
             emojiContainer.appendChild(emojiItem);
         });
+
+        // Implement Intersection Observer for images that don't support loading="lazy" or for more control
+        const images = emojiContainer.querySelectorAll('img[data-src]');
+        if ('IntersectionObserver' in window) {
+            const observer = new IntersectionObserver((entries, observerInstance) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const lazyImage = entry.target;
+                        lazyImage.src = lazyImage.getAttribute('data-src');
+                        lazyImage.removeAttribute('data-src');
+                        observerInstance.unobserve(lazyImage);
+                    }
+                });
+            });
+            images.forEach(img => observer.observe(img));
+        } else {
+            // Fallback for older browsers: load all images immediately
+            images.forEach(img => {
+                img.src = img.getAttribute('data-src');
+                img.removeAttribute('data-src');
+            });
+        }
     }
     
     // Load emojis directly from server
@@ -203,15 +158,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 
-                // Store all emojis and reset to first page
+                // Store all emojis
                 allEmojis = emojis;
-                currentPage = 1;
+                // REMOVE: currentPage = 1; // Already removed in user's provided code
                 
-                // Render first page
-                renderCurrentPage();
+                // Render all emojis
+                renderEmojis();
                 
-                // Create pagination controls
-                createPaginationControls();
+                // REMOVE: createPaginationControls(); // Already removed in user's provided code
             })
             .catch(error => {
                 console.error('Error loading emojis:', error);
@@ -276,22 +230,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Add keyboard navigation for pagination
-    document.addEventListener('keydown', function(e) {
-        if (emojiPicker.style.display === 'flex') {
-            const totalPages = Math.ceil(allEmojis.length / emojisPerPage);
-            
-            if (e.key === 'ArrowLeft' && currentPage > 1) {
-                e.preventDefault();
-                currentPage--;
-                renderCurrentPage();
-                updatePaginationControls();
-            } else if (e.key === 'ArrowRight' && currentPage < totalPages) {
-                e.preventDefault();
-                currentPage++;
-                renderCurrentPage();
-                updatePaginationControls();
-            }
-        }
-    });
+    // REMOVE: Keyboard navigation for pagination (ArrowLeft, ArrowRight)
+    // document.addEventListener('keydown', function(e) { ... });
 });
