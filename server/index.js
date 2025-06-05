@@ -6,6 +6,7 @@ import fs from 'fs/promises'
 import dotenv from 'dotenv'
 import connectDB from './config/database.js'
 import User from './models/User.js'
+import mongoose from 'mongoose'
 
 // Load environment variables
 dotenv.config()
@@ -254,6 +255,18 @@ const io = new Server(expressServer, {
     pingInterval: 25000 // Check connection every 25 seconds
 })
 
+// --- Private Message Model ---
+const privateMessageSchema = new mongoose.Schema({
+    fromUser: { type: String, required: true },
+    toUser: { type: String, required: true },
+    text: { type: String, default: null },
+    image: { type: String, default: null },
+    voice: { type: String, default: null },
+    time: { type: Date, default: Date.now }
+}, { timestamps: true });
+
+const PrivateMessage = mongoose.models.PrivateMessage || mongoose.model('PrivateMessage', privateMessageSchema);
+
 io.on('connection', socket => {
     // Upon connection - only to user 
     socket.emit('message', buildMsg(ADMIN, "Welcome to Vyb Chat!"))
@@ -272,12 +285,43 @@ io.on('connection', socket => {
     });
 
     // Add handler for private messages
-    socket.on('privateMessage', ({ fromUser, toUser, text, image = null, voice = null }) => {
+    socket.on('privateMessage', async ({ fromUser, toUser, text, image = null, voice = null }) => {
         //console.log('Private message received:', { fromUser, toUser, text: text ? 'Text message' : null, image: image ? 'Image data' : null });
         
         // Find the target user's socket
         const targetUser = UsersState.users.find(user => user.name === toUser);
-        
+
+        // Save to MongoDB
+        try {
+            await PrivateMessage.create({
+                fromUser,
+                toUser,
+                text,
+                image,
+                voice,
+                time: new Date()
+            });
+
+            // Keep only the latest 50 messages between these two users
+            const allIds = await PrivateMessage.find({
+                $or: [
+                    { fromUser, toUser },
+                    { fromUser: toUser, toUser: fromUser }
+                ]
+            })
+            .sort({ time: -1 })
+            .skip(50)
+            .select('_id')
+            .lean();
+
+            if (allIds.length > 0) {
+                const idsToDelete = allIds.map(m => m._id);
+                await PrivateMessage.deleteMany({ _id: { $in: idsToDelete } });
+            }
+        } catch (err) {
+            console.error('Failed to save or trim private messages:', err);
+        }
+
         if (targetUser) {
             const messageData = {
                 fromUser,
@@ -285,11 +329,7 @@ io.on('connection', socket => {
                 text,
                 image,
                 voice,
-                time: new Intl.DateTimeFormat('default', {
-                    hour: 'numeric',
-                    minute: 'numeric',
-                    second: 'numeric',
-                }).format(new Date())
+                time: new Date().toISOString()
             };
             
             // Send message to target user
@@ -306,6 +346,30 @@ io.on('connection', socket => {
                 error: `User ${toUser} is not online`,
                 toUser
             });
+        }
+    });
+
+    // Fetch last 50 private messages between two users
+    socket.on('getPrivateHistory', async ({ userA, userB }) => {
+        try {
+            const messages = await PrivateMessage.find({
+                $or: [
+                    { fromUser: userA, toUser: userB },
+                    { fromUser: userB, toUser: userA }
+                ]
+            })
+            .sort({ time: -1 })
+            .limit(50)
+            .lean();
+            // Send in chronological order
+            socket.emit('privateHistory', {
+                userA,
+                userB,
+                messages: messages.reverse()
+            });
+        } catch (err) {
+            console.error('Failed to fetch private message history:', err);
+            socket.emit('privateHistory', { userA, userB, messages: [] });
         }
     });
 

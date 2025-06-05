@@ -306,20 +306,43 @@ class PrivateMessaging {
                 
                 // Handle incoming private messages
                 socket.on('privateMessage', (data) => {
-                    //console.log('Received private message:', data);
                     this.handleIncomingPrivateMessage(data);
                 });
                 
                 // Handle private message sent confirmation
                 socket.on('privateMessageSent', (data) => {
-                    //console.log('Private message sent confirmation:', data);
                     this.handlePrivateMessageSent(data);
                 });
                 
                 // Handle private message errors
                 socket.on('privateMessageError', (data) => {
-                    //console.log('Private message error:', data);
                     this.handlePrivateMessageError(data);
+                });
+
+                // Handle private message history from server
+                socket.on('privateHistory', (data) => {
+                    const nameInput = document.querySelector('#name');
+                    const { userA, userB, messages } = data;
+                    // Only load if this is the current chat
+                    if (
+                        (this.currentPrivateChat === userA && nameInput?.value === userB) ||
+                        (this.currentPrivateChat === userB && nameInput?.value === userA)
+                    ) {
+                        // Store messages in memory
+                        this.privateConversations.set(
+                            this.currentPrivateChat,
+                            (messages || []).map(msg => ({
+                                fromUser: msg.fromUser,
+                                toUser: msg.toUser,
+                                text: msg.text,
+                                image: msg.image,
+                                voice: msg.voice,
+                                time: msg.time,
+                                type: msg.fromUser === nameInput?.value ? 'sent' : 'received'
+                            }))
+                        );
+                        this.loadConversationHistory(this.currentPrivateChat);
+                    }
                 });
 
                 // WebRTC signaling handlers
@@ -372,29 +395,34 @@ class PrivateMessaging {
     openPrivateMessage(username) {
         const nameInput = document.querySelector('#name');
         if (!username || username === nameInput?.value) return;
-        
+
         this.currentPrivateChat = username;
-        
+
         // Update modal title
         const title = document.getElementById('private-message-title');
         if (title) {
             title.textContent = `Private Message - ${username}`;
         }
-        
+
         // Clear unread count for this user
         this.unreadCounts.set(username, 0);
         this.updateConversationTabs();
-        
-        // Load conversation history
-        this.loadConversationHistory(username);
-        
+
+        // Request conversation history from server
+        if (typeof socket !== 'undefined' && socket) {
+            socket.emit('getPrivateHistory', {
+                userA: nameInput?.value,
+                userB: username
+            });
+        }
+
         // Show modal
         const modal = document.getElementById('private-message-modal');
         if (modal) {
             modal.style.display = 'flex';
             setTimeout(() => modal.classList.add('show'), 10);
         }
-        
+
         // Focus on input
         const input = document.getElementById('private-message-input');
         if (input) {
