@@ -442,6 +442,18 @@ class PrivateMessaging {
             title.textContent = `Private Message - ${displayName}`;
         }
 
+        // Clear search bar after opening a chat
+        const searchInput = document.getElementById('private-user-search-input');
+        if (searchInput) {
+            searchInput.value = '';
+            // Optionally, also hide results if present
+            const results = document.getElementById('private-user-search-results');
+            if (results) {
+                results.classList.remove('active');
+                results.innerHTML = '';
+            }
+        }
+
         // Clear unread count for this user
         this.unreadCounts.set(username, 0);
         this.updateConversationTabs();
