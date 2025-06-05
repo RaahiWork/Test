@@ -26,6 +26,20 @@ class PrivateMessaging {
         this.setupVoiceCallUI();
         this.setupRingtone();
         this.setupTabFocusHandlers();
+
+        // Always fetch recent private chats after DOMContentLoaded and username is available
+        const tryFetchRecentChats = () => {
+            const myName = this.getMyName();
+            if (typeof socket !== 'undefined' && socket && myName) {
+                socket.emit('getRecentPrivateChats', { user: myName });
+            } else {
+                setTimeout(tryFetchRecentChats, 300);
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            tryFetchRecentChats();
+        });
     }
     
     setupRingtone() {
@@ -383,24 +397,24 @@ class PrivateMessaging {
                     alert(`${data.from} declined your call.`);
                 });
 
-                // Handle recent private chats from server
+                // Handle recent private chats from server (users table + private messages)
                 socket.on('recentPrivateChats', (data) => {
                     // data: { chats: [{ username, lastMessage }] }
                     if (!Array.isArray(data.chats)) return;
+                    // Always clear and re-populate to ensure latest order
+                    this.privateConversations.clear();
                     data.chats.forEach(chat => {
-                        if (!this.privateConversations.has(chat.username)) {
-                            this.privateConversations.set(chat.username, [
-                                {
-                                    fromUser: chat.lastMessage.fromUser,
-                                    toUser: chat.lastMessage.toUser,
-                                    text: chat.lastMessage.text,
-                                    image: chat.lastMessage.image,
-                                    voice: chat.lastMessage.voice,
-                                    time: chat.lastMessage.time,
-                                    type: chat.lastMessage.fromUser === this.getMyName() ? 'sent' : 'received'
-                                }
-                            ]);
-                        }
+                        this.privateConversations.set(chat.username, [
+                            {
+                                fromUser: chat.lastMessage.fromUser,
+                                toUser: chat.lastMessage.toUser,
+                                text: chat.lastMessage.text,
+                                image: chat.lastMessage.image,
+                                voice: chat.lastMessage.voice,
+                                time: chat.lastMessage.time,
+                                type: chat.lastMessage.fromUser === this.getMyName() ? 'sent' : 'received'
+                            }
+                        ]);
                     });
                     this.updateConversationTabs();
                 });
@@ -764,17 +778,16 @@ class PrivateMessaging {
 
         container.innerHTML = '';
 
-        // If there are no in-memory conversations, try to show recent chats from localStorage or fetch from server
+        // If there are no in-memory conversations, fetch recent chats from server (users table)
         if (this.privateConversations.size === 0) {
-            // Try to fetch recent chats from server if user is logged in
             const myName = this.getMyName();
             if (typeof socket !== 'undefined' && socket && myName) {
+                // Request recent private chats from server (which will query the users table and private messages)
                 socket.emit('getRecentPrivateChats', { user: myName });
-                // The handler below will update the UI when data arrives
             }
         }
 
-        // Sort conversations by most recent message
+        // Sort conversations by most recent message (latest at the top)
         const sortedConversations = Array.from(this.privateConversations.entries())
             .sort((a, b) => {
                 const aLastMessage = a[1][a[1].length - 1];
@@ -792,9 +805,18 @@ class PrivateMessaging {
             }
 
             const lastMessage = messages[messages.length - 1];
-            const preview = lastMessage ?
-                (lastMessage.text || lastMessage.voice ? 'Voice' : lastMessage.image ? 'Image' : 'Message') :
-                'No messages yet';
+            let preview = 'No messages yet';
+            if (lastMessage) {
+                if (lastMessage.text && lastMessage.text.trim()) {
+                    preview = lastMessage.text;
+                } else if (lastMessage.voice) {
+                    preview = 'Voice';
+                } else if (lastMessage.image) {
+                    preview = 'Image';
+                } else {
+                    preview = 'Message';
+                }
+            }
 
             tab.innerHTML = `
                 <div class="private-conversation-name">${username}</div>

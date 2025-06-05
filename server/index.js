@@ -26,18 +26,22 @@ connectDB()
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true }))
 
-// Add CORS middleware before other routes - hardcode the specific origin
+// Add CORS middleware before other routes - allow both localhost and 127.0.0.1:5500
 app.use((req, res, next) => {
-    // Hardcode the origin for the specific client
-    res.header('Access-Control-Allow-Origin', 'http://127.0.0.1:5500');
+    const allowedOrigins = [
+        'http://127.0.0.1:5500',
+        'http://localhost:5500'
+    ];
+    const origin = req.headers.origin;
+    if (allowedOrigins.includes(origin)) {
+        res.header('Access-Control-Allow-Origin', origin);
+    }
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-    
     // Handle preflight requests
     if (req.method === 'OPTIONS') {
         return res.sendStatus(200);
     }
-    
     next();
 });
 
@@ -231,6 +235,24 @@ app.get('/api/users', async (req, res) => {
     }
 });
 
+// Add endpoint to search users by username (case-insensitive, partial match)
+app.get('/api/search-users', async (req, res) => {
+    try {
+        const q = (req.query.q || '').trim();
+        if (!q) return res.json({ users: [] });
+        // Find users whose username or displayName contains the query (case-insensitive)
+        const users = await User.find({
+            $or: [
+                { username: { $regex: q, $options: 'i' } },
+                { displayName: { $regex: q, $options: 'i' } }
+            ]
+        }, 'username displayName createdAt').limit(20);
+        res.json({ users });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to search users' });
+    }
+});
+
 const expressServer = app.listen(PORT, () => {
     //console.log(`🚀 Server running on port ${PORT}`)
 })
@@ -286,11 +308,6 @@ io.on('connection', socket => {
 
     // Add handler for private messages
     socket.on('privateMessage', async ({ fromUser, toUser, text, image = null, voice = null }) => {
-        //console.log('Private message received:', { fromUser, toUser, text: text ? 'Text message' : null, image: image ? 'Image data' : null });
-        
-        // Find the target user's socket
-        const targetUser = UsersState.users.find(user => user.name === toUser);
-
         // Save to MongoDB
         try {
             await PrivateMessage.create({
@@ -322,31 +339,22 @@ io.on('connection', socket => {
             console.error('Failed to save or trim private messages:', err);
         }
 
+        const messageData = {
+            fromUser,
+            toUser,
+            text,
+            image,
+            voice,
+            time: new Date().toISOString()
+        };
+
+        // Try to deliver in real-time if user is online
+        const targetUser = UsersState.users.find(user => user.name === toUser);
         if (targetUser) {
-            const messageData = {
-                fromUser,
-                toUser,
-                text,
-                image,
-                voice,
-                time: new Date().toISOString()
-            };
-            
-            // Send message to target user
             io.to(targetUser.id).emit('privateMessage', messageData);
-            
-            // Send confirmation back to sender
-            socket.emit('privateMessageSent', messageData);
-            
-            //console.log(`Private message sent from ${fromUser} to ${toUser}`);
-        } else {
-            // User not found or offline
-            //console.log(`User ${toUser} not found or offline`);
-            socket.emit('privateMessageError', {
-                error: `User ${toUser} is not online`,
-                toUser
-            });
         }
+        // Always send confirmation back to sender
+        socket.emit('privateMessageSent', messageData);
     });
 
     // Fetch last 50 private messages between two users

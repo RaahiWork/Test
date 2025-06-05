@@ -125,6 +125,16 @@
             <!-- Add private messaging section -->
             <div class="private-messaging-section">
                 <h4>Private Messages</h4>
+                <div class="private-user-search-container">
+                    <input
+                        id="private-user-search-input"
+                        type="text"
+                        placeholder="Search users..."
+                        autocomplete="off"
+                        spellcheck="false"
+                    />
+                    <div id="private-user-search-results"></div>
+                </div>
                 <div class="private-conversations" id="private-conversations">
                     <!-- Private conversation tabs will be added here -->
                 </div>
@@ -262,6 +272,138 @@
             if (msgInput && !isiOS) {
                 msgInput.setAttribute('autofocus', 'autofocus');
             }
+        })();
+
+        // --- User search autocomplete for private messaging ---
+        (function() {
+            // Detect backend API base URL (localhost:3500 or 127.0.0.1:3500)
+            const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+                ? `http://${window.location.hostname}:3500`
+                : window.location.origin;
+
+            const input = document.getElementById('private-user-search-input');
+            const results = document.getElementById('private-user-search-results');
+            let users = [];
+            let selectedIdx = -1;
+            let lastQuery = '';
+
+            function showResults(list) {
+                results.innerHTML = '';
+                if (!list.length) {
+                    const div = document.createElement('div');
+                    div.className = 'private-user-search-result no-results';
+                    div.textContent = 'No users found';
+                    results.appendChild(div);
+                    results.classList.add('active');
+                    return;
+                }
+                list.forEach((user, idx) => {
+                    const div = document.createElement('div');
+                    div.className = 'private-user-search-result';
+                    div.textContent = user.displayName || user.username;
+                    div.tabIndex = 0;
+                    if (idx === selectedIdx) div.classList.add('selected');
+                    div.onclick = () => {
+                        input.value = user.displayName || user.username;
+                        results.classList.remove('active');
+                        results.innerHTML = '';
+                        // Open private message modal for this user
+                        if (window.privateMessaging) window.privateMessaging.openPrivateMessage(user.username);
+                    };
+                    div.onmouseenter = () => {
+                        selectedIdx = idx;
+                        updateSelection();
+                    };
+                    results.appendChild(div);
+                });
+                results.classList.add('active');
+            }
+
+            function updateSelection() {
+                Array.from(results.children).forEach((el, idx) => {
+                    if (idx === selectedIdx) el.classList.add('selected');
+                    else el.classList.remove('selected');
+                });
+            }
+
+            input.addEventListener('input', function() {
+                const q = input.value.trim();
+                selectedIdx = -1;
+                if (!q) {
+                    results.innerHTML = '';
+                    results.classList.remove('active');
+                    return;
+                }
+                lastQuery = q;
+                fetch(`${API_BASE_URL}/api/search-users?q=${encodeURIComponent(q)}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        users = (data.users || []);
+                        showResults(users);
+                    })
+                    .catch(() => {
+                        results.innerHTML = '';
+                        results.classList.remove('active');
+                    });
+            });
+
+            input.addEventListener('keydown', function(e) {
+                if (!results.classList.contains('active')) return;
+                if (e.key === 'ArrowDown') {
+                    if (selectedIdx < users.length - 1) {
+                        selectedIdx++;
+                        updateSelection();
+                    }
+                    e.preventDefault();
+                } else if (e.key === 'ArrowUp') {
+                    if (selectedIdx > 0) {
+                        selectedIdx--;
+                        updateSelection();
+                    }
+                    e.preventDefault();
+                } else if (e.key === 'Enter') {
+                    if (selectedIdx >= 0 && users[selectedIdx]) {
+                        input.value = users[selectedIdx].displayName || users[selectedIdx].username;
+                        results.classList.remove('active');
+                        results.innerHTML = '';
+                        if (window.privateMessaging) window.privateMessaging.openPrivateMessage(users[selectedIdx].username);
+                    }
+                } else if (e.key === 'Escape') {
+                    results.classList.remove('active');
+                    results.innerHTML = '';
+                }
+            });
+
+            // Hide results when clicking outside
+            document.addEventListener('mousedown', function(e) {
+                if (!input.contains(e.target) && !results.contains(e.target)) {
+                    results.classList.remove('active');
+                }
+            });
+
+            // --- Call search on load to populate recent private messages ---
+            document.addEventListener('DOMContentLoaded', function() {
+                // Only trigger if input is empty (not searching)
+                if (!input.value.trim()) {
+                    // Use a single space to trigger backend search for all users (or use '' if backend supports)
+                    fetch(`${API_BASE_URL}/api/search-users?q=`)
+                        .then(res => res.json())
+                        .then(data => {
+                            users = (data.users || []);
+                            // Do NOT call showResults(users) here, just let the private-messaging.js handle recent chats
+                            // Instead, trigger the socket event to fetch recent private chats for the logged-in user
+                            if (window.privateMessaging && typeof window.privateMessaging.getMyName === 'function') {
+                                const myName = window.privateMessaging.getMyName();
+                                if (typeof socket !== 'undefined' && socket && myName) {
+                                    socket.emit('getRecentPrivateChats', { user: myName });
+                                }
+                            }
+                        })
+                        .catch(() => {
+                            // No-op
+                        });
+                }
+            });
         })();
     </script>
 

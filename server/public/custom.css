@@ -125,3 +125,97 @@
   background: #fff !important;
   border-radius: 1px !important;
 }
+
+/* --- User Search UI for Private Messaging --- */
+.private-user-search-container {
+  width: 100%;
+  margin: 0.5em 0 0.7em 0;
+  padding: 0.2em 0.1em;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  position: relative;
+}
+
+#private-user-search-input {
+  width: 100%;
+  padding: 0.45em 0.8em;
+  border-radius: 8px;
+  border: 1px solid #a084ee55;
+  background: #23223a;
+  color: #fff;
+  font-size: 0.95em;
+  margin-bottom: 0.2em;
+  outline: none;
+  transition: border 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(160,132,238,0.05);
+}
+
+#private-user-search-input:focus {
+  border: 1.5px solid #a084ee;
+  background: #28284a;
+}
+
+#private-user-search-results {
+  position: absolute;
+  top: 2.2em;
+  left: 0;
+  right: 0;
+  background: #23223a;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(160,132,238,0.13);
+  z-index: 20;
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid #a084ee33;
+  padding: 0.2em 0;
+  display: none;
+}
+
+#private-user-search-results.active {
+  display: block;
+}
+
+.private-user-search-result {
+  padding: 0.5em 1em;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.95em;
+  border-bottom: 1px solid #a084ee11;
+  transition: background 0.15s, color 0.15s;
+  background: transparent;
+}
+
+.private-user-search-result:last-child {
+  border-bottom: none;
+}
+
+.private-user-search-result:hover,
+.private-user-search-result:focus {
+  background: #6c63ff33;
+  color: #a084ee;
+  outline: none;
+}
+
+.private-user-search-result.selected {
+  background: #a084ee33;
+  color: #fff;
+}
+
+.private-user-search-result.no-results {
+  color: #aaa;
+  background: none;
+  cursor: default;
+  font-style: italic;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .private-user-search-container {
+    margin: 0.3em 0 0.5em 0;
+  }
+  #private-user-search-results {
+    max-height: 120px;
+    font-size: 0.95em;
+  }
+}
