@@ -9,6 +9,29 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="login.css">
     <link rel="stylesheet" href="custom.css">
+    <style>
+        /* ...existing code... */
+        .private-conversation-preview {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 180px;
+            display: block;
+            line-height: 1.4;
+            min-height: 1.4em;
+            /* Add padding to prevent cut-off */
+            padding-bottom: 2px;
+        }
+
+        /* Optionally, ensure the tab has enough height */
+        .private-conversation-tab {
+            min-height: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        /* ...existing code... */
+    </style>
 </head>
 
 <body>
@@ -382,28 +405,27 @@
             });
 
             // --- Call search on load to populate recent private messages ---
+            function triggerRecentPrivateChats() {
+                if (window.privateMessaging && typeof window.privateMessaging.getMyName === 'function') {
+                    const myName = window.privateMessaging.getMyName();
+                    if (typeof socket !== 'undefined' && socket && myName) {
+                        socket.emit('getRecentPrivateChats', { user: myName });
+                    }
+                }
+            }
+
             document.addEventListener('DOMContentLoaded', function() {
-                // Only trigger if input is empty (not searching)
                 if (!input.value.trim()) {
-                    // Use a single space to trigger backend search for all users (or use '' if backend supports)
-                    fetch(`${API_BASE_URL}/api/search-users?q=`)
-                        .then(res => res.json())
-                        .then(data => {
-                            users = (data.users || []);
-                            // Do NOT call showResults(users) here, just let the private-messaging.js handle recent chats
-                            // Instead, trigger the socket event to fetch recent private chats for the logged-in user
-                            if (window.privateMessaging && typeof window.privateMessaging.getMyName === 'function') {
-                                const myName = window.privateMessaging.getMyName();
-                                if (typeof socket !== 'undefined' && socket && myName) {
-                                    socket.emit('getRecentPrivateChats', { user: myName });
-                                }
-                            }
-                        })
-                        .catch(() => {
-                            // No-op
-                        });
+                    triggerRecentPrivateChats();
                 }
             });
+
+            // Also trigger after login overlay is hidden (login success)
+            document.addEventListener('login-success', function() {
+                triggerRecentPrivateChats();
+            });
+
+            // Patch: fire custom event after login in auth.js
         })();
     </script>
 

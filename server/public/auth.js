@@ -311,5 +311,9 @@ function proceedWithLogin(displayName) {
                 window.currentRoom = 'Vibe';
             }
         }
+
+        // --- Fire custom event for login success so private messages refresh ---
+        document.dispatchEvent(new Event('login-success'));
+
     }, 600);
 }
