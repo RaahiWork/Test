@@ -6,6 +6,7 @@ import fs from 'fs/promises'
 import dotenv from 'dotenv'
 import connectDB from './config/database.js'
 import User from './models/User.js'
+import mongoose from 'mongoose'
 
 // Load environment variables
 dotenv.config()
@@ -25,18 +26,22 @@ connectDB()
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true }))
 
-// Add CORS middleware before other routes - hardcode the specific origin
+// Add CORS middleware before other routes - allow both localhost and 127.0.0.1:5500
 app.use((req, res, next) => {
-    // Hardcode the origin for the specific client
-    res.header('Access-Control-Allow-Origin', 'http://127.0.0.1:5500');
+    const allowedOrigins = [
+        'http://127.0.0.1:5500',
+        'http://localhost:5500'
+    ];
+    const origin = req.headers.origin;
+    if (allowedOrigins.includes(origin)) {
+        res.header('Access-Control-Allow-Origin', origin);
+    }
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-    
     // Handle preflight requests
     if (req.method === 'OPTIONS') {
         return res.sendStatus(200);
     }
-    
     next();
 });
 
@@ -230,6 +235,30 @@ app.get('/api/users', async (req, res) => {
     }
 });
 
+// Add endpoint to search users by username (case-insensitive, partial match)
+app.get('/api/search-users', async (req, res) => {
+    try {
+        const q = (req.query.q || '').trim();
+        if (!q) return res.json({ users: [] });
+        // Find users whose username or displayName contains the query (case-insensitive)
+        const users = await User.find({
+            $or: [
+                { username: { $regex: q, $options: 'i' } },
+                { displayName: { $regex: q, $options: 'i' } }
+            ]
+        }, 'username displayName createdAt').limit(20);
+        // Always return displayName if available, else username
+        const usersWithDisplayName = users.map(u => ({
+            username: u.username,
+            displayName: u.displayName || u.username,
+            createdAt: u.createdAt
+        }));
+        res.json({ users: usersWithDisplayName });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to search users' });
+    }
+});
+
 const expressServer = app.listen(PORT, () => {
     //console.log(`🚀 Server running on port ${PORT}`)
 })
@@ -254,6 +283,18 @@ const io = new Server(expressServer, {
     pingInterval: 25000 // Check connection every 25 seconds
 })
 
+// --- Private Message Model ---
+const privateMessageSchema = new mongoose.Schema({
+    fromUser: { type: String, required: true },
+    toUser: { type: String, required: true },
+    text: { type: String, default: null },
+    image: { type: String, default: null },
+    voice: { type: String, default: null },
+    time: { type: Date, default: Date.now }
+}, { timestamps: true });
+
+const PrivateMessage = mongoose.models.PrivateMessage || mongoose.model('PrivateMessage', privateMessageSchema);
+
 io.on('connection', socket => {
     // Upon connection - only to user 
     socket.emit('message', buildMsg(ADMIN, "Welcome to Vyb Chat!"))
@@ -272,40 +313,134 @@ io.on('connection', socket => {
     });
 
     // Add handler for private messages
-    socket.on('privateMessage', ({ fromUser, toUser, text, image = null, voice = null }) => {
-        //console.log('Private message received:', { fromUser, toUser, text: text ? 'Text message' : null, image: image ? 'Image data' : null });
-        
-        // Find the target user's socket
-        const targetUser = UsersState.users.find(user => user.name === toUser);
-        
-        if (targetUser) {
-            const messageData = {
+    socket.on('privateMessage', async ({ fromUser, toUser, text, image = null, voice = null }) => {
+        // Save to MongoDB
+        try {
+            await PrivateMessage.create({
                 fromUser,
                 toUser,
                 text,
                 image,
                 voice,
-                time: new Intl.DateTimeFormat('default', {
-                    hour: 'numeric',
-                    minute: 'numeric',
-                    second: 'numeric',
-                }).format(new Date())
-            };
-            
-            // Send message to target user
-            io.to(targetUser.id).emit('privateMessage', messageData);
-            
-            // Send confirmation back to sender
-            socket.emit('privateMessageSent', messageData);
-            
-            //console.log(`Private message sent from ${fromUser} to ${toUser}`);
-        } else {
-            // User not found or offline
-            //console.log(`User ${toUser} not found or offline`);
-            socket.emit('privateMessageError', {
-                error: `User ${toUser} is not online`,
-                toUser
+                time: new Date()
             });
+
+            // Keep only the latest 50 messages between these two users
+            const allIds = await PrivateMessage.find({
+                $or: [
+                    { fromUser, toUser },
+                    { fromUser: toUser, toUser: fromUser }
+                ]
+            })
+            .sort({ time: -1 })
+            .skip(50)
+            .select('_id')
+            .lean();
+
+            if (allIds.length > 0) {
+                const idsToDelete = allIds.map(m => m._id);
+                await PrivateMessage.deleteMany({ _id: { $in: idsToDelete } });
+            }
+        } catch (err) {
+            console.error('Failed to save or trim private messages:', err);
+        }
+
+        const messageData = {
+            fromUser,
+            toUser,
+            text,
+            image,
+            voice,
+            time: new Date().toISOString()
+        };
+
+        // Try to deliver in real-time if user is online
+        const targetUser = UsersState.users.find(user => user.name === toUser);
+        if (targetUser) {
+            io.to(targetUser.id).emit('privateMessage', messageData);
+        }
+        // Always send confirmation back to sender
+        socket.emit('privateMessageSent', messageData);
+    });
+
+    // Fetch last 50 private messages between two users
+    socket.on('getPrivateHistory', async ({ userA, userB }) => {
+        try {
+            const messages = await PrivateMessage.find({
+                $or: [
+                    { fromUser: userA, toUser: userB },
+                    { fromUser: userB, toUser: userA }
+                ]
+            })
+            .sort({ time: -1 })
+            .limit(50)
+            .lean();
+            // Send in chronological order
+            socket.emit('privateHistory', {
+                userA,
+                userB,
+                messages: messages.reverse()
+            });
+        } catch (err) {
+            console.error('Failed to fetch private message history:', err);
+            socket.emit('privateHistory', { userA, userB, messages: [] });
+        }
+    });
+
+    // Provide recent private chats for sidebar
+    socket.on('getRecentPrivateChats', async ({ user }) => {
+        try {
+            // Find the most recent message for each unique chat partner
+            const pipeline = [
+                {
+                    $match: {
+                        $or: [
+                            { fromUser: user },
+                            { toUser: user }
+                        ]
+                    }
+                },
+                {
+                    $sort: { time: -1 }
+                },
+                {
+                    $group: {
+                        _id: {
+                            $cond: [
+                                { $eq: ["$fromUser", user] },
+                                "$toUser",
+                                "$fromUser"
+                            ]
+                        },
+                        lastMessage: { $first: "$$ROOT" }
+                    }
+                },
+                {
+                    $sort: { "lastMessage.time": -1 }
+                }
+            ];
+            const results = await PrivateMessage.aggregate(pipeline);
+
+            // Fetch displayNames for all chat partners
+            const usernames = results.map(r => r._id);
+            const usersInfo = await User.find(
+                { username: { $in: usernames.map(u => u.toLowerCase()) } },
+                'username displayName'
+            ).lean();
+            const userDisplayNameMap = {};
+            usersInfo.forEach(u => {
+                userDisplayNameMap[u.username] = u.displayName || u.username;
+            });
+
+            const chats = results.map(r => ({
+                username: r._id,
+                displayName: userDisplayNameMap[r._id.toLowerCase()] || r._id,
+                lastMessage: r.lastMessage
+            }));
+            socket.emit('recentPrivateChats', { chats });
+        } catch (err) {
+            console.error('Failed to fetch recent private chats:', err);
+            socket.emit('recentPrivateChats', { chats: [] });
         }
     });
 

@@ -26,6 +26,20 @@ class PrivateMessaging {
         this.setupVoiceCallUI();
         this.setupRingtone();
         this.setupTabFocusHandlers();
+
+        // Always fetch recent private chats after DOMContentLoaded and username is available
+        const tryFetchRecentChats = () => {
+            const myName = this.getMyName();
+            if (typeof socket !== 'undefined' && socket && myName) {
+                socket.emit('getRecentPrivateChats', { user: myName });
+            } else {
+                setTimeout(tryFetchRecentChats, 300);
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            tryFetchRecentChats();
+        });
     }
     
     setupRingtone() {
@@ -306,20 +320,43 @@ class PrivateMessaging {
                 
                 // Handle incoming private messages
                 socket.on('privateMessage', (data) => {
-                    //console.log('Received private message:', data);
                     this.handleIncomingPrivateMessage(data);
                 });
                 
                 // Handle private message sent confirmation
                 socket.on('privateMessageSent', (data) => {
-                    //console.log('Private message sent confirmation:', data);
                     this.handlePrivateMessageSent(data);
                 });
                 
                 // Handle private message errors
                 socket.on('privateMessageError', (data) => {
-                    //console.log('Private message error:', data);
                     this.handlePrivateMessageError(data);
+                });
+
+                // Handle private message history from server
+                socket.on('privateHistory', (data) => {
+                    const nameInput = document.querySelector('#name');
+                    const { userA, userB, messages } = data;
+                    // Only load if this is the current chat
+                    if (
+                        (this.currentPrivateChat === userA && nameInput?.value === userB) ||
+                        (this.currentPrivateChat === userB && nameInput?.value === userA)
+                    ) {
+                        // Store messages in memory
+                        this.privateConversations.set(
+                            this.currentPrivateChat,
+                            (messages || []).map(msg => ({
+                                fromUser: msg.fromUser,
+                                toUser: msg.toUser,
+                                text: msg.text,
+                                image: msg.image,
+                                voice: msg.voice,
+                                time: msg.time,
+                                type: msg.fromUser === nameInput?.value ? 'sent' : 'received'
+                            }))
+                        );
+                        this.loadConversationHistory(this.currentPrivateChat);
+                    }
                 });
 
                 // WebRTC signaling handlers
@@ -360,6 +397,25 @@ class PrivateMessaging {
                     alert(`${data.from} declined your call.`);
                 });
 
+                // Handle recent private chats from server (users table + private messages)
+                socket.on('recentPrivateChats', (data) => {
+                    // data: { chats: [{ username, displayName, lastMessage }] }
+                    if (!Array.isArray(data.chats)) return;
+                    this.privateConversations.clear();
+                    this.displayNameMap = {};
+                    data.chats.forEach(chat => {
+                        this.displayNameMap[chat.username] = chat.displayName || chat.username;
+                        // Attach displayName to each message for use in displayMessage
+                        const msgWithDisplayName = {
+                            ...chat.lastMessage,
+                            displayName: chat.displayName || chat.username,
+                            type: chat.lastMessage.fromUser === this.getMyName() ? 'sent' : 'received'
+                        };
+                        this.privateConversations.set(chat.username, [msgWithDisplayName]);
+                    });
+                    this.updateConversationTabs();
+                });
+
             } else {
                 // Retry after 100ms if socket not ready
                 setTimeout(waitForSocket, 100);
@@ -372,29 +428,51 @@ class PrivateMessaging {
     openPrivateMessage(username) {
         const nameInput = document.querySelector('#name');
         if (!username || username === nameInput?.value) return;
-        
+
         this.currentPrivateChat = username;
-        
+
         // Update modal title
         const title = document.getElementById('private-message-title');
         if (title) {
-            title.textContent = `Private Message - ${username}`;
+            // Use displayName if available
+            let displayName = username;
+            if (this.displayNameMap && this.displayNameMap[username]) {
+                displayName = this.displayNameMap[username];
+            }
+            title.textContent = `Private Message - ${displayName}`;
         }
-        
+
+        // Clear search bar after opening a chat
+        const searchInput = document.getElementById('private-user-search-input');
+        if (searchInput) {
+            searchInput.value = '';
+            // Optionally, also hide results if present
+            const results = document.getElementById('private-user-search-results');
+            if (results) {
+                results.classList.remove('active');
+                results.innerHTML = '';
+            }
+        }
+
         // Clear unread count for this user
         this.unreadCounts.set(username, 0);
         this.updateConversationTabs();
-        
-        // Load conversation history
-        this.loadConversationHistory(username);
-        
+
+        // Request conversation history from server
+        if (typeof socket !== 'undefined' && socket) {
+            socket.emit('getPrivateHistory', {
+                userA: nameInput?.value,
+                userB: username
+            });
+        }
+
         // Show modal
         const modal = document.getElementById('private-message-modal');
         if (modal) {
             modal.style.display = 'flex';
             setTimeout(() => modal.classList.add('show'), 10);
         }
-        
+
         // Focus on input
         const input = document.getElementById('private-message-input');
         if (input) {
@@ -563,14 +641,12 @@ class PrivateMessaging {
             console.error('Private message chat container not found');
             return;
         }
-        
+
         const nameInput = document.querySelector('#name');
-        
-        // Create message element using same structure as main chat
+
         const li = document.createElement('li');
         li.className = 'post';
-        
-        // Match main chatroom: sent messages left, received messages right
+
         if (type === 'received') {
             li.className = 'post post--right';
         } else if (type === 'sent') {
@@ -578,18 +654,28 @@ class PrivateMessaging {
         } else {
             li.className = 'post post--admin';
         }
-        
-        // Don't show system messages in private chat for now
+
         if (data.fromUser === 'System') return;
-        
-        // Convert server time to local time (same as main chat)
+
         const localTime = this.formatLocalTime(data.time);
-        
+
+        // Use displayName if available, else fallback to username
+        let fromDisplayName = data.displayName || data.fromUser;
+        // For sent messages, show our own displayName if available
+        if (type === 'sent') {
+            // Try to get our displayName from displayNameMap
+            if (this.displayNameMap && this.getMyName && this.displayNameMap[this.getMyName()]) {
+                fromDisplayName = this.displayNameMap[this.getMyName()];
+            } else {
+                fromDisplayName = nameInput?.value || 'You';
+            }
+        }
+
         let contentHtml = `<div class="post__header ${type === 'received'
             ? 'post__header--reply'
             : 'post__header--user'
         }">
-            <span class="post__header--name">${type === 'sent' ? nameInput?.value || 'You' : data.fromUser}</span> 
+            <span class="post__header--name">${fromDisplayName}</span> 
             <span class="post__header--time">${localTime}</span> 
         </div>`;
         
@@ -711,36 +797,59 @@ class PrivateMessaging {
     updateConversationTabs() {
         const container = document.getElementById('private-conversations');
         if (!container) return;
-        
+
         container.innerHTML = '';
-        
-        // Sort conversations by most recent message
+
+        // If there are no in-memory conversations, fetch recent chats from server (users table)
+        if (this.privateConversations.size === 0) {
+            const myName = this.getMyName();
+            if (typeof socket !== 'undefined' && socket && myName) {
+                socket.emit('getRecentPrivateChats', { user: myName });
+            }
+        }
+
+        // Sort conversations by most recent message (latest at the top)
         const sortedConversations = Array.from(this.privateConversations.entries())
             .sort((a, b) => {
                 const aLastMessage = a[1][a[1].length - 1];
                 const bLastMessage = b[1][b[1].length - 1];
                 return new Date(bLastMessage?.time || 0) - new Date(aLastMessage?.time || 0);
             });
-        
+
         sortedConversations.forEach(([username, messages]) => {
             const tab = document.createElement('div');
             tab.className = 'private-conversation-tab';
-            
+
             const unreadCount = this.unreadCounts.get(username) || 0;
             if (unreadCount > 0) {
                 tab.classList.add('has-unread');
             }
-            
+
+            // Use displayName from displayNameMap if available
+            let displayName = username;
+            if (this.displayNameMap && this.displayNameMap[username]) {
+                displayName = this.displayNameMap[username];
+            }
+
             const lastMessage = messages[messages.length - 1];
-            const preview = lastMessage ? 
-                (lastMessage.text || 'Image') : 
-                'No messages yet';
-            
+            let preview = 'No messages yet';
+            if (lastMessage) {
+                if (lastMessage.text && lastMessage.text.trim()) {
+                    preview = lastMessage.text;
+                } else if (lastMessage.voice) {
+                    preview = 'Voice';
+                } else if (lastMessage.image) {
+                    preview = 'Image';
+                } else {
+                    preview = 'Message';
+                }
+            }
+
             tab.innerHTML = `
-                <div class="private-conversation-name">${username}</div>
+                <div class="private-conversation-name">${displayName}</div>
                 <div class="private-conversation-preview">${preview.substring(0, 30)}${preview.length > 30 ? '...' : ''}</div>
             `;
-            
+
             tab.addEventListener('click', () => this.openPrivateMessage(username));
             container.appendChild(tab);
         });
