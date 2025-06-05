@@ -236,6 +236,94 @@ function showRooms() {
     });
 }
 
+// Cache for avatar existence checks
+const avatarExistenceCache = {};
+
+function stringToColor(str) {
+    // Simple hash to color: returns a hex color string
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    let color = '#';
+    for (let i = 0; i < 3; i++) {
+        const value = (hash >> (i * 8)) & 0xFF;
+        color += ('00' + value.toString(16)).slice(-2);
+    }
+    return color;
+}
+
+function getAvatarUrl(username) {
+    if (!username) return '';
+    const lowerUsername = username.toLowerCase();
+    const s3Url = `https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/${encodeURIComponent(lowerUsername)}/${encodeURIComponent(lowerUsername)}.jpg`;
+    const defaultAvatar = 'https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg';
+    // Always check S3 in background, update avatar if found
+    setTimeout(() => {
+        checkAvatarExistsInS3(lowerUsername, s3Url, username);
+        // Preload S3 image and update all relevant img tags if found
+        const img = new window.Image();
+        img.onload = function() {
+            avatarExistenceCache[lowerUsername] = true;
+            document.querySelectorAll('.profile-avatar-img').forEach(imgEl => {
+                if (imgEl && imgEl.alt && imgEl.alt.includes(username)) {
+                    imgEl.src = s3Url;
+                }
+            });
+        };
+        img.onerror = function() {
+            avatarExistenceCache[lowerUsername] = false;
+            document.querySelectorAll('.profile-avatar-img').forEach(imgEl => {
+                if (imgEl && imgEl.alt && imgEl.alt.includes(username)) {
+                    imgEl.src = defaultAvatar;
+                }
+            });
+        };
+        img.src = s3Url;
+    }, 0);
+    if (avatarExistenceCache[lowerUsername] !== undefined) {
+        if (avatarExistenceCache[lowerUsername]) {
+            return s3Url;
+        } else {
+            return defaultAvatar;
+        }
+    }
+    return defaultAvatar;
+}
+
+function getCustomFallbackAvatar(username) {
+    // Use a more visually distinct UI Avatars URL with a unique background and bold font
+    // You can customize the background and color for more variety
+    const bgColors = ["6c63ff","a084ee","ffe066","ff6f61","43e97b","38f9d7","f7971e","ffd200","f44336","00bcd4"];
+    // Hash username to pick a color
+    let hash = 0;
+    for (let i = 0; i < username.length; i++) hash = username.charCodeAt(i) + ((hash << 5) - hash);
+    const colorIdx = Math.abs(hash) % bgColors.length;
+    const bg = bgColors[colorIdx];
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=${bg}&color=fff&size=128&bold=true&rounded=true&format=svg`;
+}
+
+function checkAvatarExistsInS3(lowerUsername, s3Url, username) {
+    // Only check if not already checked
+    if (avatarExistenceCache[lowerUsername] !== undefined) return;
+    fetch(s3Url, { method: 'HEAD' })
+        .then(res => {
+            avatarExistenceCache[lowerUsername] = res.ok;
+            // If avatar does not exist, update the profile image if it's currently showing the S3 URL
+            if (!res.ok) {
+                // Find all profile avatar images for this user and update src
+                document.querySelectorAll('.profile-avatar-img').forEach(img => {
+                    if (img && img.alt === 'Your Avatar' && img.src === s3Url) {
+                        img.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=6c63ff&color=fff&size=128`;
+                    }
+                });
+            }
+        })
+        .catch(() => {
+            avatarExistenceCache[lowerUsername] = false;
+        });
+}
+
 // Update users display
 function showUsers(users) {
     usersList.innerHTML = '';
@@ -243,7 +331,6 @@ function showUsers(users) {
         // Remove duplicates by name (case-insensitive) as an extra safety measure
         const uniqueUsers = [];
         const seenNames = new Set();
-        
         users.forEach(user => {
             const lowerName = user.name.toLowerCase();
             if (!seenNames.has(lowerName)) {
@@ -251,25 +338,30 @@ function showUsers(users) {
                 uniqueUsers.push(user);
             }
         });
-        
-        usersList.innerHTML = `<ul>` +
-            uniqueUsers.map(user =>
-                `<li class="user-list-item">
-                    <div class="user-info">
-                        <span style="display:inline-block;width:1.3em;text-align:center;margin-right:0.5em;opacity:0.7;">👤</span>
-                        <span>${user.name}</span>
-                    </div>
-                    ${user.name !== nameInput.value ? 
-                        `<button class="message-user-btn" onclick="window.privateMessaging?.openPrivateMessage('${user.name}');window.handleHideRightPaneOnMobile && window.handleHideRightPaneOnMobile();" title="Send private message">💬</button>` : 
-                        ''
-                    }
-                </li>`
-            ).join('') +
-            `</ul>`;
+        // Show all users in the room with small profile pics and private message button (icon only)
+        usersList.innerHTML = `<ul class="online-users-list">
+            ${uniqueUsers.map(user => `
+                <li class="online-user-item">
+                    <img src="${getAvatarUrl(user.name)}" alt="${user.name}'s Avatar" class="profile-avatar-img profile-avatar-img--small">
+                    <span class="profile-username">${user.name}</span>
+                    ${user.name !== nameInput.value ? `<button class="pm-btn" data-username="${user.name}" title="Private Message ${user.name}">💬</button>` : ''}
+                </li>
+            `).join('')}
+        </ul>`;
+        // Add click handler for PM buttons
+        document.querySelectorAll('.pm-btn').forEach(btn => {
+            btn.onclick = function(e) {
+                const toUser = btn.getAttribute('data-username');
+                if (window.openPrivateChatWithUser) {
+                    window.openPrivateChatWithUser(toUser);
+                } else {
+                    alert('Private messaging not available.');
+                }
+            };
+        });
     } else {
         usersList.innerHTML = `<em>No users in room</em>`;
     }
-    // Move clear room button here, below users list
     addClearRoomButtonIfAdmin();
 }
 
@@ -1626,3 +1718,12 @@ if (helpBtn) {
         overlay.onclick = (e) => e.target === overlay && closeModal();
     });
 }
+
+// Ensure global PM handler exists
+window.openPrivateChatWithUser = function(username) {
+    if (window.privateMessaging && typeof window.privateMessaging.openPrivateMessage === 'function') {
+        window.privateMessaging.openPrivateMessage(username);
+    } else {
+        alert('Private messaging is not available.');
+    }
+};

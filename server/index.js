@@ -7,6 +7,8 @@ import dotenv from 'dotenv'
 import connectDB from './config/database.js'
 import User from './models/User.js'
 import mongoose from 'mongoose'
+// --- Add AWS SDK v3 imports ---
+import { S3Client, ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3'
 
 // Load environment variables
 dotenv.config()
@@ -21,6 +23,54 @@ const app = express()
 
 // Connect to MongoDB
 connectDB()
+
+// --- AWS S3 CONFIGURATION ---
+// (Set these in your .env: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, AWS_S3_BUCKET)
+const s3Client = new S3Client({
+    region: process.env.AWS_REGION,
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+    }
+});
+
+// Utility to list and log S3 bucket files
+async function logS3BucketFiles() {
+    const bucket = process.env.AWS_S3_BUCKET;
+    if (!bucket) {
+        console.warn('AWS_S3_BUCKET not set in environment.');
+        return;
+    }
+    try {
+        const command = new ListObjectsV2Command({ Bucket: bucket });
+        const data = await s3Client.send(command);
+    } catch (err) {
+        //console.error('Error listing S3 bucket files:', err);
+    }
+}
+
+// Utility to log a user's avatar PNG file in S3 (avatars/{username}/{username}.png)
+async function logUserAvatar(username) {
+    const bucket = process.env.AWS_S3_BUCKET;
+    if (!bucket) {
+        console.warn('AWS_S3_BUCKET not set in environment.');
+        return;
+    }
+    if (!username) {
+        console.warn('Username not provided.');
+        return;
+    }
+    const key = `avatars/${username}/${username}.png`;
+    try {
+        const command = new ListObjectsV2Command({
+            Bucket: bucket,
+            Prefix: key
+        });
+        const data = await s3Client.send(command);
+    } catch (err) {
+        console.error('Error searching for user avatar in S3:', err);
+    }
+}
 
 // Add JSON parsing middleware
 app.use(express.json({ limit: '10mb' }))
@@ -83,6 +133,12 @@ try {
 // Expose the public directory
 app.use(express.static(publicPath));
 
+// --- Log S3 files on server startup ---
+logS3BucketFiles();
+
+// --- Log only admin user's avatar on server startup ---
+logUserAvatar('admin');
+
 // Add endpoint to list available emojis with minimal logging
 app.get('/api/emojis', async (req, res) => {
     try {
@@ -140,12 +196,6 @@ app.post('/api/register', async (req, res) => {
         });
         
         await user.save();
-        
-        // console.log('Saved user:', {
-        //     id: user._id,
-        //     username: user.username,
-        //     displayName: user.displayName
-        // });
         
         res.status(201).json({
             message: 'User registered successfully',
@@ -256,6 +306,42 @@ app.get('/api/search-users', async (req, res) => {
         res.json({ users: usersWithDisplayName });
     } catch (err) {
         res.status(500).json({ error: 'Failed to search users' });
+    }
+});
+
+// --- Avatar upload endpoint ---
+app.post('/api/avatar', async (req, res) => {
+    try {
+        const { username, image } = req.body;
+        if (!username || !image) {
+            return res.status(400).json({ error: 'Username and image are required.' });
+        }
+        // Validate base64 image
+        const matches = image.match(/^data:image\/(png|jpeg|jpg|gif);base64,(.+)$/);
+        if (!matches) {
+            return res.status(400).json({ error: 'Invalid image format.' });
+        }
+        const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+        const buffer = Buffer.from(matches[2], 'base64');
+        const bucket = process.env.AWS_S3_BUCKET;
+        if (!bucket) {
+            return res.status(500).json({ error: 'S3 bucket not configured.' });
+        }
+        const key = `avatars/${username}/${username}.png`;
+        // Upload to S3
+        const putCommand = new PutObjectCommand({
+            Bucket: bucket,
+            Key: key,
+            Body: buffer,
+            ContentType: `image/png`,
+            ACL: 'public-read',
+        });
+        await s3Client.send(putCommand);
+        // Return the S3 URL
+        const s3Url = `https://${bucket}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+        res.json({ success: true, url: s3Url });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to upload avatar', details: err.message });
     }
 });
 
