@@ -247,7 +247,13 @@ app.get('/api/search-users', async (req, res) => {
                 { displayName: { $regex: q, $options: 'i' } }
             ]
         }, 'username displayName createdAt').limit(20);
-        res.json({ users });
+        // Always return displayName if available, else username
+        const usersWithDisplayName = users.map(u => ({
+            username: u.username,
+            displayName: u.displayName || u.username,
+            createdAt: u.createdAt
+        }));
+        res.json({ users: usersWithDisplayName });
     } catch (err) {
         res.status(500).json({ error: 'Failed to search users' });
     }
@@ -414,8 +420,21 @@ io.on('connection', socket => {
                 }
             ];
             const results = await PrivateMessage.aggregate(pipeline);
+
+            // Fetch displayNames for all chat partners
+            const usernames = results.map(r => r._id);
+            const usersInfo = await User.find(
+                { username: { $in: usernames.map(u => u.toLowerCase()) } },
+                'username displayName'
+            ).lean();
+            const userDisplayNameMap = {};
+            usersInfo.forEach(u => {
+                userDisplayNameMap[u.username] = u.displayName || u.username;
+            });
+
             const chats = results.map(r => ({
                 username: r._id,
+                displayName: userDisplayNameMap[r._id.toLowerCase()] || r._id,
                 lastMessage: r.lastMessage
             }));
             socket.emit('recentPrivateChats', { chats });
