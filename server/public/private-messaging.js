@@ -383,6 +383,28 @@ class PrivateMessaging {
                     alert(`${data.from} declined your call.`);
                 });
 
+                // Handle recent private chats from server
+                socket.on('recentPrivateChats', (data) => {
+                    // data: { chats: [{ username, lastMessage }] }
+                    if (!Array.isArray(data.chats)) return;
+                    data.chats.forEach(chat => {
+                        if (!this.privateConversations.has(chat.username)) {
+                            this.privateConversations.set(chat.username, [
+                                {
+                                    fromUser: chat.lastMessage.fromUser,
+                                    toUser: chat.lastMessage.toUser,
+                                    text: chat.lastMessage.text,
+                                    image: chat.lastMessage.image,
+                                    voice: chat.lastMessage.voice,
+                                    time: chat.lastMessage.time,
+                                    type: chat.lastMessage.fromUser === this.getMyName() ? 'sent' : 'received'
+                                }
+                            ]);
+                        }
+                    });
+                    this.updateConversationTabs();
+                });
+
             } else {
                 // Retry after 100ms if socket not ready
                 setTimeout(waitForSocket, 100);
@@ -739,9 +761,19 @@ class PrivateMessaging {
     updateConversationTabs() {
         const container = document.getElementById('private-conversations');
         if (!container) return;
-        
+
         container.innerHTML = '';
-        
+
+        // If there are no in-memory conversations, try to show recent chats from localStorage or fetch from server
+        if (this.privateConversations.size === 0) {
+            // Try to fetch recent chats from server if user is logged in
+            const myName = this.getMyName();
+            if (typeof socket !== 'undefined' && socket && myName) {
+                socket.emit('getRecentPrivateChats', { user: myName });
+                // The handler below will update the UI when data arrives
+            }
+        }
+
         // Sort conversations by most recent message
         const sortedConversations = Array.from(this.privateConversations.entries())
             .sort((a, b) => {
@@ -749,26 +781,26 @@ class PrivateMessaging {
                 const bLastMessage = b[1][b[1].length - 1];
                 return new Date(bLastMessage?.time || 0) - new Date(aLastMessage?.time || 0);
             });
-        
+
         sortedConversations.forEach(([username, messages]) => {
             const tab = document.createElement('div');
             tab.className = 'private-conversation-tab';
-            
+
             const unreadCount = this.unreadCounts.get(username) || 0;
             if (unreadCount > 0) {
                 tab.classList.add('has-unread');
             }
-            
+
             const lastMessage = messages[messages.length - 1];
-            const preview = lastMessage ? 
-                (lastMessage.text || 'Image') : 
+            const preview = lastMessage ?
+                (lastMessage.text || lastMessage.voice ? 'Voice' : lastMessage.image ? 'Image' : 'Message') :
                 'No messages yet';
-            
+
             tab.innerHTML = `
                 <div class="private-conversation-name">${username}</div>
                 <div class="private-conversation-preview">${preview.substring(0, 30)}${preview.length > 30 ? '...' : ''}</div>
             `;
-            
+
             tab.addEventListener('click', () => this.openPrivateMessage(username));
             container.appendChild(tab);
         });

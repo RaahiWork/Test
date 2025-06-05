@@ -373,6 +373,50 @@ io.on('connection', socket => {
         }
     });
 
+    // Provide recent private chats for sidebar
+    socket.on('getRecentPrivateChats', async ({ user }) => {
+        try {
+            // Find the most recent message for each unique chat partner
+            const pipeline = [
+                {
+                    $match: {
+                        $or: [
+                            { fromUser: user },
+                            { toUser: user }
+                        ]
+                    }
+                },
+                {
+                    $sort: { time: -1 }
+                },
+                {
+                    $group: {
+                        _id: {
+                            $cond: [
+                                { $eq: ["$fromUser", user] },
+                                "$toUser",
+                                "$fromUser"
+                            ]
+                        },
+                        lastMessage: { $first: "$$ROOT" }
+                    }
+                },
+                {
+                    $sort: { "lastMessage.time": -1 }
+                }
+            ];
+            const results = await PrivateMessage.aggregate(pipeline);
+            const chats = results.map(r => ({
+                username: r._id,
+                lastMessage: r.lastMessage
+            }));
+            socket.emit('recentPrivateChats', { chats });
+        } catch (err) {
+            console.error('Failed to fetch recent private chats:', err);
+            socket.emit('recentPrivateChats', { chats: [] });
+        }
+    });
+
     // Add handler for getting online users for private messaging
     socket.on('getOnlineUsers', () => {
         const currentUser = getUser(socket.id);
