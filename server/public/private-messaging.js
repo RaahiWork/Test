@@ -657,7 +657,16 @@ class PrivateMessaging {
 
         if (data.fromUser === 'System') return;
 
-        const localTime = this.formatLocalTime(data.time);
+        // Use server timestamp and convert to local time safely
+        let localTime = data.time;
+        if (data.time) {
+            const dateObj = new Date(data.time);
+            if (!isNaN(dateObj.getTime())) {
+                localTime = dateObj.toLocaleString();
+            } else {
+                localTime = data.time;
+            }
+        }
 
         // Use displayName if available, else fallback to username
         let fromDisplayName = data.displayName || data.fromUser;
@@ -776,20 +785,15 @@ class PrivateMessaging {
         }
     }
     
-    // Add utility function to format time (same as main chat)
+    // Replace formatLocalTime function to use toLocaleString
     formatLocalTime(timestamp) {
         try {
             const date = new Date(timestamp);
             if (isNaN(date.getTime())) {
                 return timestamp;
             }
-            
-            return date.toLocaleTimeString([], {
-                hour: 'numeric',
-                minute: 'numeric'
-            });
+            return date.toLocaleString();
         } catch (error) {
-            console.error('Error formatting time:', error);
             return timestamp;
         }
     }

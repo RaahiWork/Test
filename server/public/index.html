@@ -54,11 +54,15 @@
                     <option value="halloween.gif">Halloween</option>
                 </select>
             </div>
+            
             <!-- End Theme Picker -->
-            <div id="rooms-list-container"></div>
+            <!-- Make chat rooms scrollable after 5 rooms -->
+            <div id="rooms-list-scrollable" style="max-height: 260px; overflow-y: auto; margin-bottom: 1em;">
+                <div id="rooms-list-container"></div>
+            </div>
             <div class="connection-status">Connecting...</div>
             
-            <!-- Add radio station section -->
+            <!-- Radio stations section starts immediately after chat rooms -->
             <div class="radio-section">
                 <h4>🎵 Radio Stations</h4>
                 <div class="radio-player">
@@ -277,6 +281,27 @@
     <div id="private-voice-call-modal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);z-index:2000;align-items:center;justify-content:center;">
         <!-- Modal content will be injected by JS -->
     </div>
+
+    <!-- Add User Profile Modal -->
+    <div id="user-profile-modal" class="user-profile-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 2000; align-items: center; justify-content: center;">
+        <div class="user-profile-content" style="background: #1a1a2e; border-radius: 12px; padding: 2em; max-width: 400px; width: 90%; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            <div class="user-profile-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5em;">
+                <h3 id="user-profile-title" style="color: #6c63ff; margin: 0;">User Profile</h3>
+                <button id="close-user-profile" class="close-btn" style="background: none; border: none; color: #fff; font-size: 1.5em; cursor: pointer;">×</button>
+            </div>
+            
+            <div class="user-profile-info" style="text-align: center;">
+                <div class="user-profile-avatar" style="margin-bottom: 1em;">
+                    <img id="user-profile-avatar-img" src="" alt="User Avatar" style="width: 100%; max-width: 300px; height: 300px; border-radius: 12px; object-fit: cover; border: 3px solid #6c63ff;">
+                </div>
+                <div class="user-profile-details">
+                    <h4 id="user-profile-username" style="color: #fff; margin: 0.5em 0;">Username</h4>
+                    <p id="user-profile-status" style="color: #a084ee; margin: 0.5em 0;">Status</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="app.js"></script>
     <script src="emoji-handler.js"></script>
@@ -426,6 +451,126 @@
             });
 
             // Patch: fire custom event after login in auth.js
+        })();
+
+        // --- User Profile Modal Management ---
+        (function() {
+            const modal = document.getElementById('user-profile-modal');
+            const closeBtn = document.getElementById('close-user-profile');
+            const avatarImg = document.getElementById('user-profile-avatar-img');
+            const usernameEl = document.getElementById('user-profile-username');
+            const statusEl = document.getElementById('user-profile-status');
+            const messageBtn = document.getElementById('user-profile-message-btn');
+            const callBtn = document.getElementById('user-profile-call-btn');
+
+            function showUserProfile(username, isOnline = true, avatarSrc = null) {
+                if (!username) return;
+
+                //console.log('Showing profile for:', username);
+                
+                // Set username and status
+                usernameEl.textContent = username;
+                statusEl.textContent = isOnline ? 'Online' : 'Offline';
+                statusEl.style.color = isOnline ? '#4CAF50' : '#f44336';
+
+                // Use the avatar source from user list if provided, otherwise use fallback logic
+                if (avatarSrc) {
+                    //console.log('Using avatar from user list:', avatarSrc);
+                    avatarImg.src = avatarSrc;
+                } else {
+                    // Fallback: Load user avatar with same logic as user list - try multiple formats
+                    const defaultAvatarUrl = 'https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg';
+                    const imageFormats = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+                    let formatIndex = 0;
+                    
+                    function tryNextFormat() {
+                        if (formatIndex >= imageFormats.length) {
+                            //console.log('All custom avatar formats failed, using default:', defaultAvatarUrl);
+                            avatarImg.src = defaultAvatarUrl;
+                            return;
+                        }
+                        
+                        const format = imageFormats[formatIndex];
+                        const customAvatarUrl = `https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/${username}/${username}.${format}`;
+                        
+                        //console.log('Trying format:', format, 'URL:', customAvatarUrl);
+                        
+                        const testImg = new Image();
+                        testImg.onload = function() {
+                            //console.log('Successfully loaded avatar with format:', format);
+                            avatarImg.src = customAvatarUrl;
+                        };
+                        testImg.onerror = function() {
+                            //console.log('Failed format:', format);
+                            formatIndex++;
+                            tryNextFormat();
+                        };
+                        testImg.src = customAvatarUrl;
+                    }
+                    
+                    // Start checking for existing avatar
+                    tryNextFormat();
+                }
+
+                modal.style.display = 'flex';
+            }
+
+            closeBtn.onclick = function() {
+                modal.style.display = 'none';
+            };
+
+            modal.onclick = function(e) {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            };
+
+            // Make function globally available
+            window.showUserProfile = showUserProfile;
+
+            // Add click handlers to user list items
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.view-profile-btn') || e.target.closest('.profile-avatar-img--small')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const userItem = e.target.closest('.online-user-item');
+                    if (userItem) {
+                        const username = userItem.dataset.username || userItem.querySelector('.profile-username').textContent.trim();
+                        const isOnline = userItem.classList.contains('online') || !userItem.classList.contains('offline');
+                        
+                        // Get the actual avatar source from the user list item
+                        const userListAvatar = userItem.querySelector('.profile-avatar-img--small');
+                        const avatarSrc = userListAvatar ? userListAvatar.src : null;
+                        
+                        showUserProfile(username, isOnline, avatarSrc);
+                    }
+                }
+            });
+
+            // Modify user list creation to include view profile button
+            const originalCreateUserItem = window.createUserItem;
+            window.createUserItem = function(username, isOnline) {
+                if (originalCreateUserItem) {
+                    return originalCreateUserItem(username, isOnline);
+                }
+                
+                // Fallback if createUserItem doesn't exist
+                const li = document.createElement('li');
+                li.className = 'online-user-item';
+                li.dataset.username = username;
+                
+                const avatarUrl = `https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/${username}/${username}.jpg`;
+                
+                li.innerHTML = `
+                    <img src="${avatarUrl}" alt="${username}'s Avatar" class="profile-avatar-img profile-avatar-img--small" 
+                         onerror="this.src='https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg'"
+                         style="cursor: pointer;" title="View Profile">
+                    <span class="profile-username">${username}</span>
+                    <button class="view-profile-btn" title="View Profile" style="margin-left: auto; background: none; border: none; color: #6c63ff; cursor: pointer; font-size: 0.9em; padding: 0.2em 0.5em;">👤</button>
+                `;
+                
+                return li;
+            };
         })();
     </script>
 
