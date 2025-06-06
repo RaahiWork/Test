@@ -8,7 +8,7 @@
 
 body {
   /* Use a solid color as fallback if image is not available */
-  background: url('/images/rain-6812.gif') center center fixed no-repeat;
+  background: url('/themes/fireflies.gif') center center fixed no-repeat;
   background-size: cover;
   color: #fff;
 }
