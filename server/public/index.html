@@ -56,10 +56,13 @@
             </div>
             
             <!-- End Theme Picker -->
-            <div id="rooms-list-container"></div>
+            <!-- Make chat rooms scrollable after 5 rooms -->
+            <div id="rooms-list-scrollable" style="max-height: 260px; overflow-y: auto; margin-bottom: 1em;">
+                <div id="rooms-list-container"></div>
+            </div>
             <div class="connection-status">Connecting...</div>
             
-            <!-- Add radio station section -->
+            <!-- Radio stations section starts immediately after chat rooms -->
             <div class="radio-section">
                 <h4>🎵 Radio Stations</h4>
                 <div class="radio-player">

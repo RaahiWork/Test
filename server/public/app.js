@@ -412,7 +412,16 @@ function renderMessage(data) {
         li.className = 'post post--admin';
     }
     if (name !== 'System') {
-        const localTime = formatLocalTime(time);
+        // Use server timestamp and convert to local time safely
+        let localTime = data.time;
+        if (data.time) {
+            const dateObj = new Date(data.time);
+            if (!isNaN(dateObj.getTime())) {
+                localTime = dateObj.toLocaleString();
+            } else {
+                localTime = data.time;
+            }
+        }
         let contentHtml = `<div class="post__header ${name === nameInput.value ? 'post__header--user' : 'post__header--reply'}" ${name !== nameInput.value ? 'tabindex="0" role="button" aria-label="Reply to this user"' : ''}>
 <span class="post__header--name${name === nameInput.value ? ' current-user' : ''}">
 ${name} <span class="verified-icon" title="Registered User">✔️</span>
@@ -1351,19 +1360,12 @@ document.head.appendChild(style);
 function formatLocalTime(timestamp) {
     try {
         const date = new Date(timestamp);
-        // Check if the date is valid
         if (isNaN(date.getTime())) {
-            return timestamp; // Return the original timestamp if parsing fails
+            return timestamp;
         }
-        
-        // Format the time according to the browser's locale
-        return date.toLocaleTimeString([], {
-            hour: 'numeric',
-            minute: 'numeric'
-        });
+        return date.toLocaleString();
     } catch (error) {
-        console.error('Error formatting time:', error);
-        return timestamp; // Return original on error
+        return timestamp;
     }
 }
 
@@ -1633,6 +1635,9 @@ function addClearRoomButtonIfAdmin() {
                     background: linear-gradient(90deg, #e74c3c 70%, #c0392b 100%);
                 }
                 #clear-room-btn:hover {
+                    background: linear-gradient(90deg, #c0392b 60%, #e74c3c 100%);
+                    box-shadow: 0 4px 16px rgba(231,76,60,0.16);
+                    transform: translateY(-1px) scale(1.025);
                     background: linear-gradient(90deg, #c0392b 60%, #e74c3c 100%);
                     box-shadow: 0 4px 16px rgba(231,76,60,0.16);
                     transform: translateY(-1px) scale(1.025);
