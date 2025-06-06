@@ -1545,6 +1545,7 @@ socket.on("message", (data) => {
 // === Theme Picker Logic ===
 const themePicker = document.getElementById('theme-picker');
 const themeList = [
+     'fireflies.gif',
     'rain.gif',
     'snowfall.gif',
     'beach.gif',
@@ -1552,8 +1553,7 @@ const themeList = [
     'fireworks.gif',
     'forest.gif',
     'freedom.gif',
-    'halloween.gif',
-    'fireflies.gif' // Added fireflies theme
+    'halloween.gif'
 ];
 
 function setThemeBackground(themeFile) {
