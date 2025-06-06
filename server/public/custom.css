@@ -209,128 +209,229 @@
   font-style: italic;
 }
 
-/* Profile and avatar styles for online users section */
+/* Enhanced Profile Section */
 .profile-section {
-  background: linear-gradient(90deg, #f8f8ff 0%, #f3f0ff 100%);
-  border-radius: 10px;
-  padding: 1em 0.5em 0.7em 0.5em;
-  margin-bottom: 1.2em;
-  box-shadow: 0 2px 8px rgba(108,99,255,0.07);
+  background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+  border-radius: 16px;
+  padding: 1.5em 1em;
+  margin-bottom: 1.5em;
+  box-shadow: 0 4px 20px rgba(108,99,255,0.08);
   text-align: center;
+  border: 1px solid rgba(108,99,255,0.1);
+  position: relative;
+  overflow: hidden;
 }
+
+.profile-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #6c63ff 0%, #a084ee 100%);
+  border-radius: 16px 16px 0 0;
+}
+
 .profile-avatar-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5em;
-}
-.profile-avatar-img {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  border: 2.5px solid #a084ee;
-  box-shadow: 0 2px 8px rgba(108,99,255,0.10);
-  object-fit: cover;
-  background: #fff;
-  cursor: pointer;
-  transition: box-shadow 0.2s, opacity 0.2s;
-  position: relative;
-}
-.profile-avatar-img:hover {
-  box-shadow: 0 0 0 3px #6c63ff44;
-  opacity: 0.85;
-}
-.profile-avatar-img--small {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    object-fit: cover;
-    margin-right: 8px;
-    box-shadow: 0 1px 4px rgba(108,99,255,0.08);
-    cursor: default;
-    position: static;
-}
-.profile-username {
-  font-weight: 600;
-  color: #6c63ff;
-  font-size: 1.08em;
-  margin-top: 0.2em;
-  letter-spacing: 0.5px;
-}
-.online-users-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-.online-user-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 8px;
-    font-size: 1em;
-    gap: 6px;
-}
-.user-list-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.5em 0.2em;
-  border-bottom: 1px solid #f0f0f0;
-  transition: background 0.2s;
-}
-.user-list-item:hover {
-  background: #f7f6ff;
-}
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 0.6em;
-}
-.user-avatar-img {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 1.5px solid #e0e0ff;
-  background: #fff;
-}
-.message-user-btn {
-  background: #6c63ff;
-  color: #fff;
-  border: none;
-  border-radius: 50%;
-  width: 2em;
-  height: 2em;
-  font-size: 1.1em;
-  cursor: pointer;
-  transition: background 0.2s;
-  box-shadow: 0 1px 4px rgba(108,99,255,0.08);
-}
-.message-user-btn:hover {
-  background: #a084ee;
+  gap: 0.8em;
 }
 
-/* Private message button in online users list */
-.pm-btn {
-    margin-left: 8px;
-    padding: 4px 12px;
-    background: linear-gradient(90deg, #6c63ff 60%, #8f6fff 100%);
-    color: #fff;
-    border: none;
-    border-radius: 16px;
-    font-size: 0.98em;
-    font-weight: 500;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(108,99,255,0.10);
-    transition: background 0.18s, box-shadow 0.18s, transform 0.12s;
-    outline: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
+.profile-avatar-wrapper {
+  position: relative;
+  display: inline-block;
+  border-radius: 50%;
+  padding: 4px;
+  background: linear-gradient(135deg, #6c63ff 0%, #a084ee 100%);
+  box-shadow: 0 8px 32px rgba(108,99,255,0.15);
+  transition: all 0.3s ease;
 }
-.pm-btn:hover, .pm-btn:focus {
-    background: linear-gradient(90deg, #8f6fff 60%, #6c63ff 100%);
-    box-shadow: 0 4px 16px rgba(108,99,255,0.18);
-    transform: translateY(-2px) scale(1.04);
+
+.profile-avatar-wrapper:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(108,99,255,0.25);
+}
+
+.profile-avatar-main {
+  width: 80px !important;
+  height: 80px !important;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  object-fit: cover;
+  background: #fff;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  z-index: 2;
+}
+
+.profile-avatar-main:hover {
+  transform: scale(1.05);
+}
+
+.profile-avatar-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 3;
+}
+
+.profile-avatar-wrapper:hover .profile-avatar-overlay {
+  opacity: 1;
+}
+
+.profile-upload-btn {
+  background: rgba(255,255,255,0.9);
+  border: none;
+  border-radius: 8px;
+  padding: 0.4em 0.6em;
+  color: #6c63ff;
+  font-size: 0.75em;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.profile-upload-btn:hover {
+  background: #fff;
+  transform: scale(1.05);
+}
+
+.profile-upload-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.profile-username {
+  font-weight: 700;
+  color: #6c63ff;
+  font-size: 1.2em;
+  margin: 0;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 2px rgba(108,99,255,0.1);
+}
+
+.profile-status {
+  font-size: 0.85em;
+  color: #2ecc71;
+  font-weight: 500;
+  background: rgba(46,204,113,0.1);
+  padding: 0.2em 0.8em;
+  border-radius: 20px;
+  border: 1px solid rgba(46,204,113,0.2);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+}
+
+.profile-status::before {
+  content: '●';
+  color: #2ecc71;
+  font-size: 0.8em;
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Enhanced existing profile avatar styles */
+.profile-avatar-img--small {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 10px;
+    box-shadow: 0 2px 8px rgba(108,99,255,0.12);
+    cursor: default;
+    position: static;
+    border: 2px solid #e8e6ff;
+    transition: all 0.2s ease;
+}
+
+.profile-avatar-img--small:hover {
+  border-color: #a084ee;
+  box-shadow: 0 4px 12px rgba(108,99,255,0.18);
+  transform: scale(1.05);
+}
+
+/* Loading state for profile picture */
+.profile-avatar-wrapper.loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 50%;
+  background: rgba(108,99,255,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4;
+  animation: pulse 1.5s infinite;
+}
+
+.profile-avatar-wrapper.loading .profile-avatar-overlay {
+  opacity: 0 !important;
+}
+
+/* Toast notification styles */
+.toast-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 16px 24px;
+  border-radius: 12px;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.95em;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  z-index: 10000;
+  transform: translateX(400px);
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  max-width: 320px;
+  word-wrap: break-word;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.toast-notification.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.toast-success {
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+  box-shadow: 0 8px 32px rgba(46,204,113,0.3);
+}
+
+.toast-error {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  box-shadow: 0 8px 32px rgba(231,76,60,0.3);
+}
+
+.toast-info {
+  background: linear-gradient(135deg, #6c63ff, #a084ee);
+  box-shadow: 0 8px 32px rgba(108,99,255,0.3);
 }
 
 /* Responsive adjustments */
@@ -342,4 +443,32 @@
     max-height: 120px;
     font-size: 0.95em;
   }
+  #profile-pic-upload-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 1.2em;
+  }
+  
+  .profile-avatar-img {
+    width: 56px;
+    height: 56px;
+  }
+  
+  .toast-notification {
+    right: 10px;
+    top: 10px;
+    max-width: calc(100vw - 40px);
+    font-size: 0.9em;
+  }
+}
+
+/* Animation for profile picture change */
+@keyframes profilePicChange {
+  0% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.1) rotate(5deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+.profile-avatar-main.updating {
+  animation: profilePicChange 0.6s ease;
 }
