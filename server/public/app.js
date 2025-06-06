@@ -1353,6 +1353,42 @@ style.textContent = `
     font-size: 0.9em;
     color: #777;
 }
+
+/* Private message modal styles */
+.private-message-input-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.private-message-input-container input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    max-width: calc(100% - 120px);
+    box-sizing: border-box;
+}
+
+.private-message-input-container button {
+    flex-shrink: 0;
+    min-width: 40px;
+    box-sizing: border-box;
+}
+
+.private-message-content {
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.private-message-form {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
 `;
 document.head.appendChild(style);
 
@@ -1727,8 +1763,150 @@ if (helpBtn) {
 // Ensure global PM handler exists
 window.openPrivateChatWithUser = function(username) {
     if (window.privateMessaging && typeof window.privateMessaging.openPrivateMessage === 'function') {
+        // Close online users drawer/right pane when opening PM
+        const rightPane = document.querySelector('.right-pane');
+        if (rightPane) {
+            rightPane.classList.remove('open', 'active');
+        }
+        
         window.privateMessaging.openPrivateMessage(username);
+        
+        // Add mobile touch support after PM is opened
+        setTimeout(() => {
+            addMobileTouchSupport();
+        }, 100);
     } else {
         alert('Private messaging is not available.');
     }
 };
+
+// Add mobile touch support for PM interactions
+function addMobileTouchSupport() {
+    // Check if we're on a mobile device
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                     'ontouchstart' in window || 
+                     navigator.maxTouchPoints > 0;
+    
+    if (!isMobile) return;
+    
+    // Add touch event listeners to PM modal elements
+    const pmModal = document.getElementById('private-message-modal');
+    if (pmModal && pmModal.style.display !== 'none') {
+        // Add touch events for all interactive elements in PM modal
+        const interactiveElements = pmModal.querySelectorAll('button, input, .emoji-btn, .image-btn, .close-btn');
+        
+        interactiveElements.forEach(element => {
+            // Remove existing touch listeners to prevent duplicates
+            element.removeEventListener('touchstart', handleTouchStart);
+            element.removeEventListener('touchend', handleTouchEnd);
+            
+            // Add touch event listeners
+            element.addEventListener('touchstart', handleTouchStart, { passive: false });
+            element.addEventListener('touchend', handleTouchEnd, { passive: false });
+        });
+        
+        // Also add touch support for emoji picker if it exists
+        const emojiPicker = document.getElementById('emoji-picker');
+        if (emojiPicker) {
+            const emojiItems = emojiPicker.querySelectorAll('.emoji-item');
+            emojiItems.forEach(emoji => {
+                emoji.removeEventListener('touchstart', handleTouchStart);
+                emoji.removeEventListener('touchend', handleTouchEnd);
+                emoji.addEventListener('touchstart', handleTouchStart, { passive: false });
+                emoji.addEventListener('touchend', handleTouchEnd, { passive: false });
+            });
+        }
+    }
+}
+
+// Touch event handlers for mobile
+function handleTouchStart(e) {
+    // Add visual feedback for touch
+    e.currentTarget.style.transform = 'scale(0.95)';
+    e.currentTarget.style.transition = 'transform 0.1s ease';
+}
+
+function handleTouchEnd(e) {
+    // Remove visual feedback
+    e.currentTarget.style.transform = 'scale(1)';
+    
+    // Trigger click event for proper functionality
+    setTimeout(() => {
+        if (e.currentTarget && typeof e.currentTarget.click === 'function') {
+            e.currentTarget.click();
+        }
+    }, 50);
+}
+
+// Add observer for when private message modal is shown/hidden
+if (typeof MutationObserver !== 'undefined') {
+    const pmModalObserver = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                const target = mutation.target;
+                if (target.id === 'private-message-modal') {
+                    const isVisible = target.style.display !== 'none';
+                    
+                    // Close right pane when PM modal opens
+                    if (isVisible) {
+                        const rightPane = document.querySelector('.right-pane');
+                        if (rightPane) {
+                            rightPane.classList.remove('open', 'active');
+                        }
+                    }
+                    
+                    // Disable/enable main chat input based on PM modal visibility
+                    const mainChatInput = document.getElementById('message');
+                    const mainChatForm = document.getElementById('message-form');
+                    const sendButton = document.getElementById('send-button');
+                    
+                    if (isVisible) {
+                        // Disable main chat when PM is open
+                        if (mainChatInput) {
+                            mainChatInput.disabled = true;
+                            mainChatInput.placeholder = 'Close private message to type here...';
+                            mainChatInput.style.opacity = '0.5';
+                        }
+                        if (sendButton) {
+                            sendButton.disabled = true;
+                            sendButton.style.opacity = '0.5';
+                        }
+                        if (mainChatForm) {
+                            mainChatForm.style.pointerEvents = 'none';
+                        }
+                        
+                        // Add mobile touch support
+                        setTimeout(() => {
+                            addMobileTouchSupport();
+                        }, 100);
+                    } else {
+                        // Re-enable main chat when PM is closed
+                        if (mainChatInput) {
+                            mainChatInput.disabled = false;
+                            mainChatInput.placeholder = 'Type a message...';
+                            mainChatInput.style.opacity = '1';
+                        }
+                        if (sendButton) {
+                            sendButton.disabled = false;
+                            sendButton.style.opacity = '1';
+                        }
+                        if (mainChatForm) {
+                            mainChatForm.style.pointerEvents = 'auto';
+                        }
+                    }
+                }
+            }
+        });
+    });
+    
+    // Start observing when DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+        const pmModal = document.getElementById('private-message-modal');
+        if (pmModal) {
+            pmModalObserver.observe(pmModal, {
+                attributes: true,
+                attributeFilter: ['style']
+            });
+        }
+    });
+}
