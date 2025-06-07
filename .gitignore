@@ -1,1 +1,3 @@
 server/.env
+server/chat-backup*.json
+server/backup-output.log
