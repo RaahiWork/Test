@@ -212,11 +212,12 @@ class PrivateMessaging {
 
         if (privateVoiceBtn && privateVoiceFile && privateVoiceActionContainer && privateVoiceAudioPreview && privateVoiceSendBtn && privateVoiceCancelBtn && privateVoiceDownloadBtn) {
             privateVoiceBtn.addEventListener('click', async () => {
-                if (mediaRecorder && mediaRecorder.state === 'recording') {
-                    mediaRecorder.stop();
+                if (mediaRecorder && mediaRecorder.state === 'recording') {                    mediaRecorder.stop();
                     privateVoiceBtn.textContent = '🎤';
                     return;
-                }                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                }
+                
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                     //
                     return;
                 }
@@ -384,10 +385,9 @@ class PrivateMessaging {
                     if (data.to !== this.getMyName()) return;
                     this.stopRingtone();
                     this.endVoiceCall(true);
-                });
-
-                socket.on('voiceCallDeclined', (data) => {
-                    if (data.to !== this.getMyName()) return;                    this.stopRingtone();
+                });                socket.on('voiceCallDeclined', (data) => {
+                    if (data.to !== this.getMyName()) return;
+                    this.stopRingtone();
                     this.endVoiceCall(true);
                     //
                 });
@@ -615,8 +615,7 @@ class PrivateMessaging {
             chatContainer.innerHTML = '<div style="text-align: center; color: #888; margin: 2rem 0;">Start a private conversation!</div>';
             return;
         }
-        
-        conversation.forEach(message => {
+          conversation.forEach(message => {
             this.displayMessage(message, message.type);
         });
         
@@ -625,7 +624,8 @@ class PrivateMessaging {
     }
     
     displayMessage(data, type) {
-        //console.log('Displaying message:', { data, type });        const chatContainer = document.getElementById('private-message-chat');
+        //console.log('Displaying message:', { data, type });
+        const chatContainer = document.getElementById('private-message-chat');
         if (!chatContainer) {
             //
             return;

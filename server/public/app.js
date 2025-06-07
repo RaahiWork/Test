@@ -1905,3 +1905,38 @@ if (typeof MutationObserver !== 'undefined') {
         }
     });
 }
+
+// Add handler for avatar updates to refresh user list avatars in real-time
+socket.on('avatarUpdated', ({ username, avatarUrl }) => {
+    // Clear the avatar cache for this user to force refresh
+    if (window.avatarExistenceCache) {
+        const lowerUsername = username.toLowerCase();
+        window.avatarExistenceCache[lowerUsername] = true;
+    }
+    
+    // Update all avatar images for this user in the user list
+    const userListAvatars = document.querySelectorAll('.profile-avatar-img--small');
+    userListAvatars.forEach(img => {
+        if (img.alt && img.alt.includes(username)) {
+            img.src = avatarUrl + '?t=' + Date.now(); // Add timestamp for cache busting
+        }
+    });
+    
+    // Also update any message avatars for this user
+    const messageAvatars = document.querySelectorAll('.message-avatar');
+    messageAvatars.forEach(img => {
+        if (img.closest('.message') && img.closest('.message').dataset.username === username) {
+            img.src = avatarUrl + '?t=' + Date.now();
+        }
+    });
+    
+    // Update profile modal if it's currently showing this user
+    const profileModal = document.getElementById('user-profile-modal');
+    const profileAvatar = document.getElementById('user-profile-avatar-img');
+    const profileUsername = document.getElementById('user-profile-username');
+    
+    if (profileModal && profileModal.style.display !== 'none' && 
+        profileUsername && profileUsername.textContent === username) {
+        profileAvatar.src = avatarUrl + '?t=' + Date.now();
+    }
+});
