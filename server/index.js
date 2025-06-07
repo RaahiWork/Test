@@ -9,6 +9,8 @@ import User from './models/User.js'
 import mongoose from 'mongoose'
 // --- Add AWS SDK v3 imports ---
 import { S3Client, ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3'
+// --- Chat state management ---
+import chatState from './chatState.js'
 
 // Load environment variables
 dotenv.config()
@@ -364,7 +366,26 @@ app.post('/api/avatar', async (req, res) => {
 });
 
 const expressServer = app.listen(PORT, () => {
-    //
+    console.log(`🚀 VybChat server running on port ${PORT}`);
+    console.log(`📊 Chat state initialized with ${Object.keys(chatState.chatHistory).length} rooms`);
+    
+    // Log current chat history status
+    const totalMessages = Object.values(chatState.chatHistory).reduce((total, roomMsgs) => total + (roomMsgs?.length || 0), 0);
+    console.log(`💬 Total messages in memory: ${totalMessages}`);
+    
+    // Check if backup files exist
+    const backupPath = path.join(__dirname, 'chat-backup.json');
+    try {
+        fs.access(backupPath).then(() => {
+            console.log(`📁 Backup file exists: ${backupPath}`);
+        }).catch(() => {
+            console.log(`📁 No existing backup file found`);
+        });
+    } catch (err) {
+        console.log(`📁 Backup file check failed: ${err.message}`);
+    }
+    
+    console.log(`🔄 Server ready for connections`);
 })
 
 // state 
@@ -376,7 +397,7 @@ const UsersState = {
 }
 
 // --- Room message history ---
-const roomMessages = {};
+const roomMessages = chatState.chatHistory;
 const MAX_ROOM_HISTORY = 50;
 
 const io = new Server(expressServer, {
@@ -630,19 +651,13 @@ io.on('connection', socket => {
                 rooms: getAllActiveRooms()
             })
         }
-    });
-
-    // Listening for a message event 
+    });    // Listening for a message event 
     socket.on('message', ({ name, text }) => {
         const room = getUser(socket.id)?.room
         if (room) {
             const msg = buildMsg(name, text);
-            // Store in room history
-            if (!roomMessages[room]) roomMessages[room] = [];
-            roomMessages[room].push(msg);
-            if (roomMessages[room].length > MAX_ROOM_HISTORY) {
-                roomMessages[room].splice(0, roomMessages[room].length - MAX_ROOM_HISTORY);
-            }
+            // Store in room history using chatState
+            chatState.addMessage(room, msg);
             io.to(room).emit('message', msg)
         }
     });
@@ -655,15 +670,11 @@ io.on('connection', socket => {
             if (!image || !image.startsWith('data:image/')) {            //
                 socket.emit('message', buildMsg(ADMIN, "Invalid image format. Please try again."));
                 return;
-            }
-            try {
+            }            try {
                 const msg = buildMsg(name, null, image);
-                // Store in room history
-                if (!roomMessages[room]) roomMessages[room] = [];
-                roomMessages[room].push(msg);
-                if (roomMessages[room].length > MAX_ROOM_HISTORY) {
-                    roomMessages[room].splice(0, roomMessages[room].length - MAX_ROOM_HISTORY);
-                }                io.to(room).emit('message', msg);
+                // Store in room history using chatState
+                chatState.addMessage(room, msg);
+                io.to(room).emit('message', msg);
             } catch (error) {
                 //
                 socket.emit('message', buildMsg(ADMIN, `Error sending image: ${error.message}`));
@@ -680,15 +691,10 @@ io.on('connection', socket => {
             if (!voice || !voice.startsWith('data:audio/')) {
                 socket.emit('message', buildMsg(ADMIN, "Invalid voice message format."));
                 return;
-            }
-            try {
+            }            try {
                 const msg = buildMsg(name, null, null, voice);
-                // Store in room history
-                if (!roomMessages[room]) roomMessages[room] = [];
-                roomMessages[room].push(msg);
-                if (roomMessages[room].length > MAX_ROOM_HISTORY) {
-                    roomMessages[room].splice(0, roomMessages[room].length - MAX_ROOM_HISTORY);
-                }
+                // Store in room history using chatState
+                chatState.addMessage(room, msg);
                 io.to(room).emit('message', msg);
             } catch (error) {
                 socket.emit('message', buildMsg(ADMIN, `Error sending voice message: ${error.message}`));
@@ -809,3 +815,88 @@ function getUsersInRoom(room) {
 function getAllActiveRooms() {
     return Array.from(new Set(UsersState.users.map(user => user.room)))
 }
+
+// Graceful shutdown - save chat history before exit
+async function saveAndExit() {
+    console.log('================================');
+    console.log('💾 STARTING GRACEFUL SHUTDOWN');
+    console.log('================================');
+    process.stdout.write('\x1b[33m💾 Saving chat history before shutdown...\x1b[0m\n');
+    console.log('💾 Saving chat history before shutdown...');
+    
+    try {
+        const backupPath = path.join(__dirname, 'chat-backup.json');
+        const timestampedBackupPath = path.join(__dirname, `chat-backup-shutdown-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
+        
+        // Create both regular and timestamped backup
+        const backupData = JSON.stringify(chatState.chatHistory, null, 2);
+        await fs.writeFile(backupPath, backupData);
+        await fs.writeFile(timestampedBackupPath, backupData);
+        
+        const messageCount = Object.values(chatState.chatHistory).reduce((total, roomMsgs) => total + (roomMsgs?.length || 0), 0);
+        const logMessage = `✅ Chat history saved successfully - ${messageCount} messages backed up`;
+        
+        console.log('================================');
+        console.log('✅ BACKUP COMPLETED');
+        console.log('================================');
+        process.stdout.write(`\x1b[32m${logMessage}\x1b[0m\n`);
+        console.log(logMessage);
+        console.log(`📂 Primary backup: ${backupPath}`);
+        console.log(`📂 Timestamped backup: ${timestampedBackupPath}`);
+        console.log('================================');
+        
+    } catch (err) {
+        const errorMessage = `❌ Failed to save chat history: ${err.message}`;
+        console.log('================================');
+        console.log('❌ BACKUP FAILED');
+        console.log('================================');
+        process.stderr.write(`\x1b[31m${errorMessage}\x1b[0m\n`);
+        console.error(errorMessage);
+        console.error('Error details:', err);
+    }
+    
+    // Give a moment for any pending operations to complete
+    setTimeout(() => {
+        console.log('👋 Server shutdown complete');
+        process.exit(0);
+    }, 1000);
+}
+
+// Handle graceful shutdown with logging
+console.log('🔧 Setting up graceful shutdown handlers...');
+process.on('SIGINT', () => {
+    console.log('📡 Received SIGINT signal');
+    saveAndExit();
+});
+process.on('SIGTERM', () => {
+    console.log('📡 Received SIGTERM signal');
+    saveAndExit();
+});
+process.on('SIGUSR2', () => {
+    console.log('📡 Received SIGUSR2 signal (nodemon restart)');
+    saveAndExit();
+});
+
+// Handle PM2 graceful shutdown
+process.on('SIGTSTP', () => {
+    console.log('📡 Received SIGTSTP signal (PM2 stop)');
+    saveAndExit();
+});
+process.on('SIGHUP', () => {
+    console.log('📡 Received SIGHUP signal (PM2 reload)');
+    saveAndExit();
+});
+
+// Handle uncaught exceptions and unhandled rejections
+process.on('uncaughtException', (err) => {
+    console.error('💥 Uncaught Exception:', err);
+    saveAndExit();
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
+    saveAndExit();
+});
+
+// Log successful setup
+console.log('✅ Graceful shutdown handlers configured');
