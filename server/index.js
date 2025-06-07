@@ -28,13 +28,17 @@ connectDB()
 
 // --- AWS S3 CONFIGURATION ---
 // (Set these in your .env: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, AWS_S3_BUCKET)
+const isRender = !!process.env.AWS_ACCESS_KEY_ID && !!process.env.AWS_SECRET_ACCESS_KEY
+
 const s3Client = new S3Client({
-    region: process.env.AWS_REGION || 'ap-south-1',
+  region: process.env.AWS_REGION || 'ap-south-1',
+  ...(isRender && {
     credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     }
-});
+  })
+})
 
 // Utility to list and log S3 bucket files
 async function logS3BucketFiles() {
