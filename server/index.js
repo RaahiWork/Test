@@ -365,6 +365,70 @@ app.post('/api/avatar', async (req, res) => {
     }
 });
 
+// --- Manual backup endpoint for remote servers ---
+app.post('/api/backup', async (req, res) => {
+    try {
+        console.log('🔧 Manual backup requested via API');
+        
+        if (!chatState || !chatState.chatHistory) {
+            return res.status(400).json({ error: 'No chat state available' });
+        }
+        
+        const backupPath = path.join(__dirname, 'chat-backup.json');
+        const timestampedBackupPath = path.join(__dirname, `chat-backup-manual-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
+        
+        const backupData = JSON.stringify(chatState.chatHistory, null, 2);
+        await fs.writeFile(backupPath, backupData);
+        await fs.writeFile(timestampedBackupPath, backupData);
+        
+        const messageCount = Object.values(chatState.chatHistory).reduce((total, roomMsgs) => total + (roomMsgs?.length || 0), 0);
+        const roomCount = Object.keys(chatState.chatHistory).length;
+        
+        console.log(`✅ Manual backup completed: ${roomCount} rooms, ${messageCount} messages`);
+        
+        res.json({
+            success: true,
+            message: 'Backup completed successfully',
+            stats: {
+                rooms: roomCount,
+                messages: messageCount,
+                timestamp: new Date().toISOString()
+            },
+            files: {
+                primary: backupPath,
+                timestamped: timestampedBackupPath
+            }
+        });
+    } catch (error) {
+        console.error('❌ Manual backup failed:', error);
+        res.status(500).json({ 
+            error: 'Backup failed', 
+            details: error.message 
+        });
+    }
+});
+
+// --- Health check endpoint ---
+app.get('/api/health', (req, res) => {
+    const messageCount = chatState?.chatHistory ? 
+        Object.values(chatState.chatHistory).reduce((total, roomMsgs) => total + (roomMsgs?.length || 0), 0) : 0;
+    const roomCount = chatState?.chatHistory ? Object.keys(chatState.chatHistory).length : 0;
+    
+    res.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: process.env.NODE_ENV || 'development',
+        platform: process.platform,
+        pid: process.pid,
+        stats: {
+            rooms: roomCount,
+            messages: messageCount,
+            activeUsers: UsersState.users.length
+        }
+    });
+});
+
 const expressServer = app.listen(PORT, () => {
     console.log(`🚀 VybChat server running on port ${PORT}`);
     console.log(`📊 Chat state initialized with ${Object.keys(chatState.chatHistory).length} rooms`);
@@ -384,8 +448,7 @@ const expressServer = app.listen(PORT, () => {
     } catch (err) {
         console.log(`📁 Backup file check failed: ${err.message}`);
     }
-    
-    console.log(`🔄 Server ready for connections`);
+      console.log(`🔄 Server ready for connections`);
 })
 
 // state 
@@ -820,20 +883,47 @@ function getAllActiveRooms() {
 async function saveAndExit() {
     console.log('================================');
     console.log('💾 STARTING GRACEFUL SHUTDOWN');
+    console.log(`🕒 Timestamp: ${new Date().toISOString()}`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`📦 Platform: ${process.platform}`);
+    console.log(`🔢 Process PID: ${process.pid}`);
     console.log('================================');
     process.stdout.write('\x1b[33m💾 Saving chat history before shutdown...\x1b[0m\n');
     console.log('💾 Saving chat history before shutdown...');
     
     try {
+        // Ensure chatState exists and has data
+        if (!chatState || !chatState.chatHistory) {
+            console.log('⚠️ No chat state found, creating empty backup');
+            chatState = { chatHistory: {} };
+        }
+        
         const backupPath = path.join(__dirname, 'chat-backup.json');
         const timestampedBackupPath = path.join(__dirname, `chat-backup-shutdown-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
         
         // Create both regular and timestamped backup
         const backupData = JSON.stringify(chatState.chatHistory, null, 2);
-        await fs.writeFile(backupPath, backupData);
-        await fs.writeFile(timestampedBackupPath, backupData);
         
+        // Log the data we're about to save
         const messageCount = Object.values(chatState.chatHistory).reduce((total, roomMsgs) => total + (roomMsgs?.length || 0), 0);
+        const roomCount = Object.keys(chatState.chatHistory).length;
+        console.log(`📊 Backup stats: ${roomCount} rooms, ${messageCount} total messages`);
+        
+        // Write files with error handling for each
+        try {
+            await fs.writeFile(backupPath, backupData);
+            console.log(`✅ Primary backup written: ${backupPath}`);
+        } catch (backupErr) {
+            console.error(`❌ Failed to write primary backup: ${backupErr.message}`);
+        }
+        
+        try {
+            await fs.writeFile(timestampedBackupPath, backupData);
+            console.log(`✅ Timestamped backup written: ${timestampedBackupPath}`);
+        } catch (timestampErr) {
+            console.error(`❌ Failed to write timestamped backup: ${timestampErr.message}`);
+        }
+        
         const logMessage = `✅ Chat history saved successfully - ${messageCount} messages backed up`;
         
         console.log('================================');
@@ -853,50 +943,95 @@ async function saveAndExit() {
         process.stderr.write(`\x1b[31m${errorMessage}\x1b[0m\n`);
         console.error(errorMessage);
         console.error('Error details:', err);
+        console.error('Stack trace:', err.stack);
+    }
+    
+    // Close database connection gracefully
+    try {
+        console.log('🔌 Closing database connection...');
+        await mongoose.connection.close();
+        console.log('✅ Database connection closed');
+    } catch (dbErr) {
+        console.error('❌ Error closing database:', dbErr.message);
+    }
+    
+    // Close the HTTP server gracefully
+    try {
+        console.log('🌐 Closing HTTP server...');
+        expressServer.close(() => {
+            console.log('✅ HTTP server closed');
+        });
+    } catch (serverErr) {
+        console.error('❌ Error closing server:', serverErr.message);
     }
     
     // Give a moment for any pending operations to complete
     setTimeout(() => {
         console.log('👋 Server shutdown complete');
+        console.log(`🕒 Final timestamp: ${new Date().toISOString()}`);
         process.exit(0);
-    }, 1000);
+    }, 2000); // Increased timeout for remote servers
 }
 
 // Handle graceful shutdown with logging
 console.log('🔧 Setting up graceful shutdown handlers...');
-process.on('SIGINT', () => {
-    console.log('📡 Received SIGINT signal');
-    saveAndExit();
-});
-process.on('SIGTERM', () => {
-    console.log('📡 Received SIGTERM signal');
-    saveAndExit();
-});
-process.on('SIGUSR2', () => {
-    console.log('📡 Received SIGUSR2 signal (nodemon restart)');
-    saveAndExit();
-});
 
-// Handle PM2 graceful shutdown
-process.on('SIGTSTP', () => {
-    console.log('📡 Received SIGTSTP signal (PM2 stop)');
+// Track if shutdown is already in progress to prevent multiple calls
+let isShuttingDown = false;
+
+const gracefulShutdown = (signal) => {
+    if (isShuttingDown) {
+        console.log(`⚠️ Shutdown already in progress, ignoring ${signal} signal`);
+        return;
+    }
+    isShuttingDown = true;
+    console.log(`📡 Received ${signal} signal`);
     saveAndExit();
-});
-process.on('SIGHUP', () => {
-    console.log('📡 Received SIGHUP signal (PM2 reload)');
-    saveAndExit();
-});
+};
+
+// Standard signals - these work on most platforms
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));   // Ctrl+C
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM')); // Process termination (most cloud platforms)
+
+// Development signals
+process.on('SIGUSR2', () => gracefulShutdown('SIGUSR2')); // nodemon restart
+
+// PM2 signals
+process.on('SIGTSTP', () => gracefulShutdown('SIGTSTP')); // PM2 stop
+process.on('SIGHUP', () => gracefulShutdown('SIGHUP'));   // PM2 reload
+
+// Additional signals for better cloud platform compatibility
+process.on('SIGQUIT', () => gracefulShutdown('SIGQUIT')); // Quit signal
+process.on('SIGUSR1', () => gracefulShutdown('SIGUSR1')); // User-defined signal 1
 
 // Handle uncaught exceptions and unhandled rejections
 process.on('uncaughtException', (err) => {
     console.error('💥 Uncaught Exception:', err);
-    saveAndExit();
+    if (!isShuttingDown) {
+        isShuttingDown = true;
+        saveAndExit();
+    }
 });
 
 process.on('unhandledRejection', (reason, promise) => {
     console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
-    saveAndExit();
+    // Don't exit on unhandled rejection, just log it
+});
+
+// Handle process.exit() calls
+process.on('exit', (code) => {
+    console.log(`🚪 Process exiting with code: ${code}`);
+});
+
+// For platforms that use different shutdown mechanisms
+process.on('beforeExit', (code) => {
+    console.log(`⚠️ Process beforeExit event with code: ${code}`);
+    if (!isShuttingDown && code === 0) {
+        isShuttingDown = true;
+        console.log('🔄 Triggering graceful shutdown from beforeExit');
+        saveAndExit();
+    }
 });
 
 // Log successful setup
-console.log('✅ Graceful shutdown handlers configured');
+console.log('✅ Graceful shutdown handlers configured for multiple platforms');

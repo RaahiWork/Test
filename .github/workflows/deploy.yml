@@ -36,10 +36,16 @@ jobs:
             fi            # Backup current chat state if server is running
             if pm2 list | grep -q "vybchat.*online"; then
               echo "💾 Creating backup from running server..."
-              if [ -f backup.js ]; then
-                node backup.js || echo "⚠️ Backup script failed, continuing with deployment"
+              # Try API backup first (preferred method)
+              if curl -f -X POST http://localhost:${{ secrets.PORT }}/api/backup > /dev/null 2>&1; then
+                echo "✅ API backup completed successfully"
               else
-                echo "⚠️ backup.js not found, skipping live backup"
+                echo "⚠️ API backup failed, trying backup script..."
+                if [ -f backup.js ]; then
+                  node backup.js || echo "⚠️ Backup script failed, continuing with deployment"
+                else
+                  echo "⚠️ backup.js not found, skipping live backup"
+                fi
               fi
             fi
 
@@ -63,10 +69,19 @@ jobs:
             # Wait for server to start and restore chat history
             echo "⏳ Waiting for server to start..."
             sleep 10
-            
-            # Verify server is running
+              # Verify server is running
             if pm2 list | grep -q "vybchat.*online"; then
               echo "✅ Server started successfully"
+              
+              # Test backup endpoint to ensure it's working
+              echo "🧪 Testing backup endpoint..."
+              sleep 5  # Give server more time to fully initialize
+              if curl -f -X POST http://localhost:${{ secrets.PORT }}/api/backup > /dev/null 2>&1; then
+                echo "✅ Backup endpoint is working correctly"
+              else
+                echo "⚠️ Backup endpoint test failed, but server is running"
+              fi
+              
               # Clean up backup file after successful restore
               if [ -f chat-backup.json ]; then
                 rm chat-backup.json
