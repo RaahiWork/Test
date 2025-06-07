@@ -9,6 +9,9 @@ import User from './models/User.js'
 import mongoose from 'mongoose'
 // --- Add AWS SDK v3 imports ---
 import { S3Client, ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3'
+import { fromIni } from "@aws-sdk/credential-provider-ini"
+import { fromInstanceMetadata } from "@aws-sdk/credential-providers"
+import { fromEnv } from "@aws-sdk/credential-provider-env"
 // --- Chat state management ---
 import chatState from './chatState.js'
 
@@ -27,17 +30,27 @@ const app = express()
 connectDB()
 
 // --- AWS S3 CONFIGURATION ---
-// (Set these in your .env: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, AWS_S3_BUCKET)
-const isRender = !!process.env.AWS_ACCESS_KEY_ID && !!process.env.AWS_SECRET_ACCESS_KEY
+// For local/Render: Set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY in .env
+// For EC2: Use IAM roles (set EC2_ENV=true)
+// For other cloud: Set AWS_REGION, AWS_S3_BUCKET as needed
+const isEC2 = process.env.EC2_ENV === "true"
+const hasEnvCreds = !!process.env.AWS_ACCESS_KEY_ID && !!process.env.AWS_SECRET_ACCESS_KEY
+
+let credentialsProvider
+
+if (isEC2) {
+  // Use IAM role from EC2 metadata service
+  credentialsProvider = fromInstanceMetadata()
+} else if (hasEnvCreds) {
+  // Use credentials from .env (Render or local)
+  credentialsProvider = fromEnv()
+} else {
+  throw new Error("❌ No valid AWS credentials or IAM role found.")
+}
 
 const s3Client = new S3Client({
-  region: process.env.AWS_REGION || 'ap-south-1',
-  ...(isRender && {
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    }
-  })
+  region: process.env.AWS_REGION || "ap-south-1",
+  credentials: credentialsProvider,
 })
 
 // Utility to list and log S3 bucket files
