@@ -16,6 +16,10 @@ if (fs.existsSync(backupPath)) {
     chatHistory = JSON.parse(data);
     // Use process.stdout.write for server logs only (not broadcasted to clients)
     process.stdout.write('\x1b[32m✅ Chat history restored from backup\x1b[0m\n');
+    
+    // Delete the backup file after successful restore
+    fs.unlinkSync(backupPath);
+    process.stdout.write('\x1b[33m🗑️ Backup file cleaned up after successful restore\x1b[0m\n');
   } catch (err) {
     process.stderr.write('\x1b[31m❌ Failed to restore chat history: ' + err.message + '\x1b[0m\n');
     chatHistory = {};
