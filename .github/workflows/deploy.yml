@@ -33,12 +33,14 @@ jobs:
               echo "✅ Chat history backed up"
             else
               echo "ℹ️ No existing chat history found"
-            fi
-
-            # Backup current chat state if server is running
+            fi            # Backup current chat state if server is running
             if pm2 list | grep -q "vybchat.*online"; then
               echo "💾 Creating backup from running server..."
-              node backup.js || echo "⚠️ Backup script failed, continuing with deployment"
+              if [ -f backup.js ]; then
+                node backup.js || echo "⚠️ Backup script failed, continuing with deployment"
+              else
+                echo "⚠️ backup.js not found, skipping live backup"
+              fi
             fi
 
             git fetch origin
@@ -46,11 +48,11 @@ jobs:
 
             echo "MONGODB_URI=${{ secrets.MONGODB_URI }}" > .env
             echo "PORT=${{ secrets.PORT }}" >> .env
-            echo "AWS_S3_BUCKET=${{ secrets.AWS_S3_BUCKET }}" >> .env
-
-            npm install
+            echo "AWS_S3_BUCKET=${{ secrets.AWS_S3_BUCKET }}" >> .env            npm install
             rm -rf dist build .next .cache tmp
-            npm run build || true
+            
+            # Skip build step since this is a Node.js server (no build required)
+            echo "ℹ️ Skipping build step for Node.js server"
               # Stop server gracefully to allow chat backup
             pm2 delete vybchat || true
             pm2 flush

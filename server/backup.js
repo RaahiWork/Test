@@ -12,9 +12,8 @@ console.log('🔧 STARTING BACKUP PROCESS');
 console.log('================================');
 console.log('📡 Current chat state:', chatState.chatHistory);
 
-try {
-  const backupPath = path.join(__dirname, 'chat-backup.json');
-  const timestampedBackupPath = path.join(__dirname, `chat-backup-manual-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
+try {  const backupPath = path.join(__dirname, 'chat-backup.json');
+  const timestampedBackupPath = path.join(__dirname, `chat-backup-deployment-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
   
   const backupData = JSON.stringify(chatState.chatHistory, null, 2);
   
