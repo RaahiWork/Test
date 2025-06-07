@@ -15,9 +15,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Variables to store the current target for the emoji picker
     let currentTargetInput = null;
     let currentTriggerButton = null;
-    
-    if (!emojiPicker || !emojiContainer) { // Check only core picker elements
-        console.error('Emoji picker core UI elements not found');
+      if (!emojiPicker || !emojiContainer) { // Check only core picker elements
+        //
         return;
     }
 
@@ -164,11 +163,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Render all emojis
                 renderEmojis();
-                
-                // REMOVE: createPaginationControls(); // Already removed in user's provided code
+                  // REMOVE: createPaginationControls(); // Already removed in user's provided code
             })
             .catch(error => {
-                console.error('Error loading emojis:', error);
+                //
                 emojiContainer.innerHTML = `
                     <div class="emoji-error">
                         Failed to load emojis from server.<br>
@@ -184,9 +182,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Insert emoji at cursor position of the currentTargetInput
-    function insertEmoji(emoji) {
-        if (!currentTargetInput) {
-            console.warn("No target input set for emoji insertion.");
+    function insertEmoji(emoji) {        if (!currentTargetInput) {
+            //
             return;
         }
         

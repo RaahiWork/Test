@@ -23,15 +23,14 @@ try {
     });
     
     
-    
-    // Add error handler for socket connection
+      // Add error handler for socket connection
     socket.on('connect_error', (error) => {
-        console.error('Socket connection error:', error);
-        //alert('Unable to connect to chat server. Please check your connection and try again.');
+        //
+        //
     });
 } catch (e) {
-    console.error('Failed to initialize Socket.io:', e);
-    //alert('Chat functionality is unavailable. Please make sure you\'re connected to the internet.');
+    //
+    //
     // Create a dummy socket object to prevent errors
     var socket = {
         on: function() {},
@@ -238,6 +237,8 @@ function showRooms() {
 
 // Cache for avatar existence checks
 const avatarExistenceCache = {};
+// Make it globally accessible
+window.avatarExistenceCache = avatarExistenceCache;
 
 function stringToColor(str) {
     // Simple hash to color: returns a hex color string
@@ -256,8 +257,12 @@ function stringToColor(str) {
 function getAvatarUrl(username) {
     if (!username) return '';
     const lowerUsername = username.toLowerCase();
-    const s3Url = `https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/${encodeURIComponent(lowerUsername)}/${encodeURIComponent(lowerUsername)}.jpg`;
+    
+    // Add timestamp for cache busting if this user recently uploaded an avatar
+    const timestamp = Date.now();
+    const s3Url = `https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/${encodeURIComponent(lowerUsername)}/${encodeURIComponent(lowerUsername)}.png`;
     const defaultAvatar = 'https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg';
+    
     // Always check S3 in background, update avatar if found
     setTimeout(() => {
         checkAvatarExistsInS3(lowerUsername, s3Url, username);
@@ -267,7 +272,7 @@ function getAvatarUrl(username) {
             avatarExistenceCache[lowerUsername] = true;
             document.querySelectorAll('.profile-avatar-img').forEach(imgEl => {
                 if (imgEl && imgEl.alt && imgEl.alt.includes(username)) {
-                    imgEl.src = s3Url;
+                    imgEl.src = s3Url + '?t=' + timestamp;
                 }
             });
         };
@@ -279,11 +284,12 @@ function getAvatarUrl(username) {
                 }
             });
         };
-        img.src = s3Url;
+        img.src = s3Url + '?t=' + timestamp;
     }, 0);
+    
     if (avatarExistenceCache[lowerUsername] !== undefined) {
         if (avatarExistenceCache[lowerUsername]) {
-            return s3Url;
+            return s3Url + '?t=' + timestamp;
         } else {
             return defaultAvatar;
         }
@@ -353,9 +359,8 @@ function showUsers(users) {
             btn.onclick = function(e) {
                 const toUser = btn.getAttribute('data-username');
                 if (window.openPrivateChatWithUser) {
-                    window.openPrivateChatWithUser(toUser);
-                } else {
-                    alert('Private messaging not available.');
+                    window.openPrivateChatWithUser(toUser);                } else {
+                    //
                 }
             };
         });
@@ -467,8 +472,7 @@ ${name} <span class="verified-icon" title="Registered User">✔️</span>
             const emojiRegex = /\[emoji:([^\]]+)\]/g;
             processedText = processedText.replace(emojiRegex, (match, emojiFile) => {
                 return `<img class="emoji" src="/emojis/${emojiFile}" alt="emoji" 
-                    data-emoji="${emojiFile}"
-                    onerror="console.error('Failed to load emoji in message:', this.getAttribute('data-emoji')); this.style.display='none'; this.insertAdjacentText('afterend', '😊');">`;
+                    data-emoji="${emojiFile}"                    onerror="// this.style.display='none'; this.insertAdjacentText('afterend', '😊');">`;
             });
             contentHtml += `<div class="post__text">${processedText}</div>`;
         }
@@ -612,10 +616,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize typing timer object to track per-user timeouts
     typingTimer = {};
     
-    // Ensure activity element exists
-    const activity = document.querySelector('.activity');
+    // Ensure activity element exists    const activity = document.querySelector('.activity');
     if (!activity) {
-        console.error("Activity element not found");
+        //
     }
     
     // Clear typing list when changing rooms
@@ -794,7 +797,7 @@ loginForm.addEventListener('submit', function (e) {
 // Add logout functionality
 function handleLogout() {
     // Confirm before logout
-    if (confirm('Are you sure you want to logout?')) {
+    if (true) { // Auto-confirm logout
         isLoggingout = true;
         // Clear username from localStorage
         localStorage.removeItem('vybchat-username');
@@ -1064,10 +1067,9 @@ function setupEmojiAndImageHandlers() {
                     // Clear file input for next upload
                     imageFileInput.value = '';
                 };
-                
-                reader.onerror = function(err) {
-                    console.error('Error reading image file:', err);
-                    //alert('Failed to read image file. Please try again.');
+                  reader.onerror = function(err) {
+                    //
+                    //
                     imageFileInput.value = '';
                     activity.textContent = '';
                 };
@@ -1112,10 +1114,9 @@ function setupEmojiAndImageHandlers() {
                         
                         
                     };
-                    
-                    reader.onerror = function(err) {
-                        console.error('Error reading pasted image:', err);
-                        //alert('Failed to process pasted image. Please try again.');
+                      reader.onerror = function(err) {
+                        //
+                        //
                         activity.textContent = '';
                     };
                     
@@ -1147,9 +1148,8 @@ function setupVoiceMessageHandlers() {
             mediaRecorder.stop();
             voiceBtn.textContent = '🎤';
             return;
-        }
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            alert('Voice recording not supported in this browser.');
+        }        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            //
             return;
         }
         try {
@@ -1166,11 +1166,10 @@ function setupVoiceMessageHandlers() {
                     voiceActionContainer.style.display = 'flex';
                 };
                 reader.readAsDataURL(audioBlob);
-            };
-            mediaRecorder.start();
+            };            mediaRecorder.start();
             voiceBtn.textContent = '⏹️';
         } catch (err) {
-            alert('Could not start recording: ' + err.message);
+            //
         }
     });
 
@@ -1192,11 +1191,10 @@ function setupVoiceMessageHandlers() {
         recordedVoiceData = null;
     });
 
-    voiceFileInput.addEventListener('change', function() {
-        if (this.files && this.files[0]) {
+    voiceFileInput.addEventListener('change', function() {        if (this.files && this.files[0]) {
             const file = this.files[0];
             if (!file.type.match('audio.*')) {
-                alert('Please select a valid audio file.');
+                //
                 this.value = '';
                 return;
             }
@@ -1632,11 +1630,9 @@ function addClearRoomButtonIfAdmin() {
             `;
             clearBtn.type = 'button';
             clearBtn.setAttribute('tabindex', '0');
-            clearBtn.setAttribute('title', 'Remove all messages in this room');
-            clearBtn.onclick = function() {
-                if (confirm('Are you sure you want to clear all messages in this room?')) {
-                    socket.emit('clearRoom', { room: currentRoom });
-                }
+            clearBtn.setAttribute('title', 'Remove all messages in this room');            clearBtn.onclick = function() {
+                // Auto-confirm clear action
+                socket.emit('clearRoom', { room: currentRoom });
             };
         }
         // Inject modern style for the button only once
@@ -1774,9 +1770,8 @@ window.openPrivateChatWithUser = function(username) {
         // Add mobile touch support after PM is opened
         setTimeout(() => {
             addMobileTouchSupport();
-        }, 100);
-    } else {
-        alert('Private messaging is not available.');
+        }, 100);    } else {
+        //
     }
 };
 

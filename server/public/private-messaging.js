@@ -181,11 +181,10 @@ class PrivateMessaging {
         const privateMessageInput = document.getElementById('private-message-input');
 
         if (privateEmojiBtn && privateMessageInput) {
-            privateEmojiBtn.addEventListener('click', (e) => {
-                if (window.openEmojiPickerFor) {
+            privateEmojiBtn.addEventListener('click', (e) => {                if (window.openEmojiPickerFor) {
                     window.openEmojiPickerFor(e, privateMessageInput, privateEmojiBtn);
                 } else {
-                    console.error('Emoji picker handler (window.openEmojiPickerFor) not available.');
+                    //
                 }
             });
         }
@@ -217,9 +216,8 @@ class PrivateMessaging {
                     mediaRecorder.stop();
                     privateVoiceBtn.textContent = '🎤';
                     return;
-                }
-                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                    alert('Voice recording not supported in this browser.');
+                }                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    //
                     return;
                 }
                 try {
@@ -238,9 +236,8 @@ class PrivateMessaging {
                         reader.readAsDataURL(audioBlob);
                     };
                     mediaRecorder.start();
-                    privateVoiceBtn.textContent = '⏹️';
-                } catch (err) {
-                    alert('Could not start recording: ' + err.message);
+                    privateVoiceBtn.textContent = '⏹️';                } catch (err) {
+                    //
                 }
             });
 
@@ -261,9 +258,8 @@ class PrivateMessaging {
 
             privateVoiceFile.addEventListener('change', function() {
                 if (this.files && this.files[0]) {
-                    const file = this.files[0];
-                    if (!file.type.match('audio.*')) {
-                        alert('Please select a valid audio file.');
+                    const file = this.files[0];                    if (!file.type.match('audio.*')) {
+                        //
                         this.value = '';
                         return;
                     }
@@ -316,7 +312,7 @@ class PrivateMessaging {
         // Wait for socket to be available
         const waitForSocket = () => {
             if (typeof socket !== 'undefined' && socket) {
-                //console.log('Setting up private messaging socket handlers');
+                //
                 
                 // Handle incoming private messages
                 socket.on('privateMessage', (data) => {
@@ -391,10 +387,9 @@ class PrivateMessaging {
                 });
 
                 socket.on('voiceCallDeclined', (data) => {
-                    if (data.to !== this.getMyName()) return;
-                    this.stopRingtone();
+                    if (data.to !== this.getMyName()) return;                    this.stopRingtone();
                     this.endVoiceCall(true);
-                    alert(`${data.from} declined your call.`);
+                    //
                 });
 
                 // Handle recent private chats from server (users table + private messages)
@@ -512,16 +507,12 @@ class PrivateMessaging {
     
     sendPrivateMessage(toUser, text, image = null, voice = null) {
         const nameInput = document.querySelector('#name');
-        
-        if (typeof socket === 'undefined' || !socket || !nameInput?.value) {
-            console.error('Socket not available or nameInput not found', {
-                socketAvailable: typeof socket !== 'undefined' && !!socket,
-                nameInputValue: nameInput?.value
-            });
+          if (typeof socket === 'undefined' || !socket || !nameInput?.value) {
+            //
             return;
         }
         
-        //console.log('Sending private message:', { fromUser: nameInput.value, toUser, text, image: image ? 'Image data' : null });
+        //
         
         socket.emit('privateMessage', {
             fromUser: nameInput.value,
@@ -594,9 +585,8 @@ class PrivateMessaging {
         // Update conversation tabs
         this.updateConversationTabs();
     }
-    
-    handlePrivateMessageError(data) {
-        alert(`Failed to send message: ${data.error}`);
+      handlePrivateMessageError(data) {
+        //
     }
     
     addMessageToConversation(username, message) {
@@ -635,10 +625,9 @@ class PrivateMessaging {
     }
     
     displayMessage(data, type) {
-        //console.log('Displaying message:', { data, type });
-        const chatContainer = document.getElementById('private-message-chat');
+        //console.log('Displaying message:', { data, type });        const chatContainer = document.getElementById('private-message-chat');
         if (!chatContainer) {
-            console.error('Private message chat container not found');
+            //
             return;
         }
 
@@ -768,8 +757,7 @@ class PrivateMessaging {
             
             processedText = processedText.replace(emojiRegex, (match, emojiFile) => {
                 return `<img class="emoji" src="/emojis/${emojiFile}" alt="emoji" 
-                    data-emoji="${emojiFile}"
-                    onerror="console.error('Failed to load emoji in private message:', this.getAttribute('data-emoji')); this.style.display='none'; this.insertAdjacentText('afterend', '😊');">`;
+                    data-emoji="${emojiFile}"                    onerror="// this.style.display='none'; this.insertAdjacentText('afterend', '😊');">`;
             });
             
             contentHtml += `<div class="post__text">${processedText}</div>`;
@@ -897,15 +885,14 @@ class PrivateMessaging {
     handlePrivateImageUpload(e) {
         const file = e.target.files[0];
         if (!file || !this.currentPrivateChat) return;
-        
-        if (!file.type.match('image.*')) {
-            alert('Please select a valid image file.');
+          if (!file.type.match('image.*')) {
+            //
             e.target.value = '';
             return;
         }
         
         if (file.size > 5 * 1024 * 1024) {
-            alert('Image file is too large. Please select an image less than 5MB.');
+            //
             e.target.value = '';
             return;
         }
@@ -915,9 +902,8 @@ class PrivateMessaging {
             this.sendPrivateMessage(this.currentPrivateChat, null, event.target.result);
             e.target.value = '';
         };
-        
-        reader.onerror = () => {
-            alert('Failed to read image file. Please try again.');
+          reader.onerror = () => {
+            //
             e.target.value = '';
         };
         
@@ -1021,14 +1007,12 @@ class PrivateMessaging {
         }
         this.isCaller = true;
         this.currentCallUser = username;
-        await this.createPeerConnection();
-
-        // Get local audio
+        await this.createPeerConnection();        // Get local audio
         try {
             this.localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
             this.localStream.getTracks().forEach(track => this.peerConnection.addTrack(track, this.localStream));
         } catch (err) {
-            alert('Could not access microphone: ' + err.message);
+            //
             this.endVoiceCall();
             return;
         }
@@ -1068,11 +1052,10 @@ class PrivateMessaging {
     async handleIncomingCall(data) {
         await this.createPeerConnection();
 
-        try {
-            this.localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        try {            this.localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
             this.localStream.getTracks().forEach(track => this.peerConnection.addTrack(track, this.localStream));
         } catch (err) {
-            alert('Could not access microphone: ' + err.message);
+            //
             this.endVoiceCall();
             return;
         }

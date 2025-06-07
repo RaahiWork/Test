@@ -27,7 +27,7 @@ connectDB()
 // --- AWS S3 CONFIGURATION ---
 // (Set these in your .env: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, AWS_S3_BUCKET)
 const s3Client = new S3Client({
-    region: process.env.AWS_REGION,
+    region: process.env.AWS_REGION || 'ap-south-1',
     credentials: {
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
@@ -36,28 +36,25 @@ const s3Client = new S3Client({
 
 // Utility to list and log S3 bucket files
 async function logS3BucketFiles() {
-    const bucket = process.env.AWS_S3_BUCKET;
+    const bucket = process.env.AWS_S3_BUCKET || 'vybchat-media';
     if (!bucket) {
-        console.warn('AWS_S3_BUCKET not set in environment.');
         return;
     }
     try {
         const command = new ListObjectsV2Command({ Bucket: bucket });
         const data = await s3Client.send(command);
     } catch (err) {
-        //console.error('Error listing S3 bucket files:', err);
+        //
     }
 }
 
 // Utility to log a user's avatar PNG file in S3 (avatars/{username}/{username}.png)
 async function logUserAvatar(username) {
-    const bucket = process.env.AWS_S3_BUCKET;
+    const bucket = process.env.AWS_S3_BUCKET || 'vybchat-media';
     if (!bucket) {
-        console.warn('AWS_S3_BUCKET not set in environment.');
         return;
     }
     if (!username) {
-        console.warn('Username not provided.');
         return;
     }
     const key = `avatars/${username}/${username}.png`;
@@ -68,7 +65,7 @@ async function logUserAvatar(username) {
         });
         const data = await s3Client.send(command);
     } catch (err) {
-        console.error('Error searching for user avatar in S3:', err);
+        //
     }
 }
 
@@ -76,16 +73,9 @@ async function logUserAvatar(username) {
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true }))
 
-// Add CORS middleware before other routes - allow both localhost and 127.0.0.1:5500
+// Add CORS middleware before other routes - allow all origins for simplicity since we serve static files
 app.use((req, res, next) => {
-    const allowedOrigins = [
-        'http://127.0.0.1:5500',
-        'http://localhost:5500'
-    ];
-    const origin = req.headers.origin;
-    if (allowedOrigins.includes(origin)) {
-        res.header('Access-Control-Allow-Origin', origin);
-    }
+    res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
     // Handle preflight requests
@@ -107,11 +97,10 @@ try {
     
     // Create the images directory if it doesn't exist
     await fs.mkdir(imagesPath, { recursive: true });
-    
-    // Check if emojis directory is empty
+      // Check if emojis directory is empty
     const files = await fs.readdir(emojisPath);
     if (files.length === 0) {
-        console.warn('No emojis found. Add emoji images to:', emojisPath);
+        //
     }
     
     // Ensure placeholder.gif exists in images directory
@@ -123,15 +112,16 @@ try {
         const transparentGif = Buffer.from(
             "R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==",
             "base64"
-        );
-        await fs.writeFile(placeholderPath, transparentGif);
+        );        await fs.writeFile(placeholderPath, transparentGif);
     }
 } catch (error) {
-    console.error('Error ensuring directories exist:', error);
+    //
 }
 
 // Expose the public directory
 app.use(express.static(publicPath));
+
+
 
 // --- Log S3 files on server startup ---
 logS3BucketFiles();
@@ -157,11 +147,10 @@ app.get('/api/emojis', async (req, res) => {
         const imageFiles = files.filter(file => {
             const extension = path.extname(file).toLowerCase();
             return ['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes(extension);
-        });
-        
+        });        
         res.json(imageFiles);
     } catch (error) {
-        console.error('Error reading emoji directory:', error);
+        //
         res.status(500).json({ error: 'Failed to load emojis', details: error.message });
     }
 });
@@ -206,9 +195,8 @@ app.post('/api/register', async (req, res) => {
                 createdAt: user.createdAt
             }
         });
-        
-    } catch (error) {
-        console.error('Registration error details:', error);
+          } catch (error) {
+        //
         if (error.name === 'ValidationError') {
             const errorMessages = Object.values(error.errors).map(err => err.message);
             return res.status(400).json({ 
@@ -217,7 +205,7 @@ app.post('/api/register', async (req, res) => {
             });
         }
         
-        console.error('Registration error:', error);
+        //
         res.status(500).json({ 
             error: 'Internal server error during registration' 
         });
@@ -259,10 +247,9 @@ app.post('/api/login', async (req, res) => {
                 displayName: user.displayName, // Return the display name with preserved case
                 createdAt: user.createdAt
             }
-        });
-        
+        });        
     } catch (error) {
-        console.error('Login error:', error);
+        //
         res.status(500).json({ 
             error: 'Internal server error during login' 
         });
@@ -272,13 +259,13 @@ app.post('/api/login', async (req, res) => {
 // Get all users endpoint (for admin purposes)
 app.get('/api/users', async (req, res) => {
     try {
-        const users = await User.find({}, 'username displayName createdAt').sort({ createdAt: -1 });
+        const users = await User.find({}, 'username displayName createdAt').sort({ createdAt: -1        });
         res.json({
             count: users.length,
             users
         });
     } catch (error) {
-        console.error('Error fetching users:', error);
+        //
         res.status(500).json({ 
             error: 'Failed to fetch users' 
         });
@@ -311,42 +298,73 @@ app.get('/api/search-users', async (req, res) => {
 
 // --- Avatar upload endpoint ---
 app.post('/api/avatar', async (req, res) => {
+    //
+    //
+    //
+    
     try {
         const { username, image } = req.body;
+        //
+        //
+        
         if (!username || !image) {
+            //
             return res.status(400).json({ error: 'Username and image are required.' });
         }
-        // Validate base64 image
+          // Validate base64 image
         const matches = image.match(/^data:image\/(png|jpeg|jpg|gif);base64,(.+)$/);
         if (!matches) {
+            //
             return res.status(400).json({ error: 'Invalid image format.' });
         }
+        
         const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
         const buffer = Buffer.from(matches[2], 'base64');
-        const bucket = process.env.AWS_S3_BUCKET;
+        const bucket = process.env.AWS_S3_BUCKET || 'vybchat-media';
+        
+        //
+        //
+        //
+        
         if (!bucket) {
             return res.status(500).json({ error: 'S3 bucket not configured.' });
         }
-        const key = `avatars/${username}/${username}.png`;
+           // Ensure consistent username formatting - use lowercase for S3 path
+        const normalizedUsername = username.toLowerCase();
+        const key = `avatars/${normalizedUsername}/${normalizedUsername}.png`;
+        //
+        
         // Upload to S3
         const putCommand = new PutObjectCommand({
             Bucket: bucket,
             Key: key,
             Body: buffer,
             ContentType: `image/png`,
-            ACL: 'public-read',
         });
+        
+        //
         await s3Client.send(putCommand);
-        // Return the S3 URL
-        const s3Url = `https://${bucket}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+          // Return the S3 URL
+        const s3Url = `https://${bucket}.s3.${process.env.AWS_REGION || 'ap-south-1'}.amazonaws.com/${key}`;
+        
+        // Broadcast avatar update to all users in the same room as the uploader
+        const uploadingUser = UsersState.users.find(user => user.name === username);
+        if (uploadingUser && uploadingUser.room) {
+            io.to(uploadingUser.room).emit('avatarUpdated', {
+                username: username,
+                avatarUrl: s3Url
+            });
+        }
+        
         res.json({ success: true, url: s3Url });
     } catch (err) {
+        //
         res.status(500).json({ error: 'Failed to upload avatar', details: err.message });
     }
 });
 
 const expressServer = app.listen(PORT, () => {
-    //console.log(`🚀 Server running on port ${PORT}`)
+    //
 })
 
 // state 
@@ -424,11 +442,10 @@ io.on('connection', socket => {
             .lean();
 
             if (allIds.length > 0) {
-                const idsToDelete = allIds.map(m => m._id);
-                await PrivateMessage.deleteMany({ _id: { $in: idsToDelete } });
+                const idsToDelete = allIds.map(m => m._id);            await PrivateMessage.deleteMany({ _id: { $in: idsToDelete } });
             }
         } catch (err) {
-            console.error('Failed to save or trim private messages:', err);
+            //
         }
 
         const messageData = {
@@ -465,10 +482,9 @@ io.on('connection', socket => {
             socket.emit('privateHistory', {
                 userA,
                 userB,
-                messages: messages.reverse()
-            });
+                messages: messages.reverse()        });
         } catch (err) {
-            console.error('Failed to fetch private message history:', err);
+            //
             socket.emit('privateHistory', { userA, userB, messages: [] });
         }
     });
@@ -523,9 +539,8 @@ io.on('connection', socket => {
                 displayName: userDisplayNameMap[r._id.toLowerCase()] || r._id,
                 lastMessage: r.lastMessage
             }));
-            socket.emit('recentPrivateChats', { chats });
-        } catch (err) {
-            console.error('Failed to fetch recent private chats:', err);
+            socket.emit('recentPrivateChats', { chats });        } catch (err) {
+            //
             socket.emit('recentPrivateChats', { chats: [] });
         }
     });
@@ -540,6 +555,16 @@ io.on('connection', socket => {
                 .map(user => ({ name: user.name, room: user.room }));
             
             socket.emit('onlineUsers', onlineUsers);
+        }    });
+
+    // Add handler for getting user list for specific room
+    socket.on('getUserList', ({ room }) => {
+        const currentUser = getUser(socket.id);
+        if (currentUser && room) {
+            // Send updated user list for the specified room
+            socket.emit('userList', {
+                users: getUsersInRoom(room)
+            });
         }
     });
 
@@ -627,8 +652,7 @@ io.on('connection', socket => {
         const room = getUser(socket.id)?.room;
         if (room) {
             // Validate image data format
-            if (!image || !image.startsWith('data:image/')) {
-                console.error('Invalid image data format');
+            if (!image || !image.startsWith('data:image/')) {            //
                 socket.emit('message', buildMsg(ADMIN, "Invalid image format. Please try again."));
                 return;
             }
@@ -639,10 +663,9 @@ io.on('connection', socket => {
                 roomMessages[room].push(msg);
                 if (roomMessages[room].length > MAX_ROOM_HISTORY) {
                     roomMessages[room].splice(0, roomMessages[room].length - MAX_ROOM_HISTORY);
-                }
-                io.to(room).emit('message', msg);
+                }                io.to(room).emit('message', msg);
             } catch (error) {
-                console.error('Error sending image message:', error);
+                //
                 socket.emit('message', buildMsg(ADMIN, `Error sending image: ${error.message}`));
             }
         } else {
