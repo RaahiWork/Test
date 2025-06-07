@@ -9,9 +9,7 @@ import User from './models/User.js'
 import mongoose from 'mongoose'
 // --- Add AWS SDK v3 imports ---
 import { S3Client, ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3'
-import { fromIni } from "@aws-sdk/credential-provider-ini"
-import { fromInstanceMetadata } from "@aws-sdk/credential-providers"
-import { fromEnv } from "@aws-sdk/credential-provider-env"
+import { fromInstanceMetadata, fromEnv } from '@aws-sdk/credential-providers'
 // --- Chat state management ---
 import chatState from './chatState.js'
 
