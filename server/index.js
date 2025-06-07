@@ -9,6 +9,8 @@ import User from './models/User.js'
 import mongoose from 'mongoose'
 // --- Add AWS SDK v3 imports ---
 import { S3Client, ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3'
+// --- Chat state management ---
+import chatState from './chatState.js'
 
 // Load environment variables
 dotenv.config()
@@ -376,7 +378,7 @@ const UsersState = {
 }
 
 // --- Room message history ---
-const roomMessages = {};
+const roomMessages = chatState.chatHistory;
 const MAX_ROOM_HISTORY = 50;
 
 const io = new Server(expressServer, {
@@ -630,19 +632,13 @@ io.on('connection', socket => {
                 rooms: getAllActiveRooms()
             })
         }
-    });
-
-    // Listening for a message event 
+    });    // Listening for a message event 
     socket.on('message', ({ name, text }) => {
         const room = getUser(socket.id)?.room
         if (room) {
             const msg = buildMsg(name, text);
-            // Store in room history
-            if (!roomMessages[room]) roomMessages[room] = [];
-            roomMessages[room].push(msg);
-            if (roomMessages[room].length > MAX_ROOM_HISTORY) {
-                roomMessages[room].splice(0, roomMessages[room].length - MAX_ROOM_HISTORY);
-            }
+            // Store in room history using chatState
+            chatState.addMessage(room, msg);
             io.to(room).emit('message', msg)
         }
     });
@@ -655,15 +651,11 @@ io.on('connection', socket => {
             if (!image || !image.startsWith('data:image/')) {            //
                 socket.emit('message', buildMsg(ADMIN, "Invalid image format. Please try again."));
                 return;
-            }
-            try {
+            }            try {
                 const msg = buildMsg(name, null, image);
-                // Store in room history
-                if (!roomMessages[room]) roomMessages[room] = [];
-                roomMessages[room].push(msg);
-                if (roomMessages[room].length > MAX_ROOM_HISTORY) {
-                    roomMessages[room].splice(0, roomMessages[room].length - MAX_ROOM_HISTORY);
-                }                io.to(room).emit('message', msg);
+                // Store in room history using chatState
+                chatState.addMessage(room, msg);
+                io.to(room).emit('message', msg);
             } catch (error) {
                 //
                 socket.emit('message', buildMsg(ADMIN, `Error sending image: ${error.message}`));
@@ -680,15 +672,10 @@ io.on('connection', socket => {
             if (!voice || !voice.startsWith('data:audio/')) {
                 socket.emit('message', buildMsg(ADMIN, "Invalid voice message format."));
                 return;
-            }
-            try {
+            }            try {
                 const msg = buildMsg(name, null, null, voice);
-                // Store in room history
-                if (!roomMessages[room]) roomMessages[room] = [];
-                roomMessages[room].push(msg);
-                if (roomMessages[room].length > MAX_ROOM_HISTORY) {
-                    roomMessages[room].splice(0, roomMessages[room].length - MAX_ROOM_HISTORY);
-                }
+                // Store in room history using chatState
+                chatState.addMessage(room, msg);
                 io.to(room).emit('message', msg);
             } catch (error) {
                 socket.emit('message', buildMsg(ADMIN, `Error sending voice message: ${error.message}`));
@@ -809,3 +796,21 @@ function getUsersInRoom(room) {
 function getAllActiveRooms() {
     return Array.from(new Set(UsersState.users.map(user => user.room)))
 }
+
+// Graceful shutdown - save chat history before exit
+async function saveAndExit() {
+    process.stdout.write('\x1b[33m💾 Saving chat history before shutdown...\x1b[0m\n');
+    try {
+        const backupPath = path.join(__dirname, 'chat-backup.json');
+        await fs.writeFile(backupPath, JSON.stringify(chatState.chatHistory, null, 2));
+        process.stdout.write('\x1b[32m✅ Chat history saved successfully\x1b[0m\n');
+    } catch (err) {
+        process.stderr.write('\x1b[31m❌ Failed to save chat history: ' + err.message + '\x1b[0m\n');
+    }
+    process.exit(0);
+}
+
+// Handle graceful shutdown
+process.on('SIGINT', saveAndExit);
+process.on('SIGTERM', saveAndExit);
+process.on('SIGUSR2', saveAndExit); // For nodemon restarts

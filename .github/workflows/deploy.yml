@@ -25,6 +25,22 @@ jobs:
           ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             set -e
             cd ~/Test/server
+
+            # Backup chat history before deployment
+            echo "📦 Backing up chat history..."
+            if [ -f chat-backup.json ]; then
+              cp chat-backup.json chat-backup-$(date +%Y%m%d_%H%M%S).json
+              echo "✅ Chat history backed up"
+            else
+              echo "ℹ️ No existing chat history found"
+            fi
+
+            # Backup current chat state if server is running
+            if pm2 list | grep -q "vybchat.*online"; then
+              echo "💾 Creating backup from running server..."
+              node backup.js || echo "⚠️ Backup script failed, continuing with deployment"
+            fi
+
             git fetch origin
             git reset --hard origin/production
 
@@ -35,7 +51,29 @@ jobs:
             npm install
             rm -rf dist build .next .cache tmp
             npm run build || true
+              # Stop server gracefully to allow chat backup
             pm2 delete vybchat || true
             pm2 flush
+            
+            # Start server (it will automatically restore chat history)
             pm2 start npm --name vybchat -- run start
+            
+            # Wait for server to start and restore chat history
+            echo "⏳ Waiting for server to start..."
+            sleep 10
+            
+            # Verify server is running
+            if pm2 list | grep -q "vybchat.*online"; then
+              echo "✅ Server started successfully"
+              # Clean up backup file after successful restore
+              if [ -f chat-backup.json ]; then
+                rm chat-backup.json
+                echo "🗑️ Backup file cleaned up after successful restore"
+              fi
+            else
+              echo "❌ Server failed to start"
+              exit 1
+            fi
+            
+            echo "🚀 Deployment completed successfully!"
           EOF
