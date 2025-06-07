@@ -472,3 +472,43 @@
 .profile-avatar-main.updating {
   animation: profilePicChange 0.6s ease;
 }
+
+/* Responsive styles for private message modal - Desktop optimization */
+/* Make private message modal smaller on desktop while keeping mobile-friendly */
+
+@media (min-width: 768px) {
+    .private-message-content {
+        width: 50% !important;
+        max-width: 500px !important;
+        height: 60% !important;
+        max-height: 450px !important;
+    }
+}
+
+@media (min-width: 1024px) {
+    .private-message-content {
+        width: 40% !important;
+        max-width: 480px !important;
+        height: 55% !important;
+        max-height: 400px !important;
+    }
+}
+
+@media (min-width: 1440px) {
+    .private-message-content {
+        width: 30% !important;
+        max-width: 450px !important;
+        height: 50% !important;
+        max-height: 380px !important;
+    }
+}
+
+/* Additional responsive adjustments for very large screens */
+@media (min-width: 1920px) {
+    .private-message-content {
+        width: 25% !important;
+        max-width: 420px !important;
+        height: 45% !important;
+        max-height: 360px !important;
+    }
+}

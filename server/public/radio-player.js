@@ -161,9 +161,8 @@ class RadioPlayer {
             this.isPlaying = false;
             this.updatePlayButton();
         });
-        
-        this.audio.addEventListener('error', (e) => {
-            console.error('Radio stream error:', e);
+          this.audio.addEventListener('error', (e) => {
+            //
             const station = this.stations[this.currentStation];
             this.updateStatus(`Failed: ${station?.name || 'Unknown'}`);
             this.isPlaying = false;
@@ -338,10 +337,9 @@ class RadioPlayer {
             const playPromise = this.audio.play();
             
             if (playPromise !== undefined) {
-                playPromise.then(() => {
-                    //console.log('Radio playback started successfully');
+                playPromise.then(() => {                //console.log('Radio playback started successfully');
                 }).catch(error => {
-                    console.error('Failed to start radio playback:', error);
+                    //
                     this.updateStatus('Playback failed - trying next...');
                     
                     // Try next station after a brief delay

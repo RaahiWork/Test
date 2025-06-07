@@ -289,15 +289,19 @@
                 <h3 id="user-profile-title" style="color: #6c63ff; margin: 0;">User Profile</h3>
                 <button id="close-user-profile" class="close-btn" style="background: none; border: none; color: #fff; font-size: 1.5em; cursor: pointer;">×</button>
             </div>
-            
-            <div class="user-profile-info" style="text-align: center;">
-                <div class="user-profile-avatar" style="margin-bottom: 1em;">
+              <div class="user-profile-info" style="text-align: center;">
+                <div class="user-profile-avatar" style="margin-bottom: 1em; position: relative;">
                     <img id="user-profile-avatar-img" src="" alt="User Avatar" style="width: 100%; max-width: 300px; height: 300px; border-radius: 12px; object-fit: cover; border: 3px solid #6c63ff;">
+                    <button id="change-avatar-btn" style="display: none; position: absolute; bottom: 10px; right: 10px; background: #6c63ff; color: white; border: none; border-radius: 50%; width: 60px; height: 60px; cursor: pointer; font-size: 24px; box-shadow: 0 4px 12px rgba(108, 99, 255, 0.5); transition: all 0.3s ease; z-index: 10;" title="Change Avatar">📷</button>
+                    <input type="file" id="avatar-file-input" accept="image/*" style="display: none;">
                 </div>
                 <div class="user-profile-details">
                     <h4 id="user-profile-username" style="color: #fff; margin: 0.5em 0;">Username</h4>
                     <p id="user-profile-status" style="color: #a084ee; margin: 0.5em 0;">Status</p>
                 </div>
+                
+                <!-- Avatar upload status -->
+                <div id="avatar-upload-status" style="display: none; margin-top: 1em; padding: 0.5em; border-radius: 6px; font-size: 0.9em;"></div>
             </div>
         </div>
     </div>
@@ -451,9 +455,7 @@
             });
 
             // Patch: fire custom event after login in auth.js
-        })();
-
-        // --- User Profile Modal Management ---
+        })();        // --- User Profile Modal Management ---
         (function() {
             const modal = document.getElementById('user-profile-modal');
             const closeBtn = document.getElementById('close-user-profile');
@@ -462,16 +464,30 @@
             const statusEl = document.getElementById('user-profile-status');
             const messageBtn = document.getElementById('user-profile-message-btn');
             const callBtn = document.getElementById('user-profile-call-btn');
+            const changeAvatarBtn = document.getElementById('change-avatar-btn');
+            const avatarFileInput = document.getElementById('avatar-file-input');
+            const avatarUploadStatus = document.getElementById('avatar-upload-status');
+
+            let currentProfileUsername = null;
 
             function showUserProfile(username, isOnline = true, avatarSrc = null) {
                 if (!username) return;
 
                 //console.log('Showing profile for:', username);
                 
+                currentProfileUsername = username;
+                
                 // Set username and status
                 usernameEl.textContent = username;
                 statusEl.textContent = isOnline ? 'Online' : 'Offline';
-                statusEl.style.color = isOnline ? '#4CAF50' : '#f44336';
+                statusEl.style.color = isOnline ? '#4CAF50' : '#f44336';                // Show/hide change avatar button based on whether this is the current user
+                const currentUser = localStorage.getItem('username');
+                //
+                //
+                //
+                // Temporarily always show button for testing
+                changeAvatarBtn.style.display = 'block'; // Changed to always show for testing
+                //changeAvatarBtn.style.display = (username === currentUser) ? 'block' : 'none';
 
                 // Use the avatar source from user list if provided, otherwise use fallback logic
                 if (avatarSrc) {
@@ -515,13 +531,161 @@
                 modal.style.display = 'flex';
             }
 
+            // Avatar upload functionality
+            function showUploadStatus(message, isError = false) {
+                avatarUploadStatus.textContent = message;
+                avatarUploadStatus.style.display = 'block';
+                avatarUploadStatus.style.backgroundColor = isError ? '#f44336' : '#4CAF50';
+                avatarUploadStatus.style.color = 'white';
+                
+                // Hide status after 3 seconds
+                setTimeout(() => {
+                    avatarUploadStatus.style.display = 'none';
+                }, 3000);
+            }
+
+            function uploadAvatar(file) {
+                if (!file) return;
+
+                // Validate file type
+                if (!file.type.startsWith('image/')) {
+                    showUploadStatus('Please select a valid image file.', true);
+                    return;
+                }
+
+                // Validate file size (max 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    showUploadStatus('Image size must be less than 5MB.', true);
+                    return;
+                }
+
+                showUploadStatus('Uploading avatar...');                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64Image = e.target.result;
+                    
+                    // Detect backend API base URL (localhost:3500 or 127.0.0.1:3500)
+                    const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+                        ? `http://${window.location.hostname}:3500`
+                        : window.location.origin;
+                    
+                    // Send to server
+                    fetch(`${API_BASE_URL}/api/avatar`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            username: currentProfileUsername,
+                            image: base64Image
+                        })                    })                    .then(response => {
+                        //
+                        //
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        
+                        return response.json();
+                    })                    .then(data => {
+                        //
+                        if (data.success) {
+                            showUploadStatus('Avatar updated successfully!');
+                            // Update the avatar image in the modal
+                            avatarImg.src = data.url + '?t=' + Date.now(); // Add timestamp to force refresh
+                            // Also update avatar in user list and messages if it's the current user
+                            if (currentProfileUsername === localStorage.getItem('username')) {
+                                updateUserAvatarsInUI(data.url);
+                                
+                                // Clear avatar cache for this user to force fresh loading
+                                if (window.avatarExistenceCache) {
+                                    const lowerUsername = currentProfileUsername.toLowerCase();
+                                    window.avatarExistenceCache[lowerUsername] = true; // Mark as having S3 avatar
+                                }
+                                
+                                // Trigger user list refresh to show new avatar immediately
+                                if (window.socket && window.socket.connected && window.currentRoom) {
+                                    // Request updated user list from server to refresh avatars
+                                    window.socket.emit('getUserList', { room: window.currentRoom });
+                                }
+                            }
+                        } else {
+                            showUploadStatus(data.error || 'Failed to upload avatar.', true);                        }
+                    })
+                    .catch(error => {
+                        //
+                        showUploadStatus('Failed to upload avatar: ' + error.message, true);
+                    });
+                };
+                reader.readAsDataURL(file);
+            }            function updateUserAvatarsInUI(newAvatarUrl) {
+                const username = localStorage.getItem('username');
+                if (!username) return;
+
+                // Clear avatar cache for this user
+                if (window.avatarExistenceCache) {
+                    const lowerUsername = username.toLowerCase();
+                    window.avatarExistenceCache[lowerUsername] = true;
+                }
+
+                // Update all user avatars in the UI
+                const userAvatars = document.querySelectorAll(`img[alt*="${username}"]`);
+                userAvatars.forEach(img => {
+                    if (img.src.includes('avatars') || img.src.includes('ui-avatars.com')) {
+                        img.src = newAvatarUrl + '?t=' + Date.now();
+                    }
+                });
+
+                // Update user list avatars specifically
+                const userListAvatars = document.querySelectorAll('.profile-avatar-img--small');
+                userListAvatars.forEach(img => {
+                    if (img.alt && img.alt.includes(username)) {
+                        img.src = newAvatarUrl + '?t=' + Date.now();
+                    }
+                });
+
+                // Update message avatars for current user
+                const messageAvatars = document.querySelectorAll('.message-avatar');
+                messageAvatars.forEach(img => {
+                    if (img.closest('.message') && img.closest('.message').dataset.username === username) {
+                        img.src = newAvatarUrl + '?t=' + Date.now();
+                    }
+                });
+            }
+
+            // Event listeners
+            changeAvatarBtn.onclick = function() {
+                avatarFileInput.click();
+            };
+
+            avatarFileInput.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    uploadAvatar(file);
+                }
+                // Reset input so same file can be selected again
+                e.target.value = '';
+            };
+
+            // Hover effect for change avatar button
+            changeAvatarBtn.onmouseover = function() {
+                this.style.transform = 'scale(1.1)';
+                this.style.backgroundColor = '#5a52e8';
+            };
+
+            changeAvatarBtn.onmouseout = function() {
+                this.style.transform = 'scale(1)';
+                this.style.backgroundColor = '#6c63ff';
+            };
+
             closeBtn.onclick = function() {
                 modal.style.display = 'none';
+                currentProfileUsername = null;
             };
 
             modal.onclick = function(e) {
                 if (e.target === modal) {
                     modal.style.display = 'none';
+                    currentProfileUsername = null;
                 }
             };
 
@@ -559,7 +723,7 @@
                 li.className = 'online-user-item';
                 li.dataset.username = username;
                 
-                const avatarUrl = `https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/${username}/${username}.jpg`;
+                const avatarUrl = `https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/${username}/${username}.png`;
                 
                 li.innerHTML = `
                     <img src="${avatarUrl}" alt="${username}'s Avatar" class="profile-avatar-img profile-avatar-img--small" 

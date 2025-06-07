@@ -15,14 +15,13 @@ const connectDB = async () => {
         });
 
         //console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
-        
-        // Handle connection events
+          // Handle connection events
         mongoose.connection.on('error', (err) => {
-            console.error('❌ MongoDB connection error:', err);
+            //
         });
 
         mongoose.connection.on('disconnected', () => {
-            console.warn('⚠️ MongoDB disconnected. Attempting to reconnect...');
+            //
             // Try to reconnect automatically
             mongoose.connect(mongoURI, {
                 useNewUrlParser: true,
@@ -30,9 +29,8 @@ const connectDB = async () => {
                 keepAlive: true,
                 keepAliveInitialDelay: 300000,
                 socketTimeoutMS: 0,
-                connectTimeoutMS: 30000
-            }).catch(err => {
-                console.error('❌ MongoDB reconnection error:', err);
+                connectTimeoutMS: 30000            }).catch(err => {
+                //
             });
         });
 
@@ -41,20 +39,18 @@ const connectDB = async () => {
             try {
                 await mongoose.connection.close();
                 //console.log('📴 MongoDB connection closed through app termination');
-                process.exit(0);
-            } catch (error) {
-                console.error('Error closing MongoDB connection:', error);
+                process.exit(0);            } catch (error) {
+                //
                 process.exit(1);
             }
         });
 
         return conn;
-    } catch (error) {
-        console.error('❌ Error connecting to MongoDB:', error.message);
+    } catch (error) {        //
         
         // In development, continue without database
         if (process.env.NODE_ENV !== 'production') {
-            console.warn('⚠️ Continuing without database connection in development mode');
+            //
             return null;
         }
         
