@@ -71,7 +71,7 @@ async function logUserAvatar(username) {
 
 // Add JSON parsing middleware
 app.use(express.json({ limit: '10mb' }))
-app.use(express.urlencoded({ extended: true }))
+app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 
 // Add CORS middleware before other routes - allow all origins for simplicity since we serve static files
 app.use((req, res, next) => {
