@@ -27,8 +27,11 @@ jobs:
             cd ~/Test/server
             git fetch origin
             git reset --hard origin/production
+
             echo "MONGODB_URI=${{ secrets.MONGODB_URI }}" > .env
             echo "PORT=${{ secrets.PORT }}" >> .env
+            echo "AWS_S3_BUCKET=${{ secrets.AWS_S3_BUCKET }}" >> .env
+
             npm install
             rm -rf dist build .next .cache tmp
             npm run build || true
@@ -36,6 +39,3 @@ jobs:
             pm2 flush
             pm2 start npm --name vybchat -- run start
           EOF
-
-
-
