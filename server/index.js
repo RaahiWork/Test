@@ -334,8 +334,7 @@ app.post('/api/avatar', async (req, res) => {
             //
             return res.status(400).json({ error: 'Invalid image format.' });
         }
-        
-        const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+          const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
         const buffer = Buffer.from(matches[2], 'base64');
         const bucket = process.env.AWS_S3_BUCKET || 'vybchat-media';
         
@@ -348,7 +347,7 @@ app.post('/api/avatar', async (req, res) => {
         }
            // Ensure consistent username formatting - use lowercase for S3 path
         const normalizedUsername = username.toLowerCase();
-        const key = `avatars/${normalizedUsername}/${normalizedUsername}.png`;
+        const key = `avatars/${normalizedUsername}/${normalizedUsername}.${ext}`;
         //
         
         // Upload to S3
@@ -356,20 +355,20 @@ app.post('/api/avatar', async (req, res) => {
             Bucket: bucket,
             Key: key,
             Body: buffer,
-            ContentType: `image/png`,
+            ContentType: `image/${matches[1]}`,
         });
         
         //
         await s3Client.send(putCommand);
           // Return the S3 URL
         const s3Url = `https://${bucket}.s3.${process.env.AWS_REGION || 'ap-south-1'}.amazonaws.com/${key}`;
-        
-        // Broadcast avatar update to all users in the same room as the uploader
+          // Broadcast avatar update to all users in the same room as the uploader
         const uploadingUser = UsersState.users.find(user => user.name === username);
         if (uploadingUser && uploadingUser.room) {
             io.to(uploadingUser.room).emit('avatarUpdated', {
                 username: username,
-                avatarUrl: s3Url
+                avatarUrl: s3Url,
+                format: ext // Include format information for proper caching
             });
         }
         

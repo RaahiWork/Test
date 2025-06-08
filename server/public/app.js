@@ -237,8 +237,10 @@ function showRooms() {
 
 // Cache for avatar existence checks
 const avatarExistenceCache = {};
+const avatarFormatCache = {}; // New cache to store the actual format (png, gif, jpg, etc.)
 // Make it globally accessible
 window.avatarExistenceCache = avatarExistenceCache;
+window.avatarFormatCache = avatarFormatCache;
 
 function stringToColor(str) {
     // Simple hash to color: returns a hex color string
@@ -260,35 +262,26 @@ function getAvatarUrl(username) {
     
     // Add timestamp for cache busting if this user recently uploaded an avatar
     const timestamp = Date.now();
-    const s3Url = `https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/${encodeURIComponent(lowerUsername)}/${encodeURIComponent(lowerUsername)}.png`;
+    
+    // Check if we have cached format information
+    const cachedFormat = avatarFormatCache[lowerUsername];
+    if (cachedFormat) {
+        const s3Url = `https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/${encodeURIComponent(lowerUsername)}/${encodeURIComponent(lowerUsername)}.${cachedFormat}`;
+        return s3Url + '?t=' + timestamp;
+    }
+    
     const defaultAvatar = 'https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg';
     
-    // Always check S3 in background, update avatar if found
+    // Always check S3 in background for multiple formats
     setTimeout(() => {
-        checkAvatarExistsInS3(lowerUsername, s3Url, username);
-        // Preload S3 image and update all relevant img tags if found
-        const img = new window.Image();
-        img.onload = function() {
-            avatarExistenceCache[lowerUsername] = true;
-            document.querySelectorAll('.profile-avatar-img').forEach(imgEl => {
-                if (imgEl && imgEl.alt && imgEl.alt.includes(username)) {
-                    imgEl.src = s3Url + '?t=' + timestamp;
-                }
-            });
-        };
-        img.onerror = function() {
-            avatarExistenceCache[lowerUsername] = false;
-            document.querySelectorAll('.profile-avatar-img').forEach(imgEl => {
-                if (imgEl && imgEl.alt && imgEl.alt.includes(username)) {
-                    imgEl.src = defaultAvatar;
-                }
-            });
-        };
-        img.src = s3Url + '?t=' + timestamp;
+        checkAvatarExistsInS3MultiFormat(lowerUsername, username);
     }, 0);
     
     if (avatarExistenceCache[lowerUsername] !== undefined) {
         if (avatarExistenceCache[lowerUsername]) {
+            // Use cached format or default to png
+            const format = avatarFormatCache[lowerUsername] || 'png';
+            const s3Url = `https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/${encodeURIComponent(lowerUsername)}/${encodeURIComponent(lowerUsername)}.${format}`;
             return s3Url + '?t=' + timestamp;
         } else {
             return defaultAvatar;
@@ -296,6 +289,9 @@ function getAvatarUrl(username) {
     }
     return defaultAvatar;
 }
+
+// Make getAvatarUrl globally accessible for private messaging
+window.getAvatarUrl = getAvatarUrl;
 
 function getCustomFallbackAvatar(username) {
     // Use a more visually distinct UI Avatars URL with a unique background and bold font
@@ -309,25 +305,81 @@ function getCustomFallbackAvatar(username) {
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=${bg}&color=fff&size=128&bold=true&rounded=true&format=svg`;
 }
 
-function checkAvatarExistsInS3(lowerUsername, s3Url, username) {
+function checkAvatarExistsInS3MultiFormat(lowerUsername, username) {
     // Only check if not already checked
     if (avatarExistenceCache[lowerUsername] !== undefined) return;
-    fetch(s3Url, { method: 'HEAD' })
-        .then(res => {
-            avatarExistenceCache[lowerUsername] = res.ok;
-            // If avatar does not exist, update the profile image if it's currently showing the S3 URL
-            if (!res.ok) {
-                // Find all profile avatar images for this user and update src
-                document.querySelectorAll('.profile-avatar-img').forEach(img => {
-                    if (img && img.alt === 'Your Avatar' && img.src === s3Url) {
-                        img.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=6c63ff&color=fff&size=128`;
-                    }
-                });
-            }
-        })
-        .catch(() => {
+    
+    // Try different formats in order of preference: gif, png, jpg, jpeg
+    const formats = ['gif', 'png', 'jpg', 'jpeg'];
+    let formatIndex = 0;
+    
+    function tryNextFormat() {
+        if (formatIndex >= formats.length) {
+            // No avatar found in any format
             avatarExistenceCache[lowerUsername] = false;
-        });
+            return;
+        }
+        
+        const format = formats[formatIndex];
+        const s3Url = `https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/${encodeURIComponent(lowerUsername)}/${encodeURIComponent(lowerUsername)}.${format}`;
+        
+        fetch(s3Url, { method: 'HEAD' })
+            .then(res => {
+                if (res.ok) {
+                    // Avatar found with this format
+                    avatarExistenceCache[lowerUsername] = true;
+                    avatarFormatCache[lowerUsername] = format;
+                    
+                    // Update all avatar images for this user
+                    const timestamp = Date.now();
+                    const avatarUrl = s3Url + '?t=' + timestamp;
+                    
+                    // Update profile avatar images
+                    document.querySelectorAll('.profile-avatar-img').forEach(imgEl => {
+                        if (imgEl && imgEl.alt && imgEl.alt.includes(username)) {
+                            imgEl.src = avatarUrl;
+                        }
+                    });
+                    
+                    // Update message avatars
+                    document.querySelectorAll('.message-avatar').forEach(imgEl => {
+                        if (imgEl && imgEl.alt && imgEl.alt.includes(username)) {
+                            imgEl.src = avatarUrl;
+                        }
+                    });
+                    
+                    // Update private conversation avatars
+                    document.querySelectorAll('.private-conversation-avatar').forEach(imgEl => {
+                        if (imgEl && imgEl.alt && imgEl.alt.includes(username)) {
+                            imgEl.src = avatarUrl;
+                        }
+                    });
+                    
+                    // Update private message header avatars
+                    document.querySelectorAll('.private-message-header-avatar').forEach(imgEl => {
+                        if (imgEl && imgEl.alt && imgEl.alt.includes(username)) {
+                            imgEl.src = avatarUrl;
+                        }
+                    });
+                } else {
+                    // Try next format
+                    formatIndex++;
+                    tryNextFormat();
+                }
+            })
+            .catch(() => {
+                // Try next format on error
+                formatIndex++;
+                tryNextFormat();
+            });
+    }
+    
+    tryNextFormat();
+}
+
+function checkAvatarExistsInS3(lowerUsername, s3Url, username) {
+    // This function is kept for backward compatibility but now redirects to the multi-format version
+    checkAvatarExistsInS3MultiFormat(lowerUsername, username);
 }
 
 // Update users display
@@ -427,11 +479,17 @@ function renderMessage(data) {
                 localTime = data.time;
             }
         }
+        
+        // Get avatar URL for the message sender
+        const avatarUrl = getAvatarUrl(name);
+        
         let contentHtml = `<div class="post__header ${name === nameInput.value ? 'post__header--user' : 'post__header--reply'}" ${name !== nameInput.value ? 'tabindex="0" role="button" aria-label="Reply to this user"' : ''}>
-<span class="post__header--name${name === nameInput.value ? ' current-user' : ''}">
-${name} <span class="verified-icon" title="Registered User">✔️</span>
-<span class="post__header--time">${localTime}</span> 
-</div>`;
+            <img src="${avatarUrl}" alt="${name}'s Avatar" class="message-avatar" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; margin-right: 8px; border: 2px solid #e8e6ff; vertical-align: middle;">
+            <span class="post__header--name${name === nameInput.value ? ' current-user' : ''}">
+                ${name} <span class="verified-icon" title="Registered User">✔️</span>
+            </span>
+            <span class="post__header--time">${localTime}</span> 
+        </div>`;
         if (image) {
             const imgElement = document.createElement('img');
             imgElement.alt = 'Shared image';
@@ -1907,11 +1965,17 @@ if (typeof MutationObserver !== 'undefined') {
 }
 
 // Add handler for avatar updates to refresh user list avatars in real-time
-socket.on('avatarUpdated', ({ username, avatarUrl }) => {
-    // Clear the avatar cache for this user to force refresh
+socket.on('avatarUpdated', ({ username, avatarUrl, format }) => {
+    // Update the avatar caches for this user
     if (window.avatarExistenceCache) {
         const lowerUsername = username.toLowerCase();
         window.avatarExistenceCache[lowerUsername] = true;
+    }
+    
+    // Update format cache if format is provided
+    if (format && window.avatarFormatCache) {
+        const lowerUsername = username.toLowerCase();
+        window.avatarFormatCache[lowerUsername] = format;
     }
     
     // Update all avatar images for this user in the user list
@@ -1921,11 +1985,26 @@ socket.on('avatarUpdated', ({ username, avatarUrl }) => {
             img.src = avatarUrl + '?t=' + Date.now(); // Add timestamp for cache busting
         }
     });
-    
-    // Also update any message avatars for this user
+      // Also update any message avatars for this user (main chat)
     const messageAvatars = document.querySelectorAll('.message-avatar');
     messageAvatars.forEach(img => {
-        if (img.closest('.message') && img.closest('.message').dataset.username === username) {
+        if (img.alt && img.alt.includes(username)) {
+            img.src = avatarUrl + '?t=' + Date.now();
+        }
+    });
+    
+    // Update private conversation avatars
+    const privateConversationAvatars = document.querySelectorAll('.private-conversation-avatar');
+    privateConversationAvatars.forEach(img => {
+        if (img.alt && img.alt.includes(username)) {
+            img.src = avatarUrl + '?t=' + Date.now();
+        }
+    });
+    
+    // Update private message header avatar
+    const privateHeaderAvatars = document.querySelectorAll('.private-message-header-avatar');
+    privateHeaderAvatars.forEach(img => {
+        if (img.alt && img.alt.includes(username)) {
             img.src = avatarUrl + '?t=' + Date.now();
         }
     });

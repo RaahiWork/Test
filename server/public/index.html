@@ -493,10 +493,9 @@
                 if (avatarSrc) {
                     //console.log('Using avatar from user list:', avatarSrc);
                     avatarImg.src = avatarSrc;
-                } else {
-                    // Fallback: Load user avatar with same logic as user list - try multiple formats
+                } else {                    // Fallback: Load user avatar with same logic as user list - try multiple formats
                     const defaultAvatarUrl = 'https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg';
-                    const imageFormats = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+                    const imageFormats = ['gif', 'png', 'jpg', 'jpeg', 'webp']; // Prioritize GIF for animation support
                     let formatIndex = 0;
                     
                     function tryNextFormat() {

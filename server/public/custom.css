@@ -434,6 +434,67 @@
   box-shadow: 0 8px 32px rgba(108,99,255,0.3);
 }
 
+/* Message avatar styles */
+.message-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 8px;
+    border: 2px solid #e8e6ff;
+    vertical-align: middle;
+    transition: all 0.2s ease;
+}
+
+.message-avatar:hover {
+    border-color: #a084ee;
+    transform: scale(1.05);
+}
+
+/* Private conversation avatar styles */
+.private-conversation-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #e8e6ff;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.private-conversation-avatar:hover {
+    border-color: #a084ee;
+}
+
+/* Private message header avatar styles */
+.private-message-header-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 10px;
+    border: 2px solid #e8e6ff;
+    vertical-align: middle;
+    transition: all 0.2s ease;
+}
+
+.private-message-header-avatar:hover {
+    border-color: #a084ee;
+    transform: scale(1.05);
+}
+
+/* Update conversation tab layout for avatar */
+.private-conversation-tab {
+    background: rgba(108, 99, 255, 0.1);
+    border-radius: 6px;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(160, 132, 238, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .private-user-search-container {
