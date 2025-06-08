@@ -53,8 +53,10 @@ jobs:
             git reset --hard origin/production
 
             echo "MONGODB_URI=${{ secrets.MONGODB_URI }}" > .env
+            echo "EC2_ENV=true" >> .env
             echo "PORT=${{ secrets.PORT }}" >> .env
-            echo "AWS_S3_BUCKET=${{ secrets.AWS_S3_BUCKET }}" >> .env            npm install
+            echo "AWS_S3_BUCKET=${{ secrets.AWS_S3_BUCKET }}" >> .env            
+            npm install
             rm -rf dist build .next .cache tmp
             
             # Skip build step since this is a Node.js server (no build required)
