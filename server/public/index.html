@@ -291,7 +291,7 @@
             </div>
               <div class="user-profile-info" style="text-align: center;">
                 <div class="user-profile-avatar" style="margin-bottom: 1em; position: relative;">
-                    <img id="user-profile-avatar-img" src="" alt="User Avatar" style="width: 100%; max-width: 300px; height: 300px; border-radius: 12px; object-fit: cover; border: 3px solid #6c63ff;">
+                    <img id="user-profile-avatar-img" src="" alt="User Avatar" style="width: 100%; max-width: 300px; height: 300px; border-radius: 12px; object-fit: cover; border: 3px solid #6c63ff;" onerror="this.src='https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg'">
                     <button id="change-avatar-btn" style="display: none; position: absolute; bottom: 10px; right: 10px; background: #6c63ff; color: white; border: none; border-radius: 50%; width: 60px; height: 60px; cursor: pointer; font-size: 24px; box-shadow: 0 4px 12px rgba(108, 99, 255, 0.5); transition: all 0.3s ease; z-index: 10;" title="Change Avatar">📷</button>
                     <input type="file" id="avatar-file-input" accept="image/*" style="display: none;">
                 </div>
@@ -487,43 +487,18 @@
                 //
                 // Temporarily always show button for testing
                 changeAvatarBtn.style.display = 'block'; // Changed to always show for testing
-                //changeAvatarBtn.style.display = (username === currentUser) ? 'block' : 'none';
-
-                // Use the avatar source from user list if provided, otherwise use fallback logic
+                //changeAvatarBtn.style.display = (username === currentUser) ? 'block' : 'none';                // Use the simplified MongoDB-only avatar loading system
                 if (avatarSrc) {
                     //console.log('Using avatar from user list:', avatarSrc);
                     avatarImg.src = avatarSrc;
-                } else {                    // Fallback: Load user avatar with same logic as user list - try multiple formats
-                    const defaultAvatarUrl = 'https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg';
-                    const imageFormats = ['gif', 'png', 'jpg', 'jpeg', 'webp']; // Prioritize GIF for animation support
-                    let formatIndex = 0;
-                    
-                    function tryNextFormat() {
-                        if (formatIndex >= imageFormats.length) {
-                            //console.log('All custom avatar formats failed, using default:', defaultAvatarUrl);
-                            avatarImg.src = defaultAvatarUrl;
-                            return;
-                        }
-                        
-                        const format = imageFormats[formatIndex];
-                        const customAvatarUrl = `https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/${username}/${username}.${format}`;
-                        
-                        //console.log('Trying format:', format, 'URL:', customAvatarUrl);
-                        
-                        const testImg = new Image();
-                        testImg.onload = function() {
-                            //console.log('Successfully loaded avatar with format:', format);
-                            avatarImg.src = customAvatarUrl;
-                        };
-                        testImg.onerror = function() {
-                            //console.log('Failed format:', format);
-                            formatIndex++;
-                            tryNextFormat();
-                        };
-                        testImg.src = customAvatarUrl;
+                } else {
+                    // Use the main app's getAvatarUrl function for consistent avatar loading
+                    if (window.getAvatarUrl) {
+                        avatarImg.src = window.getAvatarUrl(username);
+                    } else {
+                        // Fallback to default avatar if getAvatarUrl is not available
+                        avatarImg.src = 'https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg';
                     }
-                    // Start checking for existing avatar
-                    tryNextFormat();
                 }
                 modal.style.display = 'flex';
             }
@@ -588,15 +563,18 @@
                             showUploadStatus('Avatar updated successfully!');
                             // Update the avatar image in the modal
                             avatarImg.src = data.url + '?t=' + Date.now(); // Add timestamp to force refresh
+                            
+                            // Cache UUID-based avatar info if provided
+                            if (data.avatarId && data.format && window.avatarUuidCache) {
+                                const lowerUsername = currentProfileUsername.toLowerCase();
+                                window.avatarUuidCache[lowerUsername] = {
+                                    avatarId: data.avatarId,
+                                    format: data.format
+                                };
+                            }
+                            
                             // Also update avatar in user list and messages if it's the current user
-                            if (currentProfileUsername === localStorage.getItem('username')) {
-                                updateUserAvatarsInUI(data.url);
-                                
-                                // Clear avatar cache for this user to force fresh loading
-                                if (window.avatarExistenceCache) {
-                                    const lowerUsername = currentProfileUsername.toLowerCase();
-                                    window.avatarExistenceCache[lowerUsername] = true; // Mark as having S3 avatar
-                                }
+                            if (currentProfileUsername === localStorage.getItem('username')) {                                updateUserAvatarsInUI(data.url);
                                 
                                 // Trigger user list refresh to show new avatar immediately
                                 if (window.socket && window.socket.connected && window.currentRoom) {
@@ -616,12 +594,6 @@
             }            function updateUserAvatarsInUI(newAvatarUrl) {
                 const username = localStorage.getItem('username');
                 if (!username) return;
-
-                // Clear avatar cache for this user
-                if (window.avatarExistenceCache) {
-                    const lowerUsername = username.toLowerCase();
-                    window.avatarExistenceCache[lowerUsername] = true;
-                }
 
                 // Update all user avatars in the UI
                 const userAvatars = document.querySelectorAll(`img[alt*="${username}"]`);

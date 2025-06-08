@@ -18,16 +18,14 @@ class PrivateMessaging {
         this.tabFlashState = false;
         this.windowFocused = true;
         this.init();    }
-    
-    // Helper function to get fallback avatar URL for private messaging
+      // Helper function to get fallback avatar URL for private messaging
     getFallbackAvatarUrl(username) {
-        // Try to use the main app's format cache if available
-        if (window.avatarFormatCache && window.avatarFormatCache[username.toLowerCase()]) {
-            const format = window.avatarFormatCache[username.toLowerCase()];
-            return `https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/${username.toLowerCase()}/${username.toLowerCase()}.${format}`;
+        // Use the main app's getAvatarUrl function if available
+        if (window.getAvatarUrl) {
+            return window.getAvatarUrl(username);
         }
-        // Default fallback - try common formats in order of preference for animation
-        return `https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/${username.toLowerCase()}/${username.toLowerCase()}.gif`;
+        // Default fallback to default avatar
+        return 'https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg';
     }
     
     init() {
