@@ -842,11 +842,7 @@ function buildMsg(name, text, image = null, voice = null) {
         text,
         image,
         voice,
-        time: new Intl.DateTimeFormat('default', {
-            hour: 'numeric',
-            minute: 'numeric',
-            second: 'numeric',
-        }).format(new Date())
+        time: new Date().toISOString()
     }
 }
 
