@@ -467,18 +467,9 @@ function renderMessage(data) {
         li.className = 'post post--right';
     } else {
         li.className = 'post post--admin';
-    }
-    if (name !== 'System') {
+    }    if (name !== 'System') {
         // Use server timestamp and convert to local time safely
-        let localTime = data.time;
-        if (data.time) {
-            const dateObj = new Date(data.time);
-            if (!isNaN(dateObj.getTime())) {
-                localTime = dateObj.toLocaleString();
-            } else {
-                localTime = data.time;
-            }
-        }
+        let localTime = formatLocalTime(data.time);
         
         // Get avatar URL for the message sender
         const avatarUrl = getAvatarUrl(name);
