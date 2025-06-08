@@ -495,6 +495,142 @@
     overflow: hidden;
 }
 
+/* Conversation-style Private Messaging Styles */
+
+/* Increase private message modal height for better viewing */
+.private-message-content {
+    height: 80% !important;
+    max-height: 650px !important;
+    min-height: 500px !important;
+}
+
+/* Message chaining styles for consecutive messages */
+.post--chained {
+    margin-top: 2px !important;
+    padding-top: 4px !important;
+}
+
+.post--chained .post__text,
+.post--chained .post__image,
+.post--chained .post__voice {
+    margin-left: 36px; /* Align with previous message content */
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 4px;
+}
+
+/* Different styling for sent vs received chained messages */
+.post--left.post--chained .post__text,
+.post--left.post--chained .post__image,
+.post--left.post--chained .post__voice {
+    background: rgba(108, 99, 255, 0.15);
+    border: 1px solid rgba(108, 99, 255, 0.2);
+    margin-left: 0;
+    margin-right: 36px;
+}
+
+.post--right.post--chained .post__text,
+.post--right.post--chained .post__image,
+.post--right.post--chained .post__voice {
+    background: rgba(160, 132, 238, 0.15);
+    border: 1px solid rgba(160, 132, 238, 0.2);
+}
+
+/* Improved spacing for regular messages */
+.post:not(.post--chained) {
+    margin-bottom: 12px;
+}
+
+/* Enhanced private message chat container */
+.private-message-chat {
+    padding: 1.2rem !important;
+    gap: 0.3rem !important;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+    .private-message-content {
+        width: 95% !important;
+        height: 85% !important;
+        max-height: 90vh !important;
+        min-height: 400px !important;
+    }
+    
+    .post--chained .post__text,
+    .post--chained .post__image,
+    .post--chained .post__voice {
+        margin-left: 28px;
+    }
+    
+    .post--left.post--chained .post__text,
+    .post--left.post--chained .post__image,
+    .post--left.post--chained .post__voice {
+        margin-right: 28px;
+    }
+}
+
+@media (max-width: 480px) {
+    .private-message-content {
+        width: 98% !important;
+        height: 90% !important;
+        max-height: 95vh !important;
+        min-height: 350px !important;
+        border-radius: 8px !important;
+    }
+    
+    .post--chained .post__text,
+    .post--chained .post__image,
+    .post--chained .post__voice {
+        margin-left: 24px;
+        padding: 6px 10px;
+    }
+    
+    .post--left.post--chained .post__text,
+    .post--left.post--chained .post__image,
+    .post--left.post--chained .post__voice {
+        margin-right: 24px;
+    }
+    
+    .private-message-chat {
+        padding: 0.8rem !important;
+    }
+}
+
+/* Enhanced visual feedback for message bubbles */
+.post__text {
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.post__text:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.post--left .post__text:hover {
+    background: rgba(108, 99, 255, 0.2) !important;
+}
+
+.post--right .post__text:hover {
+    background: rgba(160, 132, 238, 0.2) !important;
+}
+
+/* Smooth transitions for chained messages */
+.post--chained {
+    animation: slideInChained 0.3s ease-out;
+}
+
+@keyframes slideInChained {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .private-user-search-container {

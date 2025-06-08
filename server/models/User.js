@@ -11,8 +11,7 @@ const userSchema = new mongoose.Schema({
         minlength: [3, 'Username must be at least 3 characters long'],
         maxlength: [20, 'Username cannot exceed 20 characters'],
         match: [/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores']
-    },
-    displayName: {
+    },    displayName: {
         type: String,
         required: false, // Make it optional for migration
         trim: true,
@@ -20,6 +19,20 @@ const userSchema = new mongoose.Schema({
         maxlength: [20, 'Display name cannot exceed 20 characters'],
         match: [/^[a-zA-Z0-9_]+$/, 'Display name can only contain letters, numbers, and underscores']
         // Remove the default function - we'll handle this in the server code
+    },    avatarId: {
+        type: String,
+        unique: true,
+        sparse: true, // Allow null values but require uniqueness when present
+        default: null
+    },
+    avatarFormat: {
+        type: String,
+        enum: ['png', 'jpg', 'jpeg', 'gif'],
+        default: null
+    },
+    avatarFilename: {
+        type: String,
+        default: null // Stores complete filename like "uuid.jpg"
     },
     password: {
         type: String,

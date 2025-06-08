@@ -7,6 +7,7 @@ import dotenv from 'dotenv'
 import connectDB from './config/database.js'
 import User from './models/User.js'
 import mongoose from 'mongoose'
+import { v4 as uuidv4 } from 'uuid'
 // --- Add AWS SDK v3 imports ---
 import { S3Client, ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3'
 import { fromInstanceMetadata, fromEnv } from '@aws-sdk/credential-providers'
@@ -315,67 +316,112 @@ app.get('/api/search-users', async (req, res) => {
 
 // --- Avatar upload endpoint ---
 app.post('/api/avatar', async (req, res) => {
-    //
-    //
-    //
-    
     try {
         const { username, image } = req.body;
-        //
-        //
         
         if (!username || !image) {
-            //
             return res.status(400).json({ error: 'Username and image are required.' });
         }
-          // Validate base64 image
+        
+        // Find the user in database
+        const user = await User.findByUsername(username);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+        
+        // Validate base64 image
         const matches = image.match(/^data:image\/(png|jpeg|jpg|gif);base64,(.+)$/);
         if (!matches) {
-            //
             return res.status(400).json({ error: 'Invalid image format.' });
         }
-          const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+        
+        const originalFormat = matches[1];
+        const ext = originalFormat === 'jpeg' ? 'jpg' : originalFormat;
         const buffer = Buffer.from(matches[2], 'base64');
         const bucket = process.env.AWS_S3_BUCKET || 'vybchat-media';
-        
-        //
-        //
-        //
         
         if (!bucket) {
             return res.status(500).json({ error: 'S3 bucket not configured.' });
         }
-           // Ensure consistent username formatting - use lowercase for S3 path
+          // Generate or reuse avatar UUID
+        let avatarId = user.avatarId;
+        if (!avatarId) {
+            avatarId = uuidv4();
+        }
+        
+        // Use username folder with UUID filename and original format preserved
         const normalizedUsername = username.toLowerCase();
-        const key = `avatars/${normalizedUsername}/${normalizedUsername}.${ext}`;
-        //
+        const key = `avatars/${normalizedUsername}/${avatarId}.${ext}`;
         
         // Upload to S3
         const putCommand = new PutObjectCommand({
             Bucket: bucket,
             Key: key,
             Body: buffer,
-            ContentType: `image/${matches[1]}`,
+            ContentType: `image/${originalFormat}`,
         });
         
-        //
         await s3Client.send(putCommand);
-          // Return the S3 URL
+          // Update user's avatar info in database
+        user.avatarId = avatarId;
+        user.avatarFormat = ext;
+        user.avatarFilename = `${avatarId}.${ext}`;
+        await user.save();
+        
+        // Return the S3 URL
         const s3Url = `https://${bucket}.s3.${process.env.AWS_REGION || 'ap-south-1'}.amazonaws.com/${key}`;
-          // Broadcast avatar update to all users in the same room as the uploader
+        
+        // Broadcast avatar update to all users in the same room as the uploader
         const uploadingUser = UsersState.users.find(user => user.name === username);
-        if (uploadingUser && uploadingUser.room) {
-            io.to(uploadingUser.room).emit('avatarUpdated', {
+        if (uploadingUser && uploadingUser.room) {            io.to(uploadingUser.room).emit('avatarUpdated', {
                 username: username,
                 avatarUrl: s3Url,
-                format: ext // Include format information for proper caching
+                avatarId: avatarId,
+                format: ext, // Include format information for proper caching
+                filename: `${avatarId}.${ext}`
             });
         }
-        
-        res.json({ success: true, url: s3Url });
+          res.json({ 
+            success: true, 
+            url: s3Url,
+            avatarId: avatarId,
+            format: ext,
+            filename: `${avatarId}.${ext}`
+        });
     } catch (err) {
-        //
+        console.error('Avatar upload error:', err);
         res.status(500).json({ error: 'Failed to upload avatar', details: err.message });
+    }
+});
+
+// --- Get user avatar info endpoint ---
+app.get('/api/user/:username/avatar', async (req, res) => {
+    try {
+        const { username } = req.params;
+        
+        if (!username) {
+            return res.status(400).json({ error: 'Username is required.' });
+        }
+          // Find the user in database
+        const user = await User.findByUsername(username);
+        if (!user || !user.avatarId || !user.avatarFormat || !user.avatarFilename) {
+            return res.status(404).json({ error: 'User avatar not found.' });
+        }
+        
+        const bucket = process.env.AWS_S3_BUCKET || 'vybchat-media';
+        const normalizedUsername = username.toLowerCase();
+        const s3Url = `https://${bucket}.s3.${process.env.AWS_REGION || 'ap-south-1'}.amazonaws.com/avatars/${normalizedUsername}/${user.avatarFilename}`;
+        
+        res.json({
+            success: true,
+            avatarUrl: s3Url,
+            avatarId: user.avatarId,
+            format: user.avatarFormat,
+            filename: user.avatarFilename
+        });
+    } catch (err) {
+        console.error('Get avatar info error:', err);
+        res.status(500).json({ error: 'Failed to get avatar info', details: err.message });
     }
 });
 
