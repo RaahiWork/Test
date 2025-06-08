@@ -17,7 +17,17 @@ class PrivateMessaging {
         this.tabFlashInterval = null;
         this.tabFlashState = false;
         this.windowFocused = true;
-        this.init();
+        this.init();    }
+    
+    // Helper function to get fallback avatar URL for private messaging
+    getFallbackAvatarUrl(username) {
+        // Try to use the main app's format cache if available
+        if (window.avatarFormatCache && window.avatarFormatCache[username.toLowerCase()]) {
+            const format = window.avatarFormatCache[username.toLowerCase()];
+            return `https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/${username.toLowerCase()}/${username.toLowerCase()}.${format}`;
+        }
+        // Default fallback - try common formats in order of preference for animation
+        return `https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/${username.toLowerCase()}/${username.toLowerCase()}.gif`;
     }
     
     init() {
@@ -433,8 +443,12 @@ class PrivateMessaging {
             let displayName = username;
             if (this.displayNameMap && this.displayNameMap[username]) {
                 displayName = this.displayNameMap[username];
-            }
-            title.textContent = `Private Message - ${displayName}`;
+            }              // Get avatar URL for the user
+            const avatarUrl = window.getAvatarUrl ? window.getAvatarUrl(username) : this.getFallbackAvatarUrl(username);
+              title.innerHTML = `
+                <img src="${avatarUrl}" alt="${displayName}'s Avatar" class="private-message-header-avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; margin-right: 10px; border: 2px solid #e8e6ff; vertical-align: middle;" onerror="this.src='https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg'">
+                Private Message - ${displayName}
+            `;
         }
 
         // Clear search bar after opening a chat
@@ -667,12 +681,11 @@ class PrivateMessaging {
             } else {
                 fromDisplayName = nameInput?.value || 'You';
             }
-        }
-
-        let contentHtml = `<div class="post__header ${type === 'received'
+        }        let contentHtml = `<div class="post__header ${type === 'received'
             ? 'post__header--reply'
             : 'post__header--user'
         }">
+            <img src="${window.getAvatarUrl(type === 'received' ? data.fromUser : fromDisplayName)}" alt="${fromDisplayName}'s Avatar" class="message-avatar" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; margin-right: 8px; border: 2px solid #e8e6ff; vertical-align: middle;" onerror="this.src='https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg'">
             <span class="post__header--name">${fromDisplayName}</span> 
             <span class="post__header--time">${localTime}</span> 
         </div>`;
@@ -835,11 +848,15 @@ class PrivateMessaging {
                 } else {
                     preview = 'Message';
                 }
-            }
-
-            tab.innerHTML = `
-                <div class="private-conversation-name">${displayName}</div>
-                <div class="private-conversation-preview">${preview.substring(0, 30)}${preview.length > 30 ? '...' : ''}</div>
+            }            // Get avatar URL for the conversation user
+            const avatarUrl = window.getAvatarUrl ? window.getAvatarUrl(username) : this.getFallbackAvatarUrl(username);tab.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <img src="${avatarUrl}" alt="${displayName}'s Avatar" class="private-conversation-avatar" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 1px solid #e8e6ff; flex-shrink: 0;" onerror="this.src='https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg'">
+                    <div style="flex: 1; min-width: 0;">
+                        <div class="private-conversation-name">${displayName}</div>
+                        <div class="private-conversation-preview">${preview.substring(0, 30)}${preview.length > 30 ? '...' : ''}</div>
+                    </div>
+                </div>
             `;
 
             tab.addEventListener('click', () => this.openPrivateMessage(username));
