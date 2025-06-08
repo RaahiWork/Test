@@ -309,8 +309,8 @@ function checkAvatarExistsInS3MultiFormat(lowerUsername, username) {
     // Only check if not already checked
     if (avatarExistenceCache[lowerUsername] !== undefined) return;
     
-    // Try different formats in order of preference: gif, png, jpg, jpeg
-    const formats = ['gif', 'png', 'jpg', 'jpeg'];
+    // Try different formats in order of preference: png, jpg, jpeg, gif
+    const formats = ['png', 'jpg', 'jpeg', 'gif'];
     let formatIndex = 0;
     
     function tryNextFormat() {
@@ -325,8 +325,8 @@ function checkAvatarExistsInS3MultiFormat(lowerUsername, username) {
         
         fetch(s3Url, { method: 'HEAD' })
             .then(res => {
-                if (res.ok) {
-                    // Avatar found with this format
+                if (res.ok && res.status === 200) {
+                    // Avatar found with this format and is accessible (not forbidden)
                     avatarExistenceCache[lowerUsername] = true;
                     avatarFormatCache[lowerUsername] = format;
                     
@@ -362,7 +362,7 @@ function checkAvatarExistsInS3MultiFormat(lowerUsername, username) {
                         }
                     });
                 } else {
-                    // Try next format
+                    // Try next format (including 403 Forbidden responses)
                     formatIndex++;
                     tryNextFormat();
                 }
