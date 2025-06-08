@@ -336,7 +336,7 @@ function checkUserAvatarInfoFromMongoDB(lowerUsername, username) {
 
 // Helper function to update all avatar images for a user
 function updateUserAvatarImages(username, avatarUrl) {
-    console.log(`Updating avatar images for ${username} with URL: ${avatarUrl}`);
+    //console.log(`Updating avatar images for ${username} with URL: ${avatarUrl}`);
     
     // Function to check if avatar belongs to user (case-insensitive)
     const isUserAvatar = (imgEl, targetUsername) => {
@@ -348,10 +348,10 @@ function updateUserAvatarImages(username, avatarUrl) {
     
     // Update profile avatar images
     const profileAvatars = document.querySelectorAll('.profile-avatar-img');
-    console.log(`Found ${profileAvatars.length} profile avatar elements`);
+    //console.log(`Found ${profileAvatars.length} profile avatar elements`);
     profileAvatars.forEach(imgEl => {
         if (isUserAvatar(imgEl, username)) {
-            console.log(`Updating profile avatar for ${username}: ${imgEl.alt}`);
+            //console.log(`Updating profile avatar for ${username}: ${imgEl.alt}`);
             imgEl.src = avatarUrl;
             imgEl.onerror = () => {
                 imgEl.src = 'https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg';
@@ -361,10 +361,10 @@ function updateUserAvatarImages(username, avatarUrl) {
     
     // Update message avatars
     const messageAvatars = document.querySelectorAll('.message-avatar');
-    console.log(`Found ${messageAvatars.length} message avatar elements`);
+    //console.log(`Found ${messageAvatars.length} message avatar elements`);
     messageAvatars.forEach(imgEl => {
         if (isUserAvatar(imgEl, username)) {
-            console.log(`Updating message avatar for ${username}: ${imgEl.alt}`);
+            //console.log(`Updating message avatar for ${username}: ${imgEl.alt}`);
             imgEl.src = avatarUrl;
             imgEl.onerror = () => {
                 imgEl.src = 'https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg';
@@ -376,7 +376,7 @@ function updateUserAvatarImages(username, avatarUrl) {
     const privateConversationAvatars = document.querySelectorAll('.private-conversation-avatar');
     privateConversationAvatars.forEach(imgEl => {
         if (isUserAvatar(imgEl, username)) {
-            console.log(`Updating private conversation avatar for ${username}`);
+            //console.log(`Updating private conversation avatar for ${username}`);
             imgEl.src = avatarUrl;
             imgEl.onerror = () => {
                 imgEl.src = 'https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg';
@@ -388,7 +388,7 @@ function updateUserAvatarImages(username, avatarUrl) {
     const privateHeaderAvatars = document.querySelectorAll('.private-message-header-avatar');
     privateHeaderAvatars.forEach(imgEl => {
         if (isUserAvatar(imgEl, username)) {
-            console.log(`Updating private header avatar for ${username}`);
+            //console.log(`Updating private header avatar for ${username}`);
             imgEl.src = avatarUrl;
             imgEl.onerror = () => {
                 imgEl.src = 'https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg';

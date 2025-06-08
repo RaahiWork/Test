@@ -634,8 +634,7 @@ class PrivateMessaging {
         // Scroll to bottom
         chatContainer.scrollTop = chatContainer.scrollHeight;
     }
-    
-    displayMessage(data, type) {
+      displayMessage(data, type) {
         //console.log('Displaying message:', { data, type });
         const chatContainer = document.getElementById('private-message-chat');
         if (!chatContainer) {
@@ -645,8 +644,44 @@ class PrivateMessaging {
 
         const nameInput = document.querySelector('#name');
 
+        // Check if this message should be chained with the previous one
+        const lastMessage = chatContainer.lastElementChild;
+        let isChained = false;
+        let fromDisplayName = data.displayName || data.fromUser;
+        
+        // For sent messages, show our own displayName if available
+        if (type === 'sent') {
+            // Try to get our displayName from displayNameMap
+            if (this.displayNameMap && this.getMyName && this.displayNameMap[this.getMyName()]) {
+                fromDisplayName = this.displayNameMap[this.getMyName()];
+            } else {
+                fromDisplayName = nameInput?.value || 'You';
+            }
+        }
+
+        // Check if we should chain this message
+        if (lastMessage && lastMessage.classList.contains('post')) {
+            const lastMessageType = lastMessage.classList.contains('post--left') ? 'sent' : 
+                                   lastMessage.classList.contains('post--right') ? 'received' : null;
+            const lastMessageUser = lastMessage.dataset.fromUser;
+            
+            // Chain if same user and same type, and within 5 minutes
+            if (lastMessageType === type && lastMessageUser === data.fromUser) {
+                const lastMessageTime = lastMessage.dataset.messageTime;
+                const currentTime = new Date(data.time).getTime();
+                const timeDiff = Math.abs(currentTime - new Date(lastMessageTime).getTime());
+                
+                // Chain if within 5 minutes (300000 ms)
+                if (timeDiff < 300000) {
+                    isChained = true;
+                }
+            }
+        }
+
         const li = document.createElement('li');
         li.className = 'post';
+        li.dataset.fromUser = data.fromUser;
+        li.dataset.messageTime = data.time;
 
         if (type === 'received') {
             li.className = 'post post--right';
@@ -654,6 +689,11 @@ class PrivateMessaging {
             li.className = 'post post--left';
         } else {
             li.className = 'post post--admin';
+        }
+
+        // Add chained class if this is a follow-up message
+        if (isChained) {
+            li.classList.add('post--chained');
         }
 
         if (data.fromUser === 'System') return;
@@ -667,26 +707,19 @@ class PrivateMessaging {
             } else {
                 localTime = data.time;
             }
+        }        let contentHtml = '';
+        
+        // Only show header for non-chained messages
+        if (!isChained) {
+            contentHtml = `<div class="post__header ${type === 'received'
+                ? 'post__header--reply'
+                : 'post__header--user'
+            }">
+                <img src="${window.getAvatarUrl(type === 'received' ? data.fromUser : fromDisplayName)}" alt="${fromDisplayName}'s Avatar" class="message-avatar" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; margin-right: 8px; border: 2px solid #e8e6ff; vertical-align: middle;" onerror="this.src='https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg'">
+                <span class="post__header--name">${fromDisplayName}</span> 
+                <span class="post__header--time">${localTime}</span> 
+            </div>`;
         }
-
-        // Use displayName if available, else fallback to username
-        let fromDisplayName = data.displayName || data.fromUser;
-        // For sent messages, show our own displayName if available
-        if (type === 'sent') {
-            // Try to get our displayName from displayNameMap
-            if (this.displayNameMap && this.getMyName && this.displayNameMap[this.getMyName()]) {
-                fromDisplayName = this.displayNameMap[this.getMyName()];
-            } else {
-                fromDisplayName = nameInput?.value || 'You';
-            }
-        }        let contentHtml = `<div class="post__header ${type === 'received'
-            ? 'post__header--reply'
-            : 'post__header--user'
-        }">
-            <img src="${window.getAvatarUrl(type === 'received' ? data.fromUser : fromDisplayName)}" alt="${fromDisplayName}'s Avatar" class="message-avatar" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; margin-right: 8px; border: 2px solid #e8e6ff; vertical-align: middle;" onerror="this.src='https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg'">
-            <span class="post__header--name">${fromDisplayName}</span> 
-            <span class="post__header--time">${localTime}</span> 
-        </div>`;
         
         // Add image content if available
         if (data.image) {
