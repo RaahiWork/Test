@@ -24,11 +24,14 @@ const userSchema = new mongoose.Schema({
         unique: true,
         sparse: true, // Allow null values but require uniqueness when present
         default: null
-    },
-    avatarFormat: {
+    },    avatarFormat: {
         type: String,
-        enum: ['png', 'jpg', 'jpeg', 'gif'],
-        default: null
+        enum: {
+            values: [null, 'png', 'jpg', 'jpeg', 'gif'],
+            message: 'Avatar format must be png, jpg, jpeg, or gif'
+        },
+        default: null,
+        required: false
     },
     avatarFilename: {
         type: String,
