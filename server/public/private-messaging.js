@@ -966,9 +966,7 @@ class PrivateMessaging {
         getMyName() {
         const nameInput = document.querySelector('#name');
         return nameInput?.value;
-    }
-
-    async startVoiceCall(username) {
+    }    async startVoiceCall(username) {
         if (this.peerConnection) {
             this.endVoiceCall();
         }
@@ -976,10 +974,15 @@ class PrivateMessaging {
         this.currentCallUser = username;
         await this.createPeerConnection();        // Get local audio
         try {
+            //console.log('Requesting user media for caller...');
             this.localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-            this.localStream.getTracks().forEach(track => this.peerConnection.addTrack(track, this.localStream));
+            //console.log('Local stream obtained:', this.localStream, 'tracks:', this.localStream.getTracks());
+            this.localStream.getTracks().forEach(track => {
+                //console.log('Adding track to peer connection:', track);
+                this.peerConnection.addTrack(track, this.localStream);
+            });
         } catch (err) {
-            //
+            //console.error('Error getting user media for caller:', err);
             this.endVoiceCall();
             return;
         }
@@ -1059,19 +1062,27 @@ class PrivateMessaging {
                     candidate: event.candidate
                 });
             }
-        };
-
-        // Remote stream
+        };        // Remote stream
         this.peerConnection.ontrack = (event) => {
-            if (!this.remoteStream) {
-                this.remoteStream = new MediaStream();
+            //console.log('WebRTC ontrack event:', event);
+            // Use the stream from the event, which already contains all tracks
+            if (event.streams && event.streams[0]) {
+                this.remoteStream = event.streams[0];
+                //console.log('Remote stream received:', this.remoteStream, 'tracks:', this.remoteStream.getTracks());
                 const remoteAudio = document.getElementById('voice-call-remote-audio');
                 if (remoteAudio) {
                     remoteAudio.srcObject = this.remoteStream;
+                    remoteAudio.volume = 1.0; // Ensure volume is at maximum
+                    // Ensure audio plays automatically
+                    remoteAudio.play().catch(() => {});
+                    //console.log('Remote audio element set up successfully');
+                } else {
+                    console.error('Remote audio element not found');
                 }
+            } else {
+                console.warn('No remote stream found in ontrack event');
             }
-            this.remoteStream.addTrack(event.track);
-        };        // Connection state
+        };// Connection state
         this.peerConnection.onconnectionstatechange = () => {
             if (this.peerConnection.connectionState === "connected" && this.currentCallUser) {
                 // Update UI to show call is connected
