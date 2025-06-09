@@ -372,12 +372,12 @@ class PrivateMessaging {
                     this.incomingCallData = data;
                     this.playRingtone();
                     this.showVoiceCallModal(data.from, `${data.from} is calling...`, true);
-                });
-
-                socket.on('voiceCallAnswer', async (data) => {
+                });                socket.on('voiceCallAnswer', async (data) => {
                     if (data.to !== this.getMyName()) return;
                     this.stopRingtone();
                     await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                    // Update UI to show the call is connected
+                    this.showVoiceCallModal(this.currentCallUser, `In call with ${this.currentCallUser}`, false);
                 });
 
                 socket.on('voiceCallCandidate', async (data) => {
@@ -963,93 +963,7 @@ class PrivateMessaging {
         reader.readAsDataURL(file);
     }
 
-    setupVoiceCallUI() {
-        // Create modal if not present
-        let modal = document.getElementById('private-voice-call-modal');
-        if (!modal) {
-            modal = document.createElement('div');
-            modal.id = 'private-voice-call-modal';
-            modal.style.display = 'none';
-            modal.style.position = 'fixed';
-            modal.style.top = '0';
-            modal.style.left = '0';
-            modal.style.width = '100vw';
-            modal.style.height = '100vh';
-            modal.style.background = 'rgba(0,0,0,0.7)';
-            modal.style.zIndex = '2000';
-            modal.style.alignItems = 'center';
-            modal.style.justifyContent = 'center';
-            modal.style.display = 'flex';
-            document.body.appendChild(modal);
-        }
-        modal.innerHTML = `
-            <div style="background:#222;padding:2em 2.5em;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.3);display:flex;flex-direction:column;align-items:center;gap:1.2em;min-width:260px;max-width:90vw;">
-                <div style="font-size:2.2em;margin-bottom:0.2em;" id="voice-call-icon">🔊</div>
-                <div id="voice-call-status" style="color:#fff;font-size:1.1em;text-align:center;">Calling...</div>
-                <audio id="voice-call-remote-audio" autoplay style="margin:1em 0;"></audio>
-                <div id="voice-call-actions" style="display:flex;gap:1.5em;">
-                    <button id="voice-call-end-btn" style="background:#ff6b6b;color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:1.5em;cursor:pointer;">⏹️</button>
-                    <button id="voice-call-mute-btn" style="background:#444;color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:1.3em;cursor:pointer;">🔇</button>
-                </div>
-            </div>
-        `;
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) this.endVoiceCall();
-        });
-        this.voiceCallModal = modal;
-
-        // End call button
-        modal.querySelector('#voice-call-end-btn').onclick = () => this.endVoiceCall();
-        // Mute button (toggle)
-        let muted = false;
-        modal.querySelector('#voice-call-mute-btn').onclick = () => {
-            muted = !muted;
-            if (this.localStream) {
-                this.localStream.getAudioTracks().forEach(track => track.enabled = !muted);
-            }
-            modal.querySelector('#voice-call-mute-btn').textContent = muted ? '🔈' : '🔇';
-        };
-    }
-
-    showVoiceCallModal(username, statusText = "Calling...", isIncoming = false) {
-        if (!this.voiceCallModal) this.setupVoiceCallUI();
-        const status = this.voiceCallModal.querySelector('#voice-call-status');
-        const icon = this.voiceCallModal.querySelector('#voice-call-icon');
-        const actions = this.voiceCallModal.querySelector('#voice-call-actions');
-        if (status) status.textContent = statusText || `Calling ${username}...`;
-        if (icon) icon.textContent = isIncoming ? '📞' : '🔊';
-
-        // If incoming, show Accept/Decline, else show End/Mute
-        if (isIncoming) {
-            actions.innerHTML = `
-                <button id="voice-call-accept-btn" style="background:#2ecc71;color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:1.5em;cursor:pointer;">✅</button>
-                <button id="voice-call-decline-btn" style="background:#ff6b6b;color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:1.5em;cursor:pointer;">❌</button>
-            `;
-            actions.querySelector('#voice-call-accept-btn').onclick = () => this.acceptIncomingCall();
-            actions.querySelector('#voice-call-decline-btn').onclick = () => this.declineIncomingCall();
-        } else {
-            actions.innerHTML = `
-                <button id="voice-call-end-btn" style="background:#ff6b6b;color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:1.5em;cursor:pointer;">⏹️</button>
-                <button id="voice-call-mute-btn" style="background:#444;color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:1.3em;cursor:pointer;">🔇</button>
-            `;
-            actions.querySelector('#voice-call-end-btn').onclick = () => this.endVoiceCall();
-            let muted = false;
-            actions.querySelector('#voice-call-mute-btn').onclick = () => {
-                muted = !muted;
-                if (this.localStream) {
-                    this.localStream.getAudioTracks().forEach(track => track.enabled = !muted);
-                }
-                actions.querySelector('#voice-call-mute-btn').textContent = muted ? '🔈' : '🔇';
-            };
-        }
-        this.voiceCallModal.style.display = 'flex';
-    }
-
-    hideVoiceCallModal() {
-        if (this.voiceCallModal) this.voiceCallModal.style.display = 'none';
-    }
-
-    getMyName() {
+        getMyName() {
         const nameInput = document.querySelector('#name');
         return nameInput?.value;
     }
@@ -1157,11 +1071,12 @@ class PrivateMessaging {
                 }
             }
             this.remoteStream.addTrack(event.track);
-        };
-
-        // Connection state
+        };        // Connection state
         this.peerConnection.onconnectionstatechange = () => {
-            if (this.peerConnection.connectionState === "disconnected" || this.peerConnection.connectionState === "failed" || this.peerConnection.connectionState === "closed") {
+            if (this.peerConnection.connectionState === "connected" && this.currentCallUser) {
+                // Update UI to show call is connected
+                this.showVoiceCallModal(this.currentCallUser, `In call with ${this.currentCallUser}`, false);
+            } else if (this.peerConnection.connectionState === "disconnected" || this.peerConnection.connectionState === "failed" || this.peerConnection.connectionState === "closed") {
                 this.endVoiceCall();
             }
         };
