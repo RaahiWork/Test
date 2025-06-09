@@ -405,7 +405,7 @@ app.get('/api/user/:username/avatar', async (req, res) => {
           // Find the user in database
         const user = await User.findByUsername(username);
         if (!user || !user.avatarId || !user.avatarFormat || !user.avatarFilename) {
-            return res.status(404).json({ error: 'User avatar not found.' });
+            return;
         }
         
         const bucket = process.env.AWS_S3_BUCKET || 'vybchat-media';
