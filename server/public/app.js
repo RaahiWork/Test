@@ -1919,45 +1919,11 @@ if (typeof MutationObserver !== 'undefined') {
                             rightPane.classList.remove('open', 'active');
                         }
                     }
-                    
-                    // Disable/enable main chat input based on PM modal visibility
-                    const mainChatInput = document.getElementById('message');
-                    const mainChatForm = document.getElementById('message-form');
-                    const sendButton = document.getElementById('send-button');
-                    
+                      // Add mobile touch support when PM modal opens
                     if (isVisible) {
-                        // Disable main chat when PM is open
-                        if (mainChatInput) {
-                            mainChatInput.disabled = true;
-                            mainChatInput.placeholder = 'Close private message to type here...';
-                            mainChatInput.style.opacity = '0.5';
-                        }
-                        if (sendButton) {
-                            sendButton.disabled = true;
-                            sendButton.style.opacity = '0.5';
-                        }
-                        if (mainChatForm) {
-                            mainChatForm.style.pointerEvents = 'none';
-                        }
-                        
-                        // Add mobile touch support
                         setTimeout(() => {
                             addMobileTouchSupport();
                         }, 100);
-                    } else {
-                        // Re-enable main chat when PM is closed
-                        if (mainChatInput) {
-                            mainChatInput.disabled = false;
-                            mainChatInput.placeholder = 'Type a message...';
-                            mainChatInput.style.opacity = '1';
-                        }
-                        if (sendButton) {
-                            sendButton.disabled = false;
-                            sendButton.style.opacity = '1';
-                        }
-                        if (mainChatForm) {
-                            mainChatForm.style.pointerEvents = 'auto';
-                        }
                     }
                 }
             }
