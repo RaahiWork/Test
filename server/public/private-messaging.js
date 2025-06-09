@@ -963,7 +963,7 @@ class PrivateMessaging {
         reader.readAsDataURL(file);
     }
 
-        getMyName() {
+    getMyName() {
         const nameInput = document.querySelector('#name');
         return nameInput?.value;
     }
@@ -974,15 +974,43 @@ class PrivateMessaging {
         }
         this.isCaller = true;
         this.currentCallUser = username;
-        await this.createPeerConnection();        // Get local audio
+        await this.createPeerConnection();        // Get local audio with high quality constraints
         try {
-            this.localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-            this.localStream.getTracks().forEach(track => this.peerConnection.addTrack(track, this.localStream));
+            //console.log('Requesting user media for caller...');
+            const audioConstraints = {
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true,
+                    sampleRate: 48000,
+                    channelCount: 2,
+                    latency: 0.01,
+                    sampleSize: 16
+                },
+                video: false
+            };            this.localStream = await navigator.mediaDevices.getUserMedia(audioConstraints);
+            //console.log('Local stream obtained:', this.localStream, 'tracks:', this.localStream.getTracks());
+            
+            this.localStream.getTracks().forEach(track => {
+                //console.log('Adding track to peer connection:', track);
+                this.peerConnection.addTrack(track, this.localStream);
+            });
         } catch (err) {
-            //
-            this.endVoiceCall();
-            return;
+            //console.error('Error getting user media for caller:', err);
+            // Fallback to basic audio constraints if high-quality fails
+            try {
+                this.localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                this.localStream.getTracks().forEach(track => {
+                    this.peerConnection.addTrack(track, this.localStream);
+                });
+            } catch (fallbackErr) {
+                this.endVoiceCall();
+                return;
+            }
         }
+
+        // Set codec preferences for better audio quality
+        this.setAudioCodecPreferences();
 
         this.showVoiceCallModal(username, `Calling ${username}...`, false);
         this.playRingtone();
@@ -1011,21 +1039,44 @@ class PrivateMessaging {
         socket.emit('voiceCallDeclined', {
             from: this.getMyName(),
             to: this.currentCallUser
-        });
-        this.currentCallUser = null;
+        });        this.currentCallUser = null;
         this.incomingCallData = null;
     }
 
     async handleIncomingCall(data) {
         await this.createPeerConnection();
 
-        try {            this.localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-            this.localStream.getTracks().forEach(track => this.peerConnection.addTrack(track, this.localStream));
+        try {
+            // High-quality audio constraints for call recipient
+            const highQualityConstraints = {
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true,
+                    sampleRate: 48000,
+                    channelCount: 2,
+                    latency: 0.01,
+                    sampleSize: 16
+                },
+                video: false
+            };
+            
+            try {
+                this.localStream = await navigator.mediaDevices.getUserMedia(highQualityConstraints);
+            } catch (highQualityErr) {
+                // Fallback to basic constraints if high-quality fails
+                console.warn('High-quality audio constraints failed, falling back to basic audio:', highQualityErr);
+                this.localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            }
+              this.localStream.getTracks().forEach(track => this.peerConnection.addTrack(track, this.localStream));
         } catch (err) {
             //
             this.endVoiceCall();
             return;
         }
+
+        // Set codec preferences for better audio quality
+        this.setAudioCodecPreferences();
 
         await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
         const answer = await this.peerConnection.createAnswer();
@@ -1045,7 +1096,9 @@ class PrivateMessaging {
         }
         const config = {
             iceServers: [
-                { urls: "stun:stun.l.google.com:19302" }
+                { urls: "stun:stun.l.google.com:19302" },
+                { urls: "stun:stun1.l.google.com:19302" },
+                { urls: "stun:stun2.l.google.com:19302" }
             ]
         };
         this.peerConnection = new RTCPeerConnection(config);
@@ -1059,19 +1112,27 @@ class PrivateMessaging {
                     candidate: event.candidate
                 });
             }
-        };
-
-        // Remote stream
+        };        // Remote stream
         this.peerConnection.ontrack = (event) => {
-            if (!this.remoteStream) {
-                this.remoteStream = new MediaStream();
+            //console.log('WebRTC ontrack event:', event);
+            // Use the stream from the event, which already contains all tracks
+            if (event.streams && event.streams[0]) {
+                this.remoteStream = event.streams[0];
+                //console.log('Remote stream received:', this.remoteStream, 'tracks:', this.remoteStream.getTracks());
                 const remoteAudio = document.getElementById('voice-call-remote-audio');
                 if (remoteAudio) {
                     remoteAudio.srcObject = this.remoteStream;
+                    remoteAudio.volume = 1.0; // Ensure volume is at maximum
+                    // Ensure audio plays automatically
+                    remoteAudio.play().catch(() => {});
+                    //console.log('Remote audio element set up successfully');
+                } else {
+                    console.error('Remote audio element not found');
                 }
+            } else {
+                console.warn('No remote stream found in ontrack event');
             }
-            this.remoteStream.addTrack(event.track);
-        };        // Connection state
+        };// Connection state
         this.peerConnection.onconnectionstatechange = () => {
             if (this.peerConnection.connectionState === "connected" && this.currentCallUser) {
                 // Update UI to show call is connected
@@ -1080,6 +1141,43 @@ class PrivateMessaging {
                 this.endVoiceCall();
             }
         };
+
+        // Set codec preferences to prioritize high-quality audio codecs
+        this.setAudioCodecPreferences();
+    }
+
+    setAudioCodecPreferences() {
+        if (!this.peerConnection) return;
+        
+        const transceivers = this.peerConnection.getTransceivers();
+        const audioTransceiver = transceivers.find(t => 
+            t.receiver && t.receiver.track && t.receiver.track.kind === 'audio'
+        );
+        
+        if (audioTransceiver && typeof audioTransceiver.setCodecPreferences === 'function') {
+            try {
+                const codecs = RTCRtpReceiver.getCapabilities('audio').codecs;
+                const preferredCodecs = codecs.filter(codec => 
+                    codec.mimeType === 'audio/opus' || 
+                    codec.mimeType === 'audio/G722' ||
+                    codec.mimeType === 'audio/PCMU' ||
+                    codec.mimeType === 'audio/PCMA'
+                ).sort((a, b) => {
+                    // Prefer Opus first (best quality), then G722, then others
+                    if (a.mimeType === 'audio/opus') return -1;
+                    if (b.mimeType === 'audio/opus') return 1;
+                    if (a.mimeType === 'audio/G722') return -1;
+                    if (b.mimeType === 'audio/G722') return 1;
+                    return 0;
+                });
+                
+                if (preferredCodecs.length > 0) {
+                    audioTransceiver.setCodecPreferences(preferredCodecs);
+                }
+            } catch (err) {
+                console.warn('Failed to set codec preferences:', err);
+            }
+        }
     }
 
     endVoiceCall(remote = false) {

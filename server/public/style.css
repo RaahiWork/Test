@@ -2096,6 +2096,18 @@ body.swiping-left::after {
     margin-bottom: 0.5rem;
 }
 
+/* Style the scrollable rooms container to match radio section */
+#rooms-list-scrollable {
+    width: 100%;
+    background: linear-gradient(135deg, rgba(108, 99, 255, 0.1), rgba(160, 132, 238, 0.05));
+    border-radius: 8px;
+    padding: 0.4rem;
+    border: 1px solid rgba(160, 132, 238, 0.3);
+    box-shadow: 0 2px 12px rgba(108, 99, 255, 0.1);
+    box-sizing: border-box;
+    margin-bottom: 1rem;
+}
+
 /* Ensure room items fit within the container */
 .room-item {
     width: 100%;
