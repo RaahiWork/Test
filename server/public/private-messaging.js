@@ -1232,32 +1232,21 @@ class PrivateMessaging {
                 const capabilities = RTCRtpReceiver.getCapabilities('audio');
                 if (!capabilities || !capabilities.codecs) return;
                 
-                // Enhanced codec preferences for better Samsung device compatibility
+                // Enhanced codec preferences for maximum quality
                 const preferredCodecs = capabilities.codecs.filter(codec => 
-                    codec.mimeType === 'audio/opus' || 
-                    codec.mimeType === 'audio/G722' ||
-                    codec.mimeType === 'audio/PCMU' ||
-                    codec.mimeType === 'audio/PCMA' ||
-                    codec.mimeType === 'audio/G711' ||
-                    codec.mimeType === 'audio/telephone-event'
+                    codec.mimeType === 'audio/opus'
                 ).sort((a, b) => {
-                    // Priority order for Samsung compatibility:
-                    // 1. Opus (best quality, widely supported)
-                    // 2. G722 (good fallback for Samsung)
-                    // 3. PCMU/PCMA (universal compatibility)
-                    const priority = {
-                        'audio/opus': 1,
-                        'audio/G722': 2,
-                        'audio/PCMU': 3,
-                        'audio/PCMA': 4,
-                        'audio/G711': 5,
-                        'audio/telephone-event': 6
-                    };
+                    // Prefer higher sample rates and stereo
+                    const aRate = a.clockRate || 0;
+                    const bRate = b.clockRate || 0;
+                    const aChannels = a.channels || 1;
+                    const bChannels = b.channels || 1;
                     
-                    return (priority[a.mimeType] || 10) - (priority[b.mimeType] || 10);
+                    if (aRate !== bRate) return bRate - aRate; // Higher sample rate first
+                    return bChannels - aChannels; // Stereo before mono
                 });
-                  if (preferredCodecs.length > 0) {
-                    //console.log('Setting codec preferences for Samsung compatibility:', preferredCodecs.map(c => c.mimeType));
+                
+                if (preferredCodecs.length > 0) {
                     audioTransceiver.setCodecPreferences(preferredCodecs);
                 }
             }
