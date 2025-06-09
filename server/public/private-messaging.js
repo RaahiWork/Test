@@ -974,10 +974,12 @@ class PrivateMessaging {
         }
         this.isCaller = true;
         this.currentCallUser = username;
-        await this.createPeerConnection();        // Get local audio with high quality constraints
+        await this.createPeerConnection();        // Get local audio with progressive fallback for device compatibility
         try {
             //console.log('Requesting user media for caller...');
-            const audioConstraints = {
+            
+            // Try high-quality constraints first
+            const highQualityConstraints = {
                 audio: {
                     echoCancellation: true,
                     noiseSuppression: true,
@@ -988,7 +990,53 @@ class PrivateMessaging {
                     sampleSize: 16
                 },
                 video: false
-            };            this.localStream = await navigator.mediaDevices.getUserMedia(audioConstraints);
+            };
+            
+            try {
+                this.localStream = await navigator.mediaDevices.getUserMedia(highQualityConstraints);
+            } catch (highQualityErr) {
+                console.warn('High-quality constraints failed, trying medium quality:', highQualityErr);
+                
+                // Fallback to medium quality (better Samsung compatibility)
+                const mediumQualityConstraints = {
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true,
+                        sampleRate: { ideal: 48000, min: 16000 },
+                        channelCount: { ideal: 2, min: 1 },
+                        latency: { ideal: 0.01, max: 0.1 }
+                    },
+                    video: false
+                };
+                
+                try {
+                    this.localStream = await navigator.mediaDevices.getUserMedia(mediumQualityConstraints);
+                } catch (mediumQualityErr) {
+                    console.warn('Medium-quality constraints failed, trying Samsung-optimized:', mediumQualityErr);
+                    
+                    // Samsung-specific optimized constraints
+                    const samsungOptimizedConstraints = {
+                        audio: {
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            autoGainControl: true,
+                            sampleRate: 44100, // Samsung devices often prefer 44.1kHz
+                            channelCount: 1,    // Mono for better compatibility
+                            latency: 0.05       // Slightly higher latency for stability
+                        },
+                        video: false
+                    };
+                    
+                    try {
+                        this.localStream = await navigator.mediaDevices.getUserMedia(samsungOptimizedConstraints);
+                    } catch (samsungErr) {
+                        console.warn('Samsung-optimized constraints failed, using basic audio:', samsungErr);
+                        this.localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                    }
+                }
+            }
+            
             //console.log('Local stream obtained:', this.localStream, 'tracks:', this.localStream.getTracks());
             
             this.localStream.getTracks().forEach(track => {
@@ -996,17 +1044,9 @@ class PrivateMessaging {
                 this.peerConnection.addTrack(track, this.localStream);
             });
         } catch (err) {
-            //console.error('Error getting user media for caller:', err);
-            // Fallback to basic audio constraints if high-quality fails
-            try {
-                this.localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-                this.localStream.getTracks().forEach(track => {
-                    this.peerConnection.addTrack(track, this.localStream);
-                });
-            } catch (fallbackErr) {
-                this.endVoiceCall();
-                return;
-            }
+            console.error('Error getting user media for caller:', err);
+            this.endVoiceCall();
+            return;
         }
 
         // Set codec preferences for better audio quality
@@ -1044,33 +1084,68 @@ class PrivateMessaging {
     }
 
     async handleIncomingCall(data) {
-        await this.createPeerConnection();
-
-        try {
-            // High-quality audio constraints for call recipient
-            const highQualityConstraints = {
-                audio: {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    autoGainControl: true,
-                    sampleRate: 48000,
-                    channelCount: 2,
-                    latency: 0.01,
-                    sampleSize: 16
-                },
-                video: false
-            };
-            
+        await this.createPeerConnection();        try {
+            // Progressive fallback for device compatibility, especially Samsung
             try {
+                // High-quality constraints first
+                const highQualityConstraints = {
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true,
+                        sampleRate: 48000,
+                        channelCount: 2,
+                        latency: 0.01,
+                        sampleSize: 16
+                    },
+                    video: false
+                };
                 this.localStream = await navigator.mediaDevices.getUserMedia(highQualityConstraints);
             } catch (highQualityErr) {
-                // Fallback to basic constraints if high-quality fails
-                console.warn('High-quality audio constraints failed, falling back to basic audio:', highQualityErr);
-                this.localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                console.warn('High-quality constraints failed for call recipient, trying medium quality:', highQualityErr);
+                
+                // Medium quality fallback
+                const mediumQualityConstraints = {
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true,
+                        sampleRate: { ideal: 48000, min: 16000 },
+                        channelCount: { ideal: 2, min: 1 },
+                        latency: { ideal: 0.01, max: 0.1 }
+                    },
+                    video: false
+                };
+                
+                try {
+                    this.localStream = await navigator.mediaDevices.getUserMedia(mediumQualityConstraints);
+                } catch (mediumQualityErr) {
+                    console.warn('Medium-quality constraints failed, trying Samsung-optimized for recipient:', mediumQualityErr);
+                    
+                    // Samsung-optimized constraints
+                    const samsungOptimizedConstraints = {
+                        audio: {
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            autoGainControl: true,
+                            sampleRate: 44100, // Samsung devices often prefer 44.1kHz
+                            channelCount: 1,    // Mono for better compatibility
+                            latency: 0.05       // Slightly higher latency for stability
+                        },
+                        video: false
+                    };
+                    
+                    try {
+                        this.localStream = await navigator.mediaDevices.getUserMedia(samsungOptimizedConstraints);
+                    } catch (samsungErr) {
+                        console.warn('Samsung-optimized constraints failed, using basic audio for recipient:', samsungErr);
+                        this.localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                    }
+                }
             }
               this.localStream.getTracks().forEach(track => this.peerConnection.addTrack(track, this.localStream));
         } catch (err) {
-            //
+            console.error('Error getting user media for call recipient:', err);
             this.endVoiceCall();
             return;
         }
@@ -1144,39 +1219,50 @@ class PrivateMessaging {
 
         // Set codec preferences to prioritize high-quality audio codecs
         this.setAudioCodecPreferences();
-    }
-
-    setAudioCodecPreferences() {
+    }    setAudioCodecPreferences() {
         if (!this.peerConnection) return;
         
-        const transceivers = this.peerConnection.getTransceivers();
-        const audioTransceiver = transceivers.find(t => 
-            t.receiver && t.receiver.track && t.receiver.track.kind === 'audio'
-        );
-        
-        if (audioTransceiver && typeof audioTransceiver.setCodecPreferences === 'function') {
-            try {
-                const codecs = RTCRtpReceiver.getCapabilities('audio').codecs;
-                const preferredCodecs = codecs.filter(codec => 
+        try {
+            const transceivers = this.peerConnection.getTransceivers();
+            const audioTransceiver = transceivers.find(t => 
+                t.receiver && t.receiver.track && t.receiver.track.kind === 'audio'
+            );
+            
+            if (audioTransceiver && typeof audioTransceiver.setCodecPreferences === 'function') {
+                const capabilities = RTCRtpReceiver.getCapabilities('audio');
+                if (!capabilities || !capabilities.codecs) return;
+                
+                // Enhanced codec preferences for better Samsung device compatibility
+                const preferredCodecs = capabilities.codecs.filter(codec => 
                     codec.mimeType === 'audio/opus' || 
                     codec.mimeType === 'audio/G722' ||
                     codec.mimeType === 'audio/PCMU' ||
-                    codec.mimeType === 'audio/PCMA'
+                    codec.mimeType === 'audio/PCMA' ||
+                    codec.mimeType === 'audio/G711' ||
+                    codec.mimeType === 'audio/telephone-event'
                 ).sort((a, b) => {
-                    // Prefer Opus first (best quality), then G722, then others
-                    if (a.mimeType === 'audio/opus') return -1;
-                    if (b.mimeType === 'audio/opus') return 1;
-                    if (a.mimeType === 'audio/G722') return -1;
-                    if (b.mimeType === 'audio/G722') return 1;
-                    return 0;
+                    // Priority order for Samsung compatibility:
+                    // 1. Opus (best quality, widely supported)
+                    // 2. G722 (good fallback for Samsung)
+                    // 3. PCMU/PCMA (universal compatibility)
+                    const priority = {
+                        'audio/opus': 1,
+                        'audio/G722': 2,
+                        'audio/PCMU': 3,
+                        'audio/PCMA': 4,
+                        'audio/G711': 5,
+                        'audio/telephone-event': 6
+                    };
+                    
+                    return (priority[a.mimeType] || 10) - (priority[b.mimeType] || 10);
                 });
-                
-                if (preferredCodecs.length > 0) {
+                  if (preferredCodecs.length > 0) {
+                    //console.log('Setting codec preferences for Samsung compatibility:', preferredCodecs.map(c => c.mimeType));
                     audioTransceiver.setCodecPreferences(preferredCodecs);
                 }
-            } catch (err) {
-                console.warn('Failed to set codec preferences:', err);
             }
+        } catch (err) {
+            console.warn('Failed to set codec preferences:', err);
         }
     }
 
