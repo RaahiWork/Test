@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Apply styles to make the emoji container scrollable
-    emojiContainer.style.maxHeight = '200px'; // Adjust this value as needed (e.g., '25vh' or '250px')
+    emojiContainer.style.maxHeight = '320px'; // Updated to match new larger container size
     emojiContainer.style.overflowY = 'auto';
     
     // Function to position the emoji picker properly
@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // On desktop, position above the trigger button
             emojiPicker.style.position = 'fixed';
             emojiPicker.style.bottom = (window.innerHeight - btnRect.top + 10) + 'px';
-            const pickerWidth = emojiPicker.offsetWidth || 260; // Fallback to CSS width if offsetWidth is 0
+            const pickerWidth = emojiPicker.offsetWidth || 380; // Updated fallback to match new CSS width
             emojiPicker.style.left = (btnRect.left - (pickerWidth / 2) + (btnRect.width / 2)) + 'px';
             emojiPicker.style.transform = 'none';
         }
