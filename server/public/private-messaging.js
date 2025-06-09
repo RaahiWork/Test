@@ -471,13 +471,15 @@ class PrivateMessaging {
                 userA: nameInput?.value,
                 userB: username
             });
-        }
-
-        // Show modal
+        }        // Show modal
         const modal = document.getElementById('private-message-modal');
         if (modal) {
             modal.style.display = 'flex';
             setTimeout(() => modal.classList.add('show'), 10);
+        }        // Hide only the message input form when private message is open (desktop view)
+        const messageForm = document.querySelector('.form-msg');
+        if (messageForm) {
+            messageForm.style.display = 'none';
         }
 
         // Focus on input
@@ -486,8 +488,7 @@ class PrivateMessaging {
             setTimeout(() => input.focus(), 100);
         }
     }
-    
-    closePrivateMessage() {
+      closePrivateMessage() {
         const modal = document.getElementById('private-message-modal');
         if (modal) {
             modal.classList.remove('show');
@@ -495,6 +496,10 @@ class PrivateMessaging {
                 modal.style.display = 'none';
                 this.currentPrivateChat = null;
             }, 300);
+        }        // Show the message input form again when private message is closed
+        const messageForm = document.querySelector('.form-msg');
+        if (messageForm) {
+            messageForm.style.display = 'flex';
         }
     }
     
