@@ -13,6 +13,8 @@ import { S3Client, ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/clien
 import { fromInstanceMetadata, fromEnv } from '@aws-sdk/credential-providers'
 // --- Chat state management ---
 import chatState from './chatState.js'
+import jwt from 'jsonwebtoken'
+import { AccessToken } from 'livekit-server-sdk';
 
 // Load environment variables
 dotenv.config()
@@ -489,6 +491,40 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// --- LiveKit Token Endpoint for Private Messaging ---
+app.get('/api/livekit-token', (req, res) => {
+  const { identity, room } = req.query;
+  if (!identity || !room) {
+    console.log('[LiveKit] Missing identity or room in request:', req.query);
+    return res.status(400).json({ error: 'identity and room are required' });
+  }
+
+  // Use environment variables for LiveKit credentials
+  const apiKey = process.env.LIVEKIT_API_KEY;
+  const apiSecret = process.env.LIVEKIT_SECRET_KEY;
+
+  if (!apiKey || !apiSecret) {
+    console.log('[LiveKit] API key or secret not configured');
+    return res.status(500).json({ error: 'LiveKit API key/secret not configured' });
+  }
+
+  const at = new AccessToken(apiKey, apiSecret, {
+    identity,
+    ttl: 600, // 10 minutes
+  });
+
+  at.addGrant({
+    room,
+    roomJoin: true,
+    canPublish: true,
+    canSubscribe: true,
+    canPublishData: true,
+  });
+
+  const token = at.toJwt();
+  res.json({ token });
+});
+
 const expressServer = app.listen(PORT, () => {
     console.log(`🚀 VybChat server running on port ${PORT}`);
     console.log(`📊 Chat state initialized with ${Object.keys(chatState.chatHistory).length} rooms`);
@@ -836,41 +872,25 @@ io.on('connection', socket => {
     });
 
     // --- WebRTC signaling for private voice calls ---
-    socket.on('voiceCallOffer', ({ from, to, offer }) => {
-        const targetUser = UsersState.users.find(user => user.name === to);
+    // [REMOVED] Manual WebRTC signaling events (voiceCallOffer, voiceCallAnswer, etc.)
+    // All voice/video calls are now handled by LiveKit client SDK on the frontend for best quality.
+    // Use the /api/livekit-token endpoint to obtain a JWT for joining a LiveKit room.
+
+    // --- LiveKit private call signaling ---
+    socket.on('privateVoiceCallRequest', ({ fromUser, toUser, roomName }) => {
+        // Only send a simple alert/popup to the receiver, do not auto-join or auto-call
+        const targetUser = UsersState.users.find(user => user.name === toUser);
         if (targetUser) {
-            io.to(targetUser.id).emit('voiceCallOffer', { from, to, offer });
+            io.to(targetUser.id).emit('privateVoiceCallPopup', { fromUser, roomName });
+        } else {
+            // If the receiver is not online, notify the caller (optional UX improvement)
+            const callerUser = UsersState.users.find(user => user.name === fromUser);
+            if (callerUser) {
+                io.to(callerUser.id).emit('privateVoiceCallUnavailable', { toUser });
+            }
         }
     });
-
-    socket.on('voiceCallAnswer', ({ from, to, answer }) => {
-        const targetUser = UsersState.users.find(user => user.name === to);
-        if (targetUser) {
-            io.to(targetUser.id).emit('voiceCallAnswer', { from, to, answer });
-        }
-    });
-
-    socket.on('voiceCallCandidate', ({ from, to, candidate }) => {
-        const targetUser = UsersState.users.find(user => user.name === to);
-        if (targetUser) {
-            io.to(targetUser.id).emit('voiceCallCandidate', { from, to, candidate });
-        }
-    });
-
-    socket.on('voiceCallEnd', ({ from, to }) => {
-        const targetUser = UsersState.users.find(user => user.name === to);
-        if (targetUser) {
-            io.to(targetUser.id).emit('voiceCallEnd', { from, to });
-        }
-    });
-
-    socket.on('voiceCallDeclined', ({ from, to }) => {
-        const targetUser = UsersState.users.find(user => user.name === to);
-        if (targetUser) {
-            io.to(targetUser.id).emit('voiceCallDeclined', { from, to });
-        }
-    });
-
+    
     // --- Add clearRoom event handler for Admin ---
     socket.on('clearRoom', ({ room }) => {
         // Only allow Admin to clear
