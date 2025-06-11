@@ -497,7 +497,7 @@ app.get('/api/health', (req, res) => {
 
 // --- LiveKit Token Endpoint for Private Messaging ---
 app.get('/api/livekit-token', async (req, res) => {
-    console.log('✅ AccessToken loaded:', typeof AccessToken);  // should print: function
+    //console.log('✅ AccessToken loaded:', typeof AccessToken);  // should print: function
   const { identity, room } = req.query;
   if (!identity || !room) {
     //console.log('[LiveKit] Missing identity or room in request:', req.query);
@@ -561,8 +561,8 @@ app.get('/api/livekit-token', async (req, res) => {
     const tokenString = token || '';
     const tokenLength = tokenString.length;
     const tokenPreview = tokenLength > 50 ? `${tokenString.substring(0, 50)}...` : tokenString;
-      console.log('  - Token length:', tokenLength);
-    console.log('  - Token preview:', tokenPreview);
+      //console.log('  - Token length:', tokenLength);
+    //console.log('  - Token preview:', tokenPreview);
     
     if (!tokenString || typeof tokenString !== 'string' || tokenString.length < 10) {
       //console.error('[LiveKit] Generated token is empty or invalid:', token);
