@@ -397,6 +397,34 @@ function updateUserAvatarImages(username, avatarUrl) {
     });
 }
 
+// Helper function to copy text to clipboard
+async function copyToClipboard(text) {
+    try {
+        await navigator.clipboard.writeText(text);
+        return true;
+    } catch (err) {
+        // Fallback for older browsers
+        try {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+            textArea.select();
+            textArea.setSelectionRange(0, 99999);
+            const successful = document.execCommand('copy');
+            document.body.removeChild(textArea);
+            return successful;
+        } catch (fallbackErr) {
+            console.error('Failed to copy to clipboard:', fallbackErr);
+            return false;
+        }
+    }
+}
+
+// Global variable to track streaming users
+let streamingUsers = new Set();
+
 // Update users display
 function showUsers(users) {
     usersList.innerHTML = '';
@@ -415,8 +443,9 @@ function showUsers(users) {
             ${uniqueUsers.map(user => `
                 <li class="online-user-item">
                     <img src="${getAvatarUrl(user.name)}" alt="${user.name}'s Avatar" class="profile-avatar-img profile-avatar-img--small" onerror="this.src='https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg'">
-                    <span class="profile-username">${user.name}</span>
-                    ${user.name !== nameInput.value ? `<button class="pm-btn" data-username="${user.name}" title="Private Message ${user.name}">💬</button>` : ''}
+                    <span class="profile-username">${user.name}</span>                    ${user.name !== nameInput.value ? `<button class="pm-btn" data-username="${user.name}" title="Private Message ${user.name}">💬</button>` : ''}
+                    ${user.name !== nameInput.value && streamingUsers.has(user.name) ? `<button class="join-stream-btn" data-username="${user.name}" title="Join ${user.name}'s Stream">⚡</button>` : ''}
+                    ${user.name !== nameInput.value && streamingUsers.has(user.name) ? `<button class="stream-link-btn" data-username="${user.name}" title="Get ${user.name}'s Stream Link">🔗</button>` : ''}
                 </li>
             `).join('')}
         </ul>`;
@@ -427,6 +456,37 @@ function showUsers(users) {
                 if (window.openPrivateChatWithUser) {
                     window.openPrivateChatWithUser(toUser);                } else {
                     //
+                }
+            };
+        });
+        // Add click handler for Join Stream buttons
+        document.querySelectorAll('.join-stream-btn').forEach(btn => {
+            btn.onclick = function(e) {
+                const hostUser = btn.getAttribute('data-username');
+                if (window.openConferencePopup) {
+                    // Join the host's stream room
+                    const hostRoomName = `vybchat-stream-${hostUser}`;
+                    window.openConferencePopup({ autoJoin: false, hostUsername: hostUser, roomName: hostRoomName });
+                } else {
+                    //console.log('Conference popup function not available');
+                }
+            };        });
+        
+        // Add click handler for Stream Link buttons
+        document.querySelectorAll('.stream-link-btn').forEach(btn => {
+            btn.onclick = function(e) {
+                const hostUser = btn.getAttribute('data-username');
+                const baseUrl = window.location.origin + window.location.pathname;
+                const hostRoomName = `vybchat-stream-${hostUser}`;
+                const conferenceUrl = `${baseUrl}?join=${encodeURIComponent(hostUser)}&room=${encodeURIComponent(hostRoomName)}`;
+                
+                // Show share modal for this user's stream
+                if (window.showShareModal) {
+                    window.showShareModal(hostUser, conferenceUrl);
+                } else {
+                    // Fallback - copy to clipboard and show simple alert
+                    copyToClipboard(conferenceUrl);
+                    alert(`${hostUser}'s stream link copied to clipboard!`);
                 }
             };
         });
@@ -765,6 +825,9 @@ socket.on('connect', () => {
     // Request online users for private messaging
     socket.emit('getOnlineUsers');
     
+    // Request current streaming users
+    socket.emit('getStreamingUsers');
+    
     // If we were in a room before disconnection, try to rejoin it
     if (nameInput.value) {
         // Always join Vibe room as default for authenticated users
@@ -796,6 +859,26 @@ socket.on('disconnect', (reason) => {
         document.querySelector('.connection-status').classList.remove('connected');
         document.querySelector('.connection-status').classList.add('disconnected');
         document.querySelector('.connection-status').innerHTML = '<span class="status-dot"></span>';
+    }
+});
+
+// Handle streaming users updates from server
+socket.on('streamingUsersUpdate', (data) => {
+    if (data && Array.isArray(data.streamingUsers)) {
+        // Update global streaming users set
+        streamingUsers.clear();
+        data.streamingUsers.forEach(username => {
+            streamingUsers.add(username);
+        });
+        
+        // Re-render user list to show/hide Join Stream buttons
+        const currentUsers = Array.from(document.querySelectorAll('.online-user-item')).map(item => ({
+            name: item.dataset.username || item.querySelector('.profile-username')?.textContent?.trim()
+        })).filter(user => user.name);
+        
+        if (currentUsers.length > 0) {
+            showUsers(currentUsers);
+        }
     }
 });
 

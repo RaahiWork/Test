@@ -709,3 +709,1310 @@
         max-height: 360px !important;
     }
 }
+
+/* Fancy animated stream button styles */
+.stream-btn-fancy-global {
+  width: 100% !important;
+  min-width: 0;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7em;
+  background: linear-gradient(90deg, #6c63ff 0%, #a084ee 100%);
+  color: #fff;
+  font-size: 1.25em;
+  font-weight: bold;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 2px 16px 0 #6c63ff44, 0 1.5px 8px 0 #ffe06644, 0 0 0 4px #ffe06633;
+  padding: 0.7em 0;
+  margin: 0.7em 0 1.1em 0;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.18s cubic-bezier(.4,2,.6,1), box-shadow 0.18s, background 0.2s;
+  animation: streamBtnPop 1.2s cubic-bezier(.4,2,.6,1) infinite alternate;
+  z-index: 1;
+}
+.stream-btn-fancy-global:hover {
+  transform: scale(1.07) rotate(-1.5deg);
+  box-shadow: 0 6px 32px 0 #a084eecc, 0 2px 12px 0 #ffe066cc, 0 0 0 8px #ffe06644;
+  background: linear-gradient(90deg, #a084ee 0%, #6c63ff 100%);
+}
+.stream-btn-fancy-global::before {
+  content: '';
+  position: absolute;
+  left: -40%;
+  top: -40%;
+  width: 180%;
+  height: 180%;
+  background: radial-gradient(circle at 60% 40%, #ffe06655 0%, #a084ee00 80%);
+  opacity: 0.7;
+  filter: blur(18px);
+  z-index: 0;
+  pointer-events: none;
+  animation: streamBtnGlow 2.2s ease-in-out infinite alternate;
+}
+@keyframes streamBtnPop {
+  0% { transform: scale(1) rotate(0deg); }
+  60% { transform: scale(1.04) rotate(-1deg); }
+  100% { transform: scale(1.08) rotate(1.5deg); }
+}
+@keyframes streamBtnGlow {
+  0% { opacity: 0.7; filter: blur(18px); }
+  100% { opacity: 1; filter: blur(28px); }
+}
+.stream-btn-fancy-glow {
+  display: inline-block;
+  animation: pulseGlow 1.1s infinite alternate;
+  font-size: 1.3em;
+  filter: drop-shadow(0 0 8px #ffe066cc) drop-shadow(0 0 2px #6c63ffcc);
+  transition: filter 0.2s;
+}
+@keyframes pulseGlow {
+  0% { filter: drop-shadow(0 0 8px #ffe066cc) drop-shadow(0 0 2px #6c63ffcc); }
+  100% { filter: drop-shadow(0 0 18px #ffe066ff) drop-shadow(0 0 8px #a084eecc); }
+}
+.stream-btn-fancy-label {
+  letter-spacing: 0.03em;
+  text-shadow: 0 1px 8px #a084ee88, 0 1px 0 #fff2, 0 0 6px #ffe06688;
+  position: relative;
+  z-index: 1;
+}
+.stream-btn-fancy-global svg {
+  filter: drop-shadow(0 0 4px #ffe06688) drop-shadow(0 0 2px #6c63ff88);
+  transition: filter 0.2s;
+}
+.stream-btn-fancy-global:hover .stream-btn-fancy-glow {
+  filter: drop-shadow(0 0 18px #ffe066ff) drop-shadow(0 0 8px #a084eecc);
+}
+.stream-btn-fancy-global:active {
+  transform: scale(0.97) rotate(0deg);
+  box-shadow: 0 1px 4px #6c63ff33, 0 0 0 2px #ffe06633;
+}
+
+.stream-btn-global-container {
+  width: 100% !important;
+  min-width: 0;
+  max-width: 100%;
+  display: block;
+  padding: 0;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  box-sizing: border-box;
+}
+
+/* ========================================
+   VybChat Conference Room - Microsoft Teams Style UI
+   ======================================== */
+
+/* Conference Room Container */
+.conference-room-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #1a1a1a;
+  z-index: 4000;
+  display: flex;
+  flex-direction: column;
+}
+
+.conference-room-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #1a1a1a;
+}
+
+/* Conference Header */
+.conference-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: linear-gradient(90deg, #464775 0%, #383838 100%);
+  border-bottom: 1px solid #404040;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.conference-title-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.conference-title {
+  color: #ffffff;
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.conference-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 0;
+}
+
+.conference-room-name {
+  color: #b3b3b3;
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.conference-connection-status {
+  font-size: 0.8rem;
+  color: #FF9800;
+}
+
+.conference-connection-status.connected {
+  background: rgba(76, 175, 80, 0.2);
+  border-color: #4caf50;
+  color: #4caf50;
+}
+
+.conference-connection-status.connecting {
+  background: rgba(255, 152, 0, 0.2);
+  border-color: #ff9800;
+  color: #ff9800;
+}
+
+.conference-connection-status.disconnected {
+  background: rgba(244, 67, 54, 0.2);
+  border-color: #f44336;
+  color: #f44336;
+}
+
+.conference-header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.conference-share-btn,
+.conference-close-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.conference-share-btn {
+  background: linear-gradient(135deg, #6c63ff 0%, #5a52d5 100%);
+  color: #ffffff;
+}
+
+.conference-share-btn:hover {
+  background: linear-gradient(135deg, #5a52d5 0%, #4a44b8 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.conference-close-btn {
+  background: linear-gradient(135deg, #ff6b6b 0%, #e55a5a 100%);
+  color: #ffffff;
+}
+
+.conference-close-btn:hover {
+  background: linear-gradient(135deg, #e55a5a 0%, #d04949 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Video Grid Container */
+.conference-video-grid {
+  flex: 1;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  overflow: hidden;
+  background: #1a1a1a;
+  position: relative;
+}
+
+.conference-video-grid::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at center, rgba(108, 99, 255, 0.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* Video Participant Container */
+.conference-video-participant {
+  position: relative;
+  background: linear-gradient(135deg, #2a2a2a 0%, #1f1f1f 100%);
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.conference-video-participant:hover {
+  border-color: #6c63ff;
+  transform: scale(1.02);
+  box-shadow: 0 6px 20px rgba(108, 99, 255, 0.3);
+}
+
+.conference-video-participant.speaking {
+  border-color: #4caf50;
+  box-shadow: 0 0 20px rgba(76, 175, 80, 0.5);
+}
+
+.conference-video-element {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+  background: #000;
+}
+
+.conference-video-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #888;
+  font-size: 3rem;
+  user-select: none;
+  background: linear-gradient(135deg, #2c3e50, #34495e);
+}
+
+.conference-placeholder-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #ecf0f1;
+  text-align: center;
+  background: linear-gradient(135deg, #34495e, #2c3e50);
+}
+
+.conference-placeholder-avatar {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.7;
+}
+
+.conference-placeholder-text {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  font-weight: 500;
+}
+
+/* Participant Label */
+.conference-participant-label {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.6) 100%);
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  z-index: 2;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  max-width: calc(100% - 24px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conference-participant-label.you {
+  background: linear-gradient(135deg, rgba(108, 99, 255, 0.9) 0%, rgba(90, 82, 213, 0.9) 100%);
+}
+
+/* Participant Status Indicators */
+.conference-participant-status {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 6px;
+  z-index: 2;
+}
+
+.conference-status-indicator {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.conference-status-indicator.mic-muted {
+  background: rgba(244, 67, 54, 0.8);
+  color: #ffffff;
+}
+
+.conference-status-indicator.video-off {
+  background: rgba(255, 152, 0, 0.8);
+  color: #ffffff;
+}
+
+/* Controls Bar */
+.conference-controls-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px 24px;
+  background: linear-gradient(90deg, #2d2d2d 0%, #383838 100%);
+  border-top: 1px solid #404040;
+  gap: 16px;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.conference-control-btn {
+  width: 56px;
+  height: 56px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.conference-control-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.1) 100%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.conference-control-btn:hover::before {
+  opacity: 1;
+}
+
+.conference-control-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.conference-control-btn:active {
+  transform: translateY(0);
+}
+
+.conference-mic-btn {
+  background: linear-gradient(135deg, #6c63ff 0%, #5a52d5 100%);
+  color: #ffffff;
+}
+
+.conference-mic-btn.muted {
+  background: linear-gradient(135deg, #666 0%, #555 100%);
+}
+
+.conference-mic-btn.enabled {
+  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+}
+
+.conference-video-btn {
+  background: linear-gradient(135deg, #6c63ff 0%, #5a52d5 100%);
+  color: #ffffff;
+}
+
+.conference-video-btn.disabled {
+  background: linear-gradient(135deg, #666 0%, #555 100%);
+}
+
+.conference-video-btn.enabled {
+  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+}
+
+.conference-screen-btn {
+  background: linear-gradient(135deg, #6c63ff 0%, #5a52d5 100%);
+  color: #ffffff;
+}
+
+.conference-screen-btn.sharing {
+  background: linear-gradient(135deg, #ff6b6b 0%, #e55a5a 100%);
+}
+
+.conference-speaker-btn {
+  background: linear-gradient(135deg, #6c63ff 0%, #5a52d5 100%);
+  color: #ffffff;
+}
+
+.conference-speaker-btn.muted {
+  background: linear-gradient(135deg, #666 0%, #555 100%);
+}
+
+.conference-speaker-btn.enabled {
+  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+}
+
+.conference-participants-info {
+  flex: 1;
+  text-align: center;
+  color: #b3b3b3;
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.conference-participants-info span {
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.conference-participants-count {
+  background: rgba(108, 99, 255, 0.2);
+  padding: 4px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(108, 99, 255, 0.3);
+}
+
+/* Join Modal */
+.conference-popup-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.conference-modal-content {
+  background: linear-gradient(135deg, #2a2a2a 0%, #1f1f1f 100%);
+  padding: 32px 40px;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  min-width: 360px;
+  max-width: 95vw;
+  border: 1px solid #404040;
+}
+
+.conference-modal-title {
+  color: #ffffff;
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.conference-modal-description {
+  color: #b3b3b3;
+  margin: 0;
+  text-align: center;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.conference-modal-description b {
+  color: #6c63ff;
+  font-weight: 600;
+}
+
+.conference-join-btn,
+.conference-cancel-btn {
+  padding: 12px 32px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.conference-join-btn {
+  background: linear-gradient(135deg, #6c63ff 0%, #5a52d5 100%);
+  color: #ffffff;
+}
+
+.conference-join-btn:hover {
+  background: linear-gradient(135deg, #5a52d5 0%, #4a44b8 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(108, 99, 255, 0.4);
+}
+
+.conference-cancel-btn {
+  background: linear-gradient(135deg, #666 0%, #555 100%);
+  color: #ffffff;
+  margin-top: 8px;
+  padding: 10px 24px;
+  font-size: 1rem;
+}
+
+.conference-cancel-btn:hover {
+  background: linear-gradient(135deg, #777 0%, #666 100%);
+  transform: translateY(-1px);
+}
+
+/* Share Modal */
+.conference-share-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 5000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.conference-share-modal-content {
+  background: #222;
+  padding: 2em 2.5em;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2em;
+  min-width: 400px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.conference-share-title {
+  color: #fff;
+  margin: 0;
+  font-size: 1.4rem;
+  text-align: center;
+}
+
+.conference-share-description {
+  color: #ccc;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+.conference-share-description strong {
+  color: #6c63ff;
+}
+
+.conference-link-section {
+  width: 100%;
+  margin: 1em 0;
+}
+
+.conference-link-label {
+  color: #aaa;
+  font-size: 0.9rem;
+  display: block;
+  margin-bottom: 0.5em;
+}
+
+.conference-link-input-container {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.conference-link-input {
+  flex: 1;
+  padding: 0.7em;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background: #333;
+  color: #fff;
+  font-size: 0.9rem;
+  font-family: monospace;
+  word-break: break-all;
+}
+
+.conference-copy-btn {
+  background: #6c63ff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.7em 1em;
+  cursor: pointer;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.conference-copy-btn:hover {
+  background: #5548c8;
+}
+
+.conference-copy-btn.copied {
+  background: #4CAF50;
+}
+
+.conference-share-info {
+  color: #888;
+  font-size: 0.85rem;
+  text-align: center;
+  line-height: 1.4;
+  margin: 0.5em 0;
+}
+
+.conference-share-info-item {
+  margin-bottom: 0.5em;
+}
+
+.conference-share-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5em;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.conference-share-whatsapp {
+  background: #25D366;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.6em 1.2em;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: background 0.2s;
+}
+
+.conference-share-whatsapp:hover {
+  background: #1DA851;
+}
+
+.conference-share-email {
+  background: #4285f4;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.6em 1.2em;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: background 0.2s;
+}
+
+.conference-share-email:hover {
+  background: #3367d6;
+}
+
+.conference-share-close {
+  background: #666;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.6em 2em;
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-top: 1em;
+  transition: background 0.2s;
+}
+
+.conference-share-close:hover {
+  background: #555;
+}
+
+/* Conference Room Header Styles */
+.conference-room-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: #222;
+  border-bottom: 1px solid #333;
+}
+
+.conference-room-info h2 {
+  color: #fff;
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.conference-room-details {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 0.3rem 0 0 0;
+}
+
+.conference-room-name {
+  color: #888;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.conference-header-buttons {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.conference-share-btn {
+  background: #6c63ff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: background 0.2s;
+}
+
+.conference-share-btn:hover {
+  background: #5548c8;
+}
+
+.conference-close-btn {
+  background: #ff6b6b;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.conference-close-btn:hover {
+  background: #ff5252;
+}
+
+/* Video Container Styles */
+.conference-video-container {
+  position: relative;
+  background: #333;
+  border-radius: 8px;
+  overflow: hidden;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.conference-video-element {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.conference-participant-label {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: rgba(0,0,0,0.7);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  z-index: 1;
+}
+
+/* Conference Modal Styles */
+.conference-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.7);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.conference-modal-content {
+  background: #222;
+  padding: 2em 2.5em;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2em;
+  min-width: 320px;
+  max-width: 95vw;
+}
+
+.conference-modal-title {
+  color: #fff;
+  margin-bottom: 0.5em;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.conference-modal-text {
+  color: #fff;
+  margin-bottom: 1em;
+  text-align: center;
+}
+
+.conference-join-btn {
+  background: #6c63ff;
+  color: #fff;
+  padding: 0.7em 2em;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.conference-join-btn:hover {
+  background: #5548c8;
+}
+
+.conference-cancel-btn {
+  background: #ff6b6b;
+  color: #fff;
+  padding: 0.5em 1.5em;
+  border: none;
+  border-radius: 8px;
+  font-size: 1em;
+  cursor: pointer;
+  margin-top: 0.5em;
+  transition: background 0.2s;
+}
+
+.conference-cancel-btn:hover {
+  background: #ff5252;
+}
+
+/* Share Modal Styles */
+.conference-share-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.7);
+  z-index: 5000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.conference-share-modal-content {
+  background: #222;
+  padding: 2em 2.5em;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2em;
+  min-width: 400px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.conference-share-title {
+  color: #fff;
+  margin: 0;
+  font-size: 1.4rem;
+  text-align: center;
+}
+
+.conference-share-description {
+  color: #ccc;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+.conference-share-description strong {
+  color: #6c63ff;
+}
+
+.conference-link-section {
+  width: 100%;
+  margin: 1em 0;
+}
+
+.conference-link-label {
+  color: #aaa;
+  font-size: 0.9rem;
+  display: block;
+  margin-bottom: 0.5em;
+}
+
+.conference-link-input-container {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.conference-link-input {
+  flex: 1;
+  padding: 0.7em;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background: #333;
+  color: #fff;
+  font-size: 0.9rem;
+  font-family: monospace;
+  word-break: break-all;
+}
+
+.conference-copy-btn {
+  background: #6c63ff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.7em 1em;
+  cursor: pointer;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.conference-copy-btn:hover {
+  background: #5548c8;
+}
+
+.conference-copy-btn.copied {
+  background: #4CAF50;
+}
+
+.conference-share-info {
+  color: #888;
+  font-size: 0.85rem;
+  text-align: center;
+  line-height: 1.4;
+  margin: 0.5em 0;
+}
+
+.conference-share-info-item {
+  margin-bottom: 0.5em;
+}
+
+.conference-share-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5em;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.conference-share-whatsapp {
+  background: #25D366;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.6em 1.2em;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: background 0.2s;
+}
+
+.conference-share-whatsapp:hover {
+  background: #1DA851;
+}
+
+.conference-share-email {
+  background: #4285f4;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.6em 1.2em;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: background 0.2s;
+}
+
+.conference-share-email:hover {
+  background: #3367d6;
+}
+
+.conference-share-close {
+  background: #666;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.6em 2em;
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-top: 1em;
+  transition: background 0.2s;
+}
+
+.conference-share-close:hover {
+  background: #555;
+}
+
+/* Full-screen video overlay styles */
+.conference-fullscreen-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 4000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.conference-fullscreen-video {
+  max-width: 95vw;
+  max-height: 95vh;
+  width: auto;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  cursor: default;
+}
+
+.conference-fullscreen-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  color: #ffffff;
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+
+.conference-fullscreen-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.conference-fullscreen-label {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: #ffffff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 1rem;
+  font-weight: 500;
+  backdrop-filter: blur(10px);
+}
+
+/* Video hover effects for clickable indication */
+.conference-video-element:hover {
+  transform: scale(1.02);
+  transition: transform 0.2s ease;
+  box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
+}
+
+.conference-placeholder-content:hover {
+  background: rgba(108, 99, 255, 0.1);
+  transition: background 0.2s ease;
+}
+
+/* Disabled control styles */
+.conference-control-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.conference-control-btn:disabled:hover {
+  transform: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Conference Focused View Styles */
+.conference-video-grid.focused-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  grid-template-rows: 1fr;
+  gap: 15px;
+  align-items: start;
+}
+
+.conference-video-grid.focused-layout .conference-video-container.focused {
+  grid-column: 1;
+  grid-row: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+  border: 3px solid #6c63ff;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(108, 99, 255, 0.3);
+  transform: scale(1.02);
+  transition: all 0.3s ease;
+  z-index: 10;
+  position: relative;
+}
+
+.conference-video-grid.focused-layout .conference-video-container.unfocused {
+  grid-column: 2;
+  width: 100%;
+  height: auto;
+  min-height: 120px;
+  max-height: 150px;
+  opacity: 0.8;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+}
+
+.conference-video-grid.focused-layout .conference-video-container.unfocused:hover {
+  opacity: 1;
+  border-color: #6c63ff;
+  transform: scale(1.05);
+}
+
+.conference-video-container.focused .conference-participant-label {
+  background: linear-gradient(135deg, #6c63ff 0%, #5a52d5 100%);
+  color: white;
+  font-weight: bold;
+  font-size: 0.9rem;
+  padding: 8px 12px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.conference-video-container.unfocused .conference-participant-label {
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* Focused video element styling */
+.conference-video-container.focused .conference-video-element {
+  border-radius: 8px;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.conference-video-container.unfocused .conference-video-element {
+  border-radius: 6px;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Focused placeholder styling */
+.conference-video-container.focused .conference-placeholder-content {
+  background: linear-gradient(135deg, #4a4a4a 0%, #2a2a2a 100%);
+  border-radius: 8px;
+  padding: 40px 20px;
+}
+
+.conference-video-container.focused .conference-placeholder-avatar {
+  font-size: 4rem;
+  margin-bottom: 20px;
+}
+
+.conference-video-container.focused .conference-placeholder-text {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.conference-video-container.unfocused .conference-placeholder-content {
+  padding: 20px 10px;
+}
+
+.conference-video-container.unfocused .conference-placeholder-avatar {
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.conference-video-container.unfocused .conference-placeholder-text {
+  font-size: 0.8rem;
+}
+
+/* Responsive behavior for focused view */
+@media (max-width: 768px) {
+  .conference-video-grid.focused-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: 2fr auto;
+    gap: 10px;
+  }
+  
+  .conference-video-grid.focused-layout .conference-video-container.focused {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 250px;
+  }
+  
+  .conference-video-grid.focused-layout .conference-video-container.unfocused {
+    grid-column: 1;
+    grid-row: 2;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 10px 0;
+  }
+  
+  .conference-video-container.unfocused {
+    min-width: 120px;
+    flex-shrink: 0;
+  }
+}
