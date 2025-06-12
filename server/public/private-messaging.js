@@ -206,14 +206,29 @@ class PrivateMessaging {
                     this.closePrivateMessage();
                 }
             });
-        }
-
-        // Voice call button in private message modal
+        }        // Voice call button in private message modal
         const voiceCallBtn = document.getElementById('private-voice-call-btn');
         if (voiceCallBtn) {
             voiceCallBtn.addEventListener('click', () => {
                 if (this.currentPrivateChat) {
                     this.startVoiceCall(this.currentPrivateChat);
+                }
+            });
+        }
+
+        // Add click handler for private message header avatar to open profile
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target.classList.contains('private-message-header-avatar')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    if (this.currentPrivateChat && window.showUserProfile) {
+                        // Assume user is online since they're in a private chat
+                        const isOnline = true;
+                        const avatarSrc = e.target.src;
+                        window.showUserProfile(this.currentPrivateChat, isOnline, avatarSrc);
+                    }
                 }
             });
         }
@@ -343,9 +358,8 @@ class PrivateMessaging {
             if (this.displayNameMap && this.displayNameMap[username]) {
                 displayName = this.displayNameMap[username];
             }              // Get avatar URL for the user
-            const avatarUrl = window.getAvatarUrl ? window.getAvatarUrl(username) : this.getFallbackAvatarUrl(username);
-              title.innerHTML = `
-                <img src="${avatarUrl}" alt="${displayName}'s Avatar" class="private-message-header-avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; margin-right: 10px; border: 2px solid #e8e6ff; vertical-align: middle;" onerror="this.src='https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg'">
+            const avatarUrl = window.getAvatarUrl ? window.getAvatarUrl(username) : this.getFallbackAvatarUrl(username);            title.innerHTML = `
+                <img src="${avatarUrl}" alt="${displayName}'s Avatar" class="private-message-header-avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; margin-right: 10px; border: 2px solid #e8e6ff; vertical-align: middle; cursor: pointer;" title="View ${displayName}'s Profile" onerror="this.src='https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg'">
                 Private Message - ${displayName}
             `;
         }
