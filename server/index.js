@@ -13,6 +13,8 @@ import { S3Client, ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/clien
 import { fromInstanceMetadata, fromEnv } from '@aws-sdk/credential-providers'
 // --- Chat state management ---
 import chatState from './chatState.js'
+import jwt from 'jsonwebtoken'
+import { AccessToken } from 'livekit-server-sdk';
 
 // Load environment variables
 dotenv.config()
@@ -165,11 +167,23 @@ app.get('/api/emojis', async (req, res) => {
         const imageFiles = files.filter(file => {
             const extension = path.extname(file).toLowerCase();
             return ['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes(extension);
-        });        
-        res.json(imageFiles);
+        });          res.json(imageFiles);
     } catch (error) {
         //
         res.status(500).json({ error: 'Failed to load emojis', details: error.message });
+    }
+});
+
+// Add endpoint to get feature flags and configuration
+app.get('/api/config', (req, res) => {
+    try {
+        const config = {
+            enableStream: process.env.EnableStream === 'true' || process.env.EnableStream === '1',
+            version: '1.0.0'
+        };
+        res.json(config);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to get configuration' });
     }
 });
 
@@ -394,6 +408,10 @@ app.post('/api/avatar', async (req, res) => {
     }
 });
 
+const apiKey = process.env.LIVEKIT_API_KEY;
+const apiSecret = process.env.LIVEKIT_SECRET_KEY;
+const wsUrl = process.env.LIVEKIT_WS_URL;
+
 // --- Get user avatar info endpoint ---
 app.get('/api/user/:username/avatar', async (req, res) => {
     try {
@@ -489,6 +507,128 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// --- LiveKit Token Endpoint for Private Messaging ---
+app.get('/api/livekit-token', async (req, res) => {
+    //console.log('✅ AccessToken loaded:', typeof AccessToken);  // should print: function
+  const { identity, room } = req.query;
+  if (!identity || !room) {
+    //console.log('[LiveKit] Missing identity or room in request:', req.query);
+    return res.status(400).json({ error: 'identity and room are required' });
+  }
+
+  // Use environment variables for LiveKit credentials with fallback
+  const apiKey = process.env.LIVEKIT_API_KEY;
+  const apiSecret = process.env.LIVEKIT_SECRET_KEY;
+  const wsUrl = process.env.LIVEKIT_WS_URL;
+
+  //console.log('[LiveKit] Token generation request:');
+  //console.log('  - Identity:', identity);
+  //console.log('  - Room:', room);
+  //console.log('  - API Key:', apiKey ? `${apiKey.substring(0, 8)}...` : 'NOT SET');
+  //console.log('  - API Secret:', apiSecret ? `${apiSecret.substring(0, 8)}...` : 'NOT SET');
+  //console.log('  - WS URL:', wsUrl);
+
+  if (!apiKey || !apiSecret) {
+    //console.log('[LiveKit] API key or secret not configured');
+    return res.status(500).json({ error: 'LiveKit API key/secret not configured' });
+  }
+
+  try {
+    //console.log('[LiveKit] Creating AccessToken...');
+    
+    // Create the AccessToken with detailed logging
+    const at = new AccessToken(apiKey, apiSecret, {
+      identity: identity,
+      ttl: 600, // 10 minutes
+    });
+    
+    //console.log('[LiveKit] AccessToken created successfully');
+    //console.log('[LiveKit] Adding grants...');
+    
+    at.addGrant({
+      room: room,
+      roomJoin: true,
+      canPublish: true,
+      canSubscribe: true,
+      canPublishData: true,
+    });
+      //console.log('[LiveKit] Grants added successfully');
+    //console.log('[LiveKit] Generating JWT token...');
+    
+    // Handle both Promise and direct string return from toJwt()
+    let token = at.toJwt();
+    
+    // Check if toJwt() returned a Promise (newer SDK versions)
+    if (token && typeof token === 'object' && typeof token.then === 'function') {
+      //console.log('[LiveKit] toJwt() returned a Promise, awaiting...');
+      token = await token;
+    }
+    
+    //console.log('[LiveKit] JWT generation result:');
+    //console.log('  - Token type:', typeof token);
+    //console.log('  - Token length:', token ? token.length : 0);
+    //console.log('  - Token preview:', token && token.length > 50 ? `${token.substring(0, 50)}...` : token || 'EMPTY/NULL');
+    
+    // Now token should be a string
+    const tokenString = token || '';
+    const tokenLength = tokenString.length;
+    const tokenPreview = tokenLength > 50 ? `${tokenString.substring(0, 50)}...` : tokenString;
+      //console.log('  - Token length:', tokenLength);
+    //console.log('  - Token preview:', tokenPreview);
+    
+    if (!tokenString || typeof tokenString !== 'string' || tokenString.length < 10) {
+      //console.error('[LiveKit] Generated token is empty or invalid:', token);
+    //   console.error('[LiveKit] AccessToken object state:', {
+    //     apiKey: apiKey ? 'SET' : 'NOT SET',
+    //     apiSecret: apiSecret ? 'SET' : 'NOT SET',
+    //     identity: identity,
+    //     ttl: 600
+    //   });
+      return res.status(500).json({ 
+        error: 'Failed to generate LiveKit token', 
+        details: 'Token is empty or invalid',
+        debug: {
+          tokenType: typeof token,
+          tokenLength: token ? token.length : 0,
+          hasApiKey: !!apiKey,
+          hasApiSecret: !!apiSecret,
+          identity: identity,
+          room: room
+        }
+      });
+    }
+      //console.log(`[LiveKit] ✅ Token generated successfully for identity=${identity}, room=${room}`);
+    return res.json({ token: tokenString, wsUrl });
+    
+  } catch (err) {
+    //console.error('[LiveKit] Error generating token:', err);
+    //console.error('[LiveKit] Error stack:', err.stack);
+    // console.error('[LiveKit] Error details:', {
+    //   name: err.name,
+    //   message: err.message,
+    //   apiKey: apiKey ? 'SET' : 'NOT SET',
+    //   apiSecret: apiSecret ? 'SET' : 'NOT SET',
+    //   identity: identity,
+    //   room: room
+    // });
+    return res.status(500).json({ 
+      error: 'Error generating LiveKit token', 
+      details: err.message,
+      errorName: err.name,
+      debug: {
+        hasApiKey: !!apiKey,
+        hasApiSecret: !!apiSecret,
+        identity: identity,
+        room: room
+      }
+    });
+  }
+});
+
+// app.listen(PORT, () => {
+//   console.log(`✅ LiveKit token server running at http://localhost:${PORT}`);
+// });
+
 const expressServer = app.listen(PORT, () => {
     console.log(`🚀 VybChat server running on port ${PORT}`);
     console.log(`📊 Chat state initialized with ${Object.keys(chatState.chatHistory).length} rooms`);
@@ -516,6 +656,23 @@ const UsersState = {
     users: [],
     setUsers: function (newUsersArray) {
         this.users = newUsersArray
+    }
+}
+
+// Track streaming users
+const StreamingState = {
+    streamingUsers: new Set(),
+    addStreamer: function(username) {
+        this.streamingUsers.add(username);
+    },
+    removeStreamer: function(username) {
+        this.streamingUsers.delete(username);
+    },
+    isStreaming: function(username) {
+        return this.streamingUsers.has(username);
+    },
+    getAllStreamers: function() {
+        return Array.from(this.streamingUsers);
     }
 }
 
@@ -756,14 +913,15 @@ io.on('connection', socket => {
         io.emit('roomList', {
             rooms: getAllActiveRooms()
         })
-    });
-
-    // When user disconnects - to all others 
+    });    // When user disconnects - to all others 
     socket.on('disconnect', () => {
         const user = getUser(socket.id)
         userLeavesApp(socket.id)
 
         if (user) {
+            // Remove from streaming users when they disconnect
+            StreamingState.removeStreamer(user.name);
+            
             io.to(user.room).emit('message', buildMsg(ADMIN, `${user.name} has left the room`))
 
             io.to(user.room).emit('userList', {
@@ -773,8 +931,13 @@ io.on('connection', socket => {
             io.emit('roomList', {
                 rooms: getAllActiveRooms()
             })
+
+            // Broadcast updated streaming status
+            io.emit('streamingUsersUpdate', {
+                streamingUsers: StreamingState.getAllStreamers()
+            });
         }
-    });    // Listening for a message event 
+    });// Listening for a message event 
     socket.on('message', ({ name, text }) => {
         const room = getUser(socket.id)?.room
         if (room) {
@@ -836,42 +999,25 @@ io.on('connection', socket => {
     });
 
     // --- WebRTC signaling for private voice calls ---
-    socket.on('voiceCallOffer', ({ from, to, offer }) => {
-        const targetUser = UsersState.users.find(user => user.name === to);
+    // [REMOVED] Manual WebRTC signaling events (voiceCallOffer, voiceCallAnswer, etc.)
+    // All voice/video calls are now handled by LiveKit client SDK on the frontend for best quality.
+    // Use the /api/livekit-token endpoint to obtain a JWT for joining a LiveKit room.
+
+    // --- LiveKit private call signaling ---
+    socket.on('privateVoiceCallRequest', ({ fromUser, toUser, roomName }) => {
+        // Only send a simple alert/popup to the receiver, do not auto-join or auto-call
+        const targetUser = UsersState.users.find(user => user.name === toUser);
         if (targetUser) {
-            io.to(targetUser.id).emit('voiceCallOffer', { from, to, offer });
+            io.to(targetUser.id).emit('privateVoiceCallPopup', { fromUser, roomName });
+        } else {
+            // If the receiver is not online, notify the caller (optional UX improvement)
+            const callerUser = UsersState.users.find(user => user.name === fromUser);
+            if (callerUser) {
+                io.to(callerUser.id).emit('privateVoiceCallUnavailable', { toUser });
+            }
         }
     });
-
-    socket.on('voiceCallAnswer', ({ from, to, answer }) => {
-        const targetUser = UsersState.users.find(user => user.name === to);
-        if (targetUser) {
-            io.to(targetUser.id).emit('voiceCallAnswer', { from, to, answer });
-        }
-    });
-
-    socket.on('voiceCallCandidate', ({ from, to, candidate }) => {
-        const targetUser = UsersState.users.find(user => user.name === to);
-        if (targetUser) {
-            io.to(targetUser.id).emit('voiceCallCandidate', { from, to, candidate });
-        }
-    });
-
-    socket.on('voiceCallEnd', ({ from, to }) => {
-        const targetUser = UsersState.users.find(user => user.name === to);
-        if (targetUser) {
-            io.to(targetUser.id).emit('voiceCallEnd', { from, to });
-        }
-    });
-
-    socket.on('voiceCallDeclined', ({ from, to }) => {
-        const targetUser = UsersState.users.find(user => user.name === to);
-        if (targetUser) {
-            io.to(targetUser.id).emit('voiceCallDeclined', { from, to });
-        }
-    });
-
-    // --- Add clearRoom event handler for Admin ---
+      // --- Add clearRoom event handler for Admin ---
     socket.on('clearRoom', ({ room }) => {
         // Only allow Admin to clear
         const user = getUser(socket.id);
@@ -879,6 +1025,43 @@ io.on('connection', socket => {
         if (!roomMessages[room]) return;
         roomMessages[room] = [];
         io.to(room).emit('clearRoom');
+    });    // Handle streaming status updates
+    socket.on('streamingStatusUpdate', ({ username, isStreaming }) => {
+        if (isStreaming) {
+            StreamingState.addStreamer(username);
+        } else {
+            StreamingState.removeStreamer(username);
+        }
+        
+        // Broadcast updated streaming status to all users
+        io.emit('streamingUsersUpdate', {
+            streamingUsers: StreamingState.getAllStreamers()
+        });
+    });
+
+    // Handle host leaving conference - disconnect all participants
+    socket.on('hostLeftConference', ({ hostUsername, roomName }) => {
+        //console.log(`[LiveKit] 🏠 Host ${hostUsername} left conference room: ${roomName}`);
+        
+        // Broadcast to all clients that the host left and they should disconnect
+        io.emit('hostLeftConference', {
+            hostUsername,
+            roomName,
+            message: `${hostUsername} has ended the conference. You will be disconnected.`
+        });
+        
+        // Also remove from streaming state
+        StreamingState.removeStreamer(hostUsername);
+        io.emit('streamingUsersUpdate', {
+            streamingUsers: StreamingState.getAllStreamers()
+        });
+    });
+
+    // Send current streaming users when user connects
+    socket.on('getStreamingUsers', () => {
+        socket.emit('streamingUsersUpdate', {
+            streamingUsers: StreamingState.getAllStreamers()
+        });
     });
 });
 

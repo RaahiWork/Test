@@ -189,7 +189,8 @@ class PrivateMessaging {
         const privateMessageInput = document.getElementById('private-message-input');
 
         if (privateEmojiBtn && privateMessageInput) {
-            privateEmojiBtn.addEventListener('click', (e) => {                if (window.openEmojiPickerFor) {
+            privateEmojiBtn.addEventListener('click', (e) => {
+                if (window.openEmojiPickerFor) {
                     window.openEmojiPickerFor(e, privateMessageInput, privateEmojiBtn);
                 } else {
                     //
@@ -205,113 +206,29 @@ class PrivateMessaging {
                     this.closePrivateMessage();
                 }
             });
-        }
-
-        // Private voice message
-        const privateVoiceBtn = document.getElementById('private-voice-record-btn');
-        const privateVoiceFile = document.getElementById('private-voice-file');
-        const privateVoiceActionContainer = document.getElementById('private-voice-action-container');
-        const privateVoiceAudioPreview = document.getElementById('private-voice-audio-preview');
-        const privateVoiceSendBtn = document.getElementById('private-voice-send-btn');
-        const privateVoiceCancelBtn = document.getElementById('private-voice-cancel-btn');
-        const privateVoiceDownloadBtn = document.getElementById('private-voice-download-btn');
-        let privateRecordedVoiceData = null;
-        let mediaRecorder, audioChunks = [];
-
-        if (privateVoiceBtn && privateVoiceFile && privateVoiceActionContainer && privateVoiceAudioPreview && privateVoiceSendBtn && privateVoiceCancelBtn && privateVoiceDownloadBtn) {
-            privateVoiceBtn.addEventListener('click', async () => {
-                if (mediaRecorder && mediaRecorder.state === 'recording') {                    mediaRecorder.stop();
-                    privateVoiceBtn.textContent = '🎤';
-                    return;
-                }
-                
-                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                    //
-                    return;
-                }
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRecorder = new MediaRecorder(stream);
-                    audioChunks = [];
-                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-                    mediaRecorder.onstop = () => {
-                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
-                            privateRecordedVoiceData = event.target.result;
-                            privateVoiceAudioPreview.src = privateRecordedVoiceData;
-                            privateVoiceActionContainer.style.display = 'flex';
-                        };
-                        reader.readAsDataURL(audioBlob);
-                    };
-                    mediaRecorder.start();
-                    privateVoiceBtn.textContent = '⏹️';                } catch (err) {
-                    //
-                }
-            });
-
-            privateVoiceSendBtn.addEventListener('click', () => {
-                if (privateRecordedVoiceData && this.currentPrivateChat) {
-                    this.sendPrivateMessage(this.currentPrivateChat, null, null, privateRecordedVoiceData);
-                }
-                privateVoiceActionContainer.style.display = 'none';
-                privateVoiceAudioPreview.src = '';
-                privateRecordedVoiceData = null;
-            });
-
-            privateVoiceCancelBtn.addEventListener('click', () => {
-                privateVoiceActionContainer.style.display = 'none';
-                privateVoiceAudioPreview.src = '';
-                privateRecordedVoiceData = null;
-            });
-
-            privateVoiceFile.addEventListener('change', function() {
-                if (this.files && this.files[0]) {
-                    const file = this.files[0];                    if (!file.type.match('audio.*')) {
-                        //
-                        this.value = '';
-                        return;
-                    }
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        privateRecordedVoiceData = event.target.result;
-                        privateVoiceAudioPreview.src = privateRecordedVoiceData;
-                        privateVoiceActionContainer.style.display = 'flex';
-                    };
-                    reader.readAsDataURL(file);
-                    this.value = '';
-                }
-            });
-
-            privateVoiceDownloadBtn.addEventListener('click', function() {
-                if (!privateRecordedVoiceData) return;
-                const arr = privateRecordedVoiceData.split(',');
-                const mime = arr[0].match(/:(.*?);/)[1];
-                const bstr = atob(arr[1]);
-                let n = bstr.length;
-                const u8arr = new Uint8Array(n);
-                while (n--) u8arr[n] = bstr.charCodeAt(n);
-                let blob = new Blob([u8arr], { type: mime });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = url;
-                a.download = 'voice-message.mp3';
-                document.body.appendChild(a);
-                a.click();
-                setTimeout(() => {
-                    URL.revokeObjectURL(url);
-                    a.remove();
-                }, 100);
-            });
-        }
-
-        // Voice call button in private message modal
+        }        // Voice call button in private message modal
         const voiceCallBtn = document.getElementById('private-voice-call-btn');
         if (voiceCallBtn) {
             voiceCallBtn.addEventListener('click', () => {
                 if (this.currentPrivateChat) {
                     this.startVoiceCall(this.currentPrivateChat);
+                }
+            });
+        }
+
+        // Add click handler for private message header avatar to open profile
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target.classList.contains('private-message-header-avatar')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    if (this.currentPrivateChat && window.showUserProfile) {
+                        // Assume user is online since they're in a private chat
+                        const isOnline = true;
+                        const avatarSrc = e.target.src;
+                        window.showUserProfile(this.currentPrivateChat, isOnline, avatarSrc);
+                    }
                 }
             });
         }
@@ -355,7 +272,6 @@ class PrivateMessaging {
                                 toUser: msg.toUser,
                                 text: msg.text,
                                 image: msg.image,
-                                voice: msg.voice,
                                 time: msg.time,
                                 type: msg.fromUser === nameInput?.value ? 'sent' : 'received'
                             }))
@@ -442,9 +358,8 @@ class PrivateMessaging {
             if (this.displayNameMap && this.displayNameMap[username]) {
                 displayName = this.displayNameMap[username];
             }              // Get avatar URL for the user
-            const avatarUrl = window.getAvatarUrl ? window.getAvatarUrl(username) : this.getFallbackAvatarUrl(username);
-              title.innerHTML = `
-                <img src="${avatarUrl}" alt="${displayName}'s Avatar" class="private-message-header-avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; margin-right: 10px; border: 2px solid #e8e6ff; vertical-align: middle;" onerror="this.src='https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg'">
+            const avatarUrl = window.getAvatarUrl ? window.getAvatarUrl(username) : this.getFallbackAvatarUrl(username);            title.innerHTML = `
+                <img src="${avatarUrl}" alt="${displayName}'s Avatar" class="private-message-header-avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; margin-right: 10px; border: 2px solid #e8e6ff; vertical-align: middle; cursor: pointer;" title="View ${displayName}'s Profile" onerror="this.src='https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg'">
                 Private Message - ${displayName}
             `;
         }
@@ -522,74 +437,53 @@ class PrivateMessaging {
         }
     }
     
-    sendPrivateMessage(toUser, text, image = null, voice = null) {
+    sendPrivateMessage(toUser, text, image = null) {
         const nameInput = document.querySelector('#name');
-          if (typeof socket === 'undefined' || !socket || !nameInput?.value) {
-            //
+        if (typeof socket === 'undefined' || !socket || !nameInput?.value) {
             return;
         }
-        
-        //
-        
         socket.emit('privateMessage', {
             fromUser: nameInput.value,
             toUser,
             text,
-            image,
-            voice
+            image
         });
     }
     
     handleIncomingPrivateMessage(data) {
         const nameInput = document.querySelector('#name');
-        const { fromUser, text, image, time, voice } = data;
-        
-        // Add to conversation history
+        const { fromUser, text, image, time } = data;
         this.addMessageToConversation(fromUser, {
             fromUser,
             toUser: nameInput?.value,
             text,
             image,
-            voice,
             time,
             type: 'received'
         });
-        
-        // Show notification if not currently viewing this conversation
         if (this.currentPrivateChat !== fromUser) {
             this.showPrivateMessageNotification(fromUser, text || 'Image');
-            
-            // Increment unread count
             const currentCount = this.unreadCounts.get(fromUser) || 0;
             this.unreadCounts.set(fromUser, currentCount + 1);
             this.updateConversationTabs();
         } else {
-            // Update the current chat display
             this.displayMessage(data, 'received');
         }
-
         this.highlightTabForPrivateMessage(fromUser);
     }
     
     handlePrivateMessageSent(data) {
-        //console.log('Handling sent message:', data);
         const nameInput = document.querySelector('#name');
-        const { toUser, text, image, time, voice } = data;
-        
-        // Add to conversation history
+        const { toUser, text, image, time } = data;
         this.addMessageToConversation(toUser, {
             fromUser: nameInput?.value,
             toUser,
             text,
             image,
-            voice,
             time,
             type: 'sent'
         });
-        
-        // Update current chat display if viewing this conversation
         if (this.currentPrivateChat === toUser) {
-            //console.log('Displaying sent message in current chat');
             this.displayMessage({
                 fromUser: nameInput?.value,
                 toUser,
@@ -598,8 +492,6 @@ class PrivateMessaging {
                 time
             }, 'sent');
         }
-        
-        // Update conversation tabs
         this.updateConversationTabs();
     }
       handlePrivateMessageError(data) {
@@ -713,14 +605,12 @@ class PrivateMessaging {
                 localTime = data.time;
             }
         }        let contentHtml = '';
-        
-        // Only show header for non-chained messages
+          // Only show header for non-chained messages
         if (!isChained) {
             contentHtml = `<div class="post__header ${type === 'received'
                 ? 'post__header--reply'
                 : 'post__header--user'
             }">
-                <img src="${window.getAvatarUrl(type === 'received' ? data.fromUser : fromDisplayName)}" alt="${fromDisplayName}'s Avatar" class="message-avatar" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; margin-right: 8px; border: 2px solid #e8e6ff; vertical-align: middle;" onerror="this.src='https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg'">
                 <span class="post__header--name">${fromDisplayName}</span> 
                 <span class="post__header--time">${localTime}</span> 
             </div>`;
@@ -771,31 +661,6 @@ class PrivateMessaging {
                     addedImg.src = data.image;
                 }
             }, 10);
-        }
-        
-        // Add voice content if available
-        if (data.voice) {
-            const downloadMp3Btn = `
-                <a href="${data.voice}" download="voice-message.mp3" 
-                   style="
-                    display:inline-block;
-                    margin-left:10px;
-                    padding:4px 14px;
-                    background:#2ecc71;
-                    color:#fff;
-                    border-radius:18px;
-                    font-size:0.97em;
-                    font-weight:500;
-                    text-decoration:none;
-                    box-shadow:0 2px 6px rgba(46,204,113,0.12);
-                    transition:background 0.2s;
-                    vertical-align:middle;
-                "
-                onmouseover="this.style.background='#27ae60'"
-                onmouseout="this.style.background='#2ecc71'"
-                title="Download voice message as MP3"
-                >⬇️ Download as MP3</a>`;
-            contentHtml += `<div class="post__voice"><audio controls src="${data.voice}"></audio>${downloadMp3Btn}</div>`;
         }
         
         // Add text content if available

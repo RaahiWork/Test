@@ -50,12 +50,15 @@ jobs:
             fi
 
             git fetch origin
-            git reset --hard origin/production
-
+            git reset --hard origin/production            
             echo "MONGODB_URI=${{ secrets.MONGODB_URI }}" > .env
             echo "EC2_ENV=true" >> .env
-            echo "PORT=${{ secrets.PORT }}" >> .env
-            echo "AWS_S3_BUCKET=${{ secrets.AWS_S3_BUCKET }}" >> .env            
+            echo "PORT=${{ secrets.PORT }}" >> .env            
+            echo "AWS_S3_BUCKET=${{ secrets.AWS_S3_BUCKET }}" >> .env
+            echo "LIVEKIT_API_KEY=${{ secrets.LIVEKIT_API_KEY }}" >> .env
+            echo "LIVEKIT_SECRET_KEY=${{ secrets.LIVEKIT_SECRET_KEY }}" >> .env
+            echo "LIVEKIT_WS_URL=${{ secrets.LIVEKIT_WS_URL }}" >> .env
+            echo "EnableStream=${{ secrets.EnableStream }}" >> .env
             npm install
             rm -rf dist build .next .cache tmp
             

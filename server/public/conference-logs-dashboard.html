@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conference Room Controls Logs Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #6c63ff 0%, #a084ee 100%);
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 20px rgba(108, 99, 255, 0.3);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .dashboard {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .control-group label {
+            font-weight: 600;
+            color: #a084ee;
+        }
+
+        .control-group select,
+        .control-group input {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            padding: 0.5rem;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+        .control-group button {
+            background: linear-gradient(135deg, #6c63ff 0%, #a084ee 100%);
+            border: none;
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            color: #fff;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .control-group button:hover {
+            transform: translateY(-2px);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-card h3 {
+            color: #a084ee;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #6c63ff;
+        }
+
+        .logs-container {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
+
+        .logs-header {
+            background: linear-gradient(135deg, rgba(108, 99, 255, 0.3) 0%, rgba(160, 132, 238, 0.3) 100%);
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logs-header h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .logs-content {
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .log-entry {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .log-entry:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .log-entry.level-INFO {
+            border-left-color: #6c63ff;
+        }
+
+        .log-entry.level-WARN {
+            border-left-color: #ffa500;
+        }
+
+        .log-entry.level-ERROR {
+            border-left-color: #ff6b6b;
+        }
+
+        .log-entry.level-DEBUG {
+            border-left-color: #888;
+        }
+
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+
+        .log-level {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .log-level.INFO {
+            background: rgba(108, 99, 255, 0.2);
+            color: #6c63ff;
+        }
+
+        .log-level.WARN {
+            background: rgba(255, 165, 0, 0.2);
+            color: #ffa500;
+        }
+
+        .log-level.ERROR {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+        }
+
+        .log-level.DEBUG {
+            background: rgba(136, 136, 136, 0.2);
+            color: #888;
+        }
+
+        .log-category {
+            background: rgba(160, 132, 238, 0.2);
+            color: #a084ee;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .log-timestamp {
+            color: #888;
+            font-size: 0.8rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        .log-message {
+            font-size: 0.95rem;
+            margin: 0.5rem 0;
+            font-weight: 500;
+        }
+
+        .log-data {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            padding: 0.75rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            white-space: pre-wrap;
+            color: #ccc;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .no-logs {
+            text-align: center;
+            padding: 3rem;
+            color: #888;
+            font-size: 1.1rem;
+        }
+
+        .export-controls {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .scrollbar-thin {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(160, 132, 238, 0.5) rgba(255, 255, 255, 0.1);
+        }
+
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: rgba(160, 132, 238, 0.5);
+            border-radius: 3px;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+            background: rgba(160, 132, 238, 0.8);
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                padding: 1rem;
+            }
+            
+            .header {
+                padding: 1rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 Conference Room Controls Dashboard</h1>
+        <p>Real-time monitoring and logging for conference room activities</p>
+    </div>
+
+    <div class="dashboard">
+        <!-- Control Panel -->
+        <div class="controls">
+            <div class="control-group">
+                <label>Filter Level:</label>
+                <select id="logLevelFilter">
+                    <option value="">All Levels</option>
+                    <option value="ERROR">Error</option>
+                    <option value="WARN">Warning</option>
+                    <option value="INFO">Info</option>
+                    <option value="DEBUG">Debug</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label>Filter Category:</label>
+                <select id="categoryFilter">
+                    <option value="">All Categories</option>
+                    <option value="CONNECTION">Connection</option>
+                    <option value="MEDIA">Media</option>
+                    <option value="PARTICIPANT">Participant</option>
+                    <option value="CONTROL">Control</option>
+                    <option value="PERFORMANCE">Performance</option>
+                    <option value="SYSTEM">System</option>
+                    <option value="ERROR">Error</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label>Max Logs:</label>
+                <input type="number" id="maxLogs" value="100" min="10" max="1000" step="10">
+            </div>
+            
+            <div class="control-group">
+                <button onclick="refreshLogs()">🔄 Refresh</button>
+                <button onclick="clearLogs()">🗑️ Clear</button>
+            </div>
+            
+            <div class="control-group export-controls">
+                <button onclick="exportLogs('json')">📁 Export JSON</button>
+                <button onclick="exportLogs('csv')">📊 Export CSV</button>
+                <button onclick="exportLogs('text')">📄 Export Text</button>
+            </div>
+        </div>
+
+        <!-- Statistics Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Logs</h3>
+                <div class="value" id="totalLogs">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Errors</h3>
+                <div class="value" id="errorCount" style="color: #ff6b6b;">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Media Events</h3>
+                <div class="value" id="mediaEvents" style="color: #00d4aa;">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Participants</h3>
+                <div class="value" id="participantEvents" style="color: #ffa500;">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Connection Events</h3>
+                <div class="value" id="connectionEvents" style="color: #6c63ff;">0</div>
+            </div>
+        </div>
+
+        <!-- Logs Container -->
+        <div class="logs-container">
+            <div class="logs-header">
+                <h2>📋 Live Logs</h2>
+            </div>
+            <div class="logs-content scrollbar-thin" id="logsContent">
+                <div class="no-logs">
+                    <p>No logs available. Logs will appear here when conference room activities occur.</p>
+                    <p style="margin-top: 1rem; font-size: 0.9rem;">Make sure the Conference Logger is loaded on the main page.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let logUpdateInterval;
+        let lastLogCount = 0;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            startLogMonitoring();
+            setupEventListeners();
+            refreshLogs();
+        });
+
+        function startLogMonitoring() {
+            // Check for logs every 2 seconds
+            logUpdateInterval = setInterval(() => {
+                if (window.opener && window.opener.ConferenceLogger) {
+                    const logger = window.opener.ConferenceLogger;
+                    const currentLogCount = logger.logs.length;
+                    
+                    // Only refresh if there are new logs
+                    if (currentLogCount !== lastLogCount) {
+                        lastLogCount = currentLogCount;
+                        refreshLogs();
+                    }
+                }
+            }, 2000);
+        }
+
+        function setupEventListeners() {
+            document.getElementById('logLevelFilter').addEventListener('change', refreshLogs);
+            document.getElementById('categoryFilter').addEventListener('change', refreshLogs);
+            document.getElementById('maxLogs').addEventListener('change', refreshLogs);
+        }
+
+        function refreshLogs() {
+            try {
+                let logs = [];
+                
+                // Try to get logs from parent window (if opened as popup)
+                if (window.opener && window.opener.ConferenceLogger) {
+                    logs = window.opener.ConferenceLogger.logs;
+                }
+                // Try to get logs from localStorage as fallback
+                else {
+                    const savedLogs = localStorage.getItem('conference_logs');
+                    if (savedLogs) {
+                        logs = JSON.parse(savedLogs);
+                    }
+                }
+
+                displayLogs(logs);
+                updateStatistics(logs);
+            } catch (error) {
+                console.error('Error refreshing logs:', error);
+                document.getElementById('logsContent').innerHTML = `
+                    <div class="no-logs">
+                        <p>❌ Error loading logs: ${error.message}</p>
+                        <p style="margin-top: 1rem; font-size: 0.9rem;">Please ensure the Conference Logger is properly loaded.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function displayLogs(logs) {
+            const container = document.getElementById('logsContent');
+            const levelFilter = document.getElementById('logLevelFilter').value;
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const maxLogs = parseInt(document.getElementById('maxLogs').value);
+
+            // Filter logs
+            let filteredLogs = logs.filter(log => {
+                const levelMatch = !levelFilter || log.level === levelFilter;
+                const categoryMatch = !categoryFilter || log.category === categoryFilter;
+                return levelMatch && categoryMatch;
+            });
+
+            // Sort by timestamp (newest first) and limit
+            filteredLogs = filteredLogs
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                .slice(0, maxLogs);
+
+            if (filteredLogs.length === 0) {
+                container.innerHTML = `
+                    <div class="no-logs">
+                        <p>No logs match the current filters.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = filteredLogs.map(log => {
+                const timestamp = new Date(log.timestamp);
+                const timeStr = timestamp.toLocaleTimeString();
+                const dataStr = JSON.stringify(log.data, null, 2);
+                
+                return `
+                    <div class="log-entry level-${log.level}">
+                        <div class="log-header">
+                            <div>
+                                <span class="log-level ${log.level}">${log.level}</span>
+                                <span class="log-category">${log.category}</span>
+                            </div>
+                            <span class="log-timestamp">${timeStr}</span>
+                        </div>
+                        <div class="log-message">${escapeHtml(log.message)}</div>
+                        ${Object.keys(log.data).length > 0 ? `<div class="log-data">${escapeHtml(dataStr)}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = html;
+        }
+
+        function updateStatistics(logs) {
+            document.getElementById('totalLogs').textContent = logs.length;
+            document.getElementById('errorCount').textContent = logs.filter(log => log.level === 'ERROR').length;
+            document.getElementById('mediaEvents').textContent = logs.filter(log => log.category === 'MEDIA').length;
+            document.getElementById('participantEvents').textContent = logs.filter(log => log.category === 'PARTICIPANT').length;
+            document.getElementById('connectionEvents').textContent = logs.filter(log => log.category === 'CONNECTION').length;
+        }
+
+        function clearLogs() {
+            if (confirm('Are you sure you want to clear all logs?')) {
+                try {
+                    if (window.opener && window.opener.ConferenceLogger) {
+                        window.opener.ConferenceLogger.clearLogs();
+                    }
+                    localStorage.removeItem('conference_logs');
+                    refreshLogs();
+                } catch (error) {
+                    alert('Error clearing logs: ' + error.message);
+                }
+            }
+        }
+
+        function exportLogs(format) {
+            try {
+                let logs = [];
+                
+                if (window.opener && window.opener.ConferenceLogger) {
+                    logs = window.opener.ConferenceLogger.logs;
+                } else {
+                    const savedLogs = localStorage.getItem('conference_logs');
+                    if (savedLogs) {
+                        logs = JSON.parse(savedLogs);
+                    }
+                }
+
+                if (logs.length === 0) {
+                    alert('No logs to export');
+                    return;
+                }
+
+                let content;
+                let filename;
+                let mimeType;
+
+                switch (format.toLowerCase()) {
+                    case 'json':
+                        content = JSON.stringify(logs, null, 2);
+                        filename = `conference-logs-${new Date().toISOString().split('T')[0]}.json`;
+                        mimeType = 'application/json';
+                        break;
+                    case 'csv':
+                        content = logsToCSV(logs);
+                        filename = `conference-logs-${new Date().toISOString().split('T')[0]}.csv`;
+                        mimeType = 'text/csv';
+                        break;
+                    case 'text':
+                        content = logsToText(logs);
+                        filename = `conference-logs-${new Date().toISOString().split('T')[0]}.txt`;
+                        mimeType = 'text/plain';
+                        break;
+                    default:
+                        alert('Unknown export format');
+                        return;
+                }
+
+                downloadFile(content, filename, mimeType);
+            } catch (error) {
+                alert('Error exporting logs: ' + error.message);
+            }
+        }
+
+        function logsToCSV(logs) {
+            const headers = ['Timestamp', 'Level', 'Category', 'Message', 'Data'];
+            const csvLines = [headers.join(',')];
+            
+            logs.forEach(log => {
+                const row = [
+                    log.timestamp,
+                    log.level,
+                    log.category,
+                    `"${log.message.replace(/"/g, '""')}"`,
+                    `"${JSON.stringify(log.data).replace(/"/g, '""')}"`
+                ];
+                csvLines.push(row.join(','));
+            });
+            
+            return csvLines.join('\n');
+        }
+
+        function logsToText(logs) {
+            return logs.map(log => {
+                return `[${log.timestamp}] [${log.level}] [${log.category}] ${log.message}\n` +
+                       `Data: ${JSON.stringify(log.data, null, 2)}\n` +
+                       '---\n';
+            }).join('');
+        }
+
+        function downloadFile(content, filename, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Cleanup on window close
+        window.addEventListener('beforeunload', function() {
+            if (logUpdateInterval) {
+                clearInterval(logUpdateInterval);
+            }
+        });
+
+        // Auto-refresh every 30 seconds
+        setInterval(refreshLogs, 30000);
+    </script>
+</body>
+</html>

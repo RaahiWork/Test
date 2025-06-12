@@ -5,10 +5,10 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vyb Chat</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Vyb Chat</title>    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="login.css">
     <link rel="stylesheet" href="custom.css">
+    <link rel="stylesheet" href="conference-button-fixes.css">
     <style>
         /* ...existing code... */
         .private-conversation-preview {
@@ -29,13 +29,43 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-        }
-        /* ...existing code... */
-    </style>
-</head>
-
-<body>
-
+        }        /* ...existing code... */    </style>
+    <!-- Conference Logger Script - Load first -->
+    <script src="conference-logger.js"></script>
+    <!-- Conference Debug Helper - Load for troubleshooting -->
+    <script src="conference-debug.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/livekit-client@1.9.2/dist/livekit-client.umd.min.js"></script>
+  </head>
+  <body>
+    <script>
+      if (!window.LivekitClient) {
+        console.error('⚠️ LivekitClient not found – check the <script> load!');
+      } else {
+        // Make LiveKit available globally for private messaging
+        window.LiveKit = window.LivekitClient;
+        
+        // Add microphone permission checker
+        window.checkMicrophonePermissions = async function() {
+            try {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    console.error('❌ getUserMedia not supported');
+                    return false;
+                }
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                
+                // Stop the stream immediately after testing
+                stream.getTracks().forEach(track => track.stop());
+                return true;
+            } catch (err) {
+                console.error('❌ Microphone access failed:', err.name, err.message);
+                return false;
+            }
+        };
+        
+        // Test microphone on page load (optional)
+        // checkMicrophonePermissions();
+      }
+    </script>
     <main>
         <aside class="side-pane left-pane">
             <h3>Chat Rooms</h3>
@@ -147,7 +177,48 @@
                     <span class="info-icon">ℹ️</span>
                 </button>
             </div>
+            <div class="stream-btn-global-container" style="margin-bottom:0.7em;">
+                <button id="stream-btn-global" class="stream-btn-fancy-global" title="Start Stream/Conference">
+                    <span class="stream-btn-fancy-glow">🔴</span>
+                    <span class="stream-btn-fancy-label">Start Stream</span>
+                    <svg width="24" height="24" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-left:0.2em;vertical-align:middle;"><circle cx="10" cy="10" r="8" stroke="#6c63ff" stroke-width="2" fill="#ffe066"></circle><path d="M7 8V12L12 10L7 8Z" fill="#6c63ff"></path></svg>
+                </button>
+            </div>
             <section class="user-list"></section>
+            <script>
+            // Filter and render only online users in the user list
+            (function() {
+                // This assumes you have a global array or object of users, e.g., window.userList or similar
+                // If not, adapt to your actual user list source
+                function renderOnlineUsers(users) {
+                    const userListSection = document.querySelector('.user-list');
+                    if (!userListSection) return;
+                    userListSection.innerHTML = '';
+                    if (!Array.isArray(users)) return;
+                    users.filter(u => u.isOnline).forEach(user => {
+                        // Use your existing createUserItem or similar logic
+                        let li;
+                        if (window.createUserItem) {
+                            li = window.createUserItem(user.username, true);
+                        } else {
+                            li = document.createElement('li');
+                            li.textContent = user.username;
+                        }
+                        userListSection.appendChild(li);
+                    });
+                }
+                // Listen for user list updates (adapt event name as needed)
+                document.addEventListener('user-list-updated', function(e) {
+                    if (e.detail && Array.isArray(e.detail.users)) {
+                        renderOnlineUsers(e.detail.users);
+                    }
+                });
+                // Optionally, trigger initial render if user list is available
+                if (window.userList && Array.isArray(window.userList)) {
+                    renderOnlineUsers(window.userList);
+                }
+            })();
+            </script>
             
             <!-- Add private messaging section -->
             <div class="private-messaging-section">
@@ -256,11 +327,9 @@
                     <button id="close-private-message" class="close-btn">×</button>
                 </div>
             </div>
-            
             <div class="private-message-chat" id="private-message-chat">
                 <!-- Private messages will appear here -->
             </div>
-            
             <form class="private-message-form" id="private-message-form">
                 <div class="private-message-input-container">
                     <input type="text" id="private-message-input" placeholder="Type a private message..." autocomplete="off">
@@ -305,7 +374,6 @@
             </div>
         </div>
     </div>
-
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="app.js"></script>
     <script src="emoji-handler.js"></script>
@@ -315,6 +383,7 @@
     <script src="private-messaging.js"></script>
     <script src="radio-player.js"></script>
     <script src="voice-message.js"></script>
+    <script src="livekit-client.js"></script>
     <script>
         // Remove any JS that does: msgInput.focus(); after sending a message
         // Add this utility to conditionally set autofocus (optional, for clarity)
@@ -460,10 +529,7 @@
             const modal = document.getElementById('user-profile-modal');
             const closeBtn = document.getElementById('close-user-profile');
             const avatarImg = document.getElementById('user-profile-avatar-img');
-            const usernameEl = document.getElementById('user-profile-username');
             const statusEl = document.getElementById('user-profile-status');
-            const messageBtn = document.getElementById('user-profile-message-btn');
-            const callBtn = document.getElementById('user-profile-call-btn');
             const changeAvatarBtn = document.getElementById('change-avatar-btn');
             const avatarFileInput = document.getElementById('avatar-file-input');
             const avatarUploadStatus = document.getElementById('avatar-upload-status');
@@ -478,10 +544,8 @@
                 currentProfileUsername = username;
                 
                 // Set username and status
-                usernameEl.textContent = username;
                 statusEl.textContent = isOnline ? 'Online' : 'Offline';
                 statusEl.style.color = isOnline ? '#4CAF50' : '#f44336';                // Show/hide change avatar button based on whether this is the current user
-                const currentUser = localStorage.getItem('username');
                 //
                 //
                 //
@@ -493,12 +557,7 @@
                     avatarImg.src = avatarSrc;
                 } else {
                     // Use the main app's getAvatarUrl function for consistent avatar loading
-                    if (window.getAvatarUrl) {
-                        avatarImg.src = window.getAvatarUrl(username);
-                    } else {
-                        // Fallback to default avatar if getAvatarUrl is not available
-                        avatarImg.src = 'https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg';
-                    }
+                    avatarImg.src = 'https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg';
                 }
                 modal.style.display = 'flex';
             }
@@ -704,6 +763,214 @@
                 return li;
             };
         })();
+        // --- LiveKit Private Voice Call Logic ---
+        (function() {
+            const callBtn = document.getElementById('private-voice-call-btn');
+            const callModal = document.getElementById('private-voice-call-modal');
+            let livekitRoom = null;
+            let localTrack = null;
+            let isMuted = false;
+            // let currentCallUser = null;
+            let remoteAudioElements = [];
+
+            // Helper: Generate a unique room name for 1:1 call (sorted usernames)
+            function getPrivateCallRoomName(userA, userB) {
+                return 'vybchat-voicecall-' + [userA, userB].sort().join('-');
+            }
+
+            // Helper: Get current username
+            function getMyUsername() {
+                return localStorage.getItem('username');
+            }
+
+            // Helper: Get LiveKit server URL and token (replace with your backend logic)
+            async function getLiveKitToken(roomName, username) {
+                const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+                    ? `http://${window.location.hostname}:3500`
+                    : window.location.origin;
+                const res = await fetch(`${API_BASE_URL}/api/livekit-token?room=${encodeURIComponent(roomName)}&username=${encodeURIComponent(username)}`);
+                if (!res.ok) throw new Error('Failed to get LiveKit token');
+                return await res.json(); // { url, token }
+            }
+
+            // Show call modal UI
+            function showCallModal({ onHangup, targetUser }) {
+                callModal.innerHTML = `
+                    <div style="background:#222;padding:2em 2em 1.5em 2em;border-radius:16px;max-width:350px;width:90vw;text-align:center;position:relative;">
+                        <h2 style="color:#a084ee;margin-bottom:1em;">Voice Call</h2>
+                        <div id="call-status" style="color:#fff;margin-bottom:1em;">Connecting...</div>
+                        <button id="mute-btn" style="font-size:1.5em;margin-right:1em;">🔇</button>
+                        <button id="hangup-btn" style="font-size:1.5em;color:#f44336;">Hang Up</button>
+                        <audio id="remote-audio" autoplay style="display:none;"></audio>
+                    </div>
+                `;
+                callModal.style.display = 'flex';
+                document.getElementById('hangup-btn').onclick = () => {
+                    if (onHangup) onHangup();
+                };
+                document.getElementById('mute-btn').onclick = () => {
+                    isMuted = !isMuted;
+                    if (localTrack) localTrack.muted = isMuted;
+                    document.getElementById('mute-btn').textContent = isMuted ? '🔈' : '🔇';
+                };
+            }
+
+            // Hide call modal
+            function hideCallModal() {
+                callModal.style.display = 'none';
+                callModal.innerHTML = '';
+                // Remove remote audio elements
+                remoteAudioElements.forEach(el => el.remove());
+                remoteAudioElements = [];
+            }
+
+            // Start or join a LiveKit call
+            async function startVoiceCall(targetUser) {
+                const myName = getMyUsername();
+                if (!myName || !targetUser) return;
+                const roomName = getPrivateCallRoomName(myName, targetUser);
+                showCallModal({ onHangup: endVoiceCall, targetUser });
+                document.getElementById('call-status').textContent = 'Connecting...';
+                try {
+                    const { url, token } = await getLiveKitToken(roomName, myName);
+                    livekitRoom = new window.LiveKit.Room();
+                    // Publish local audio
+                    localTrack = await window.LiveKit.createLocalAudioTrack();
+                    await livekitRoom.connect(url, token);
+                    await livekitRoom.localParticipant.publishTrack(localTrack);
+                    document.getElementById('call-status').textContent = 'In call with ' + targetUser;
+                    // Play remote audio
+                    livekitRoom.on('trackSubscribed', (track, publication, participant) => {
+                        if (track.kind === 'audio') {
+                            const audioEl = track.attach();
+                            audioEl.autoplay = true;
+                            audioEl.style.display = 'none';
+                            callModal.appendChild(audioEl);
+                            remoteAudioElements.push(audioEl);
+                        }
+                    });
+                    // Remove remote audio on unsubscribe
+                    livekitRoom.on('trackUnsubscribed', (track, publication, participant) => {
+                        if (track.kind === 'audio') {
+                            const els = remoteAudioElements.filter(el => el.srcObject === track.mediaStreamTrack);
+                            els.forEach(el => el.remove());
+                            remoteAudioElements = remoteAudioElements.filter(el => el.srcObject !== track.mediaStreamTrack);
+                        }
+                    });
+                    // Handle remote hangup
+                    livekitRoom.on('disconnected', () => {
+                        endVoiceCall();
+                    });
+                } catch (err) {
+                    document.getElementById('call-status').textContent = 'Call failed: ' + err.message;
+                    setTimeout(endVoiceCall, 2000);
+                }
+            }
+
+            // End call and cleanup
+            function endVoiceCall() {
+                if (localTrack) {
+                    localTrack.stop();
+                    localTrack = null;
+                }
+                if (livekitRoom) {
+                    livekitRoom.disconnect();
+                    livekitRoom = null;
+                }
+                hideCallModal();
+            }
+
+            // Listen for call button click
+            if (callBtn) {
+                callBtn.onclick = async function() {
+                    // Get the username of the private message target
+                    const title = document.getElementById('private-message-title');
+                    let targetUser = null;
+                    if (title && title.textContent) {
+                        // Try to extract username from title (e.g., "Private Message: username")
+                        const match = title.textContent.match(/Private Message\s*:?\s*(.+)/i);
+                        targetUser = match ? match[1].trim() : null;
+                    }
+                    if (!targetUser) {
+                        // Fallback: try to get from modal dataset
+                        const modal = document.getElementById('private-message-modal');
+                        if (modal && modal.dataset && modal.dataset.username) {
+                            targetUser = modal.dataset.username;
+                        }
+                    }
+                    if (!targetUser) {
+                        alert('Could not determine user to call.');
+                        return;
+                    }
+                    startVoiceCall(targetUser);
+                };
+            }
+
+            // Allow closing modal by clicking outside
+            callModal.onclick = function(e) {
+                if (e.target === callModal) {
+                    endVoiceCall();
+                }
+            };
+
+            // Expose for debugging
+            window._livekitVoiceCall = { startVoiceCall, endVoiceCall };
+        })();
+    </script>    <script>      // Attach click handler to open LiveKit conference popup
+      // Also auto-join conference for the current user
+      (function() {
+        // Function to check if stream feature is enabled
+        async function checkStreamFeature() {
+          try {
+            const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+              ? `http://${window.location.hostname}:3500`
+              : window.location.origin;
+              
+            const response = await fetch(`${API_BASE_URL}/api/config`);
+            const config = await response.json();
+            return config.enableStream === true;
+          } catch (error) {
+            console.error('Failed to check stream feature:', error);
+            return false; // Default to disabled if can't check
+          }
+        }
+        
+        document.addEventListener('DOMContentLoaded', async function() {
+          var streamBtn = document.getElementById('stream-btn-global');
+          
+          if (streamBtn) {
+            // Check if stream feature is enabled
+            const isStreamEnabled = await checkStreamFeature();
+            
+            if (!isStreamEnabled) {
+              // Disable the stream button and update its appearance
+              streamBtn.disabled = true;
+              streamBtn.style.opacity = '0.5';
+              streamBtn.style.cursor = 'not-allowed';
+              streamBtn.title = 'Stream feature is currently disabled';
+              streamBtn.innerHTML = '<span class="stream-btn-fancy-glow">🚫</span> <span class="stream-btn-fancy-label">Stream Disabled</span>';
+              
+              // Add click handler to show disabled message
+              streamBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                alert('The streaming feature is currently disabled. Please contact the administrator.');
+              });
+            } else if (typeof window.openConferencePopup === 'function') {
+              // Stream is enabled, add normal functionality
+              streamBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                window.openConferencePopup({
+                  autoJoin: true,
+                  defaultMicMuted: true,
+                  defaultVideoMuted: true,
+                  isHostStarting: true  // Flag to indicate this is a fresh host start
+                });
+              });
+            }
+          }
+          // Removed autoJoinConference();
+        });
+      })();
     </script>
 
 </body>
