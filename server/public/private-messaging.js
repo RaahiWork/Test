@@ -591,14 +591,12 @@ class PrivateMessaging {
                 localTime = data.time;
             }
         }        let contentHtml = '';
-        
-        // Only show header for non-chained messages
+          // Only show header for non-chained messages
         if (!isChained) {
             contentHtml = `<div class="post__header ${type === 'received'
                 ? 'post__header--reply'
                 : 'post__header--user'
             }">
-                <img src="${window.getAvatarUrl(type === 'received' ? data.fromUser : fromDisplayName)}" alt="${fromDisplayName}'s Avatar" class="message-avatar" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; margin-right: 8px; border: 2px solid #e8e6ff; vertical-align: middle;" onerror="this.src='https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg'">
                 <span class="post__header--name">${fromDisplayName}</span> 
                 <span class="post__header--time">${localTime}</span> 
             </div>`;

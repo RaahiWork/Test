@@ -552,11 +552,7 @@ function renderMessage(data) {
                 localTime = data.time;
             }
         }
-        
-        // Get avatar URL for the message sender
-        const avatarUrl = getAvatarUrl(name);
-          let contentHtml = `<div class="post__header ${name === nameInput.value ? 'post__header--user' : 'post__header--reply'}" ${name !== nameInput.value ? 'tabindex="0" role="button" aria-label="Reply to this user"' : ''}>
-            <img src="${avatarUrl}" alt="${name}'s Avatar" class="message-avatar" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; margin-right: 8px; border: 2px solid #e8e6ff; vertical-align: middle;" onerror="this.src='https://vybchat-media.s3.ap-south-1.amazonaws.com/avatars/default/default.jpg'">
+            let contentHtml = `<div class="post__header ${name === nameInput.value ? 'post__header--user' : 'post__header--reply'}" ${name !== nameInput.value ? 'tabindex="0" role="button" aria-label="Reply to this user"' : ''}>
             <span class="post__header--name${name === nameInput.value ? ' current-user' : ''}">
                 ${name} <span class="verified-icon" title="Registered User">✔️</span>
             </span>
