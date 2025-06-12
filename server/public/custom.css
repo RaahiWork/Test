@@ -905,9 +905,12 @@
   font-weight: 500;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   transition: all 0.2s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  vertical-align: middle;
 }
 
 .conference-share-btn {
@@ -1104,6 +1107,9 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   position: relative;
   overflow: hidden;
+  text-align: center;
+  vertical-align: middle;
+  line-height: 1;
 }
 
 .conference-control-btn::before {
@@ -1263,6 +1269,12 @@
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+  vertical-align: middle;
 }
 
 .conference-join-btn {
@@ -1416,8 +1428,12 @@
   font-size: 0.9rem;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.3rem;
   transition: background 0.2s;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
 }
 
 .conference-share-whatsapp:hover {
@@ -1434,8 +1450,12 @@
   font-size: 0.9rem;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.3rem;
   transition: background 0.2s;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
 }
 
 .conference-share-email:hover {
@@ -1452,6 +1472,13 @@
   font-size: 0.9rem;
   margin-top: 1em;
   transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
 }
 
 .conference-share-close:hover {
@@ -1503,8 +1530,11 @@
   font-size: 0.9rem;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.3rem;
   transition: background 0.2s;
+  text-align: center;
+  vertical-align: middle;
 }
 
 .conference-share-btn:hover {
@@ -1520,6 +1550,12 @@
   cursor: pointer;
   font-size: 0.9rem;
   transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  text-align: center;
+  vertical-align: middle;
 }
 
 .conference-close-btn:hover {
@@ -1606,6 +1642,12 @@
   font-size: 1.1em;
   cursor: pointer;
   transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  text-align: center;
+  vertical-align: middle;
 }
 
 .conference-join-btn:hover {
@@ -1622,6 +1664,12 @@
   cursor: pointer;
   margin-top: 0.5em;
   transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  text-align: center;
+  vertical-align: middle;
 }
 
 .conference-cancel-btn:hover {
@@ -1732,70 +1780,6 @@
   margin: 0.5em 0;
 }
 
-.conference-share-info-item {
-  margin-bottom: 0.5em;
-}
-
-.conference-share-buttons {
-  display: flex;
-  gap: 1rem;
-  margin-top: 0.5em;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.conference-share-whatsapp {
-  background: #25D366;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 0.6em 1.2em;
-  cursor: pointer;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  transition: background 0.2s;
-}
-
-.conference-share-whatsapp:hover {
-  background: #1DA851;
-}
-
-.conference-share-email {
-  background: #4285f4;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 0.6em 1.2em;
-  cursor: pointer;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  transition: background 0.2s;
-}
-
-.conference-share-email:hover {
-  background: #3367d6;
-}
-
-.conference-share-close {
-  background: #666;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 0.6em 2em;
-  cursor: pointer;
-  font-size: 0.9rem;
-  margin-top: 1em;
-  transition: background 0.2s;
-}
-
-.conference-share-close:hover {
-  background: #555;
-}
-
 /* Full-screen video overlay styles */
 .conference-fullscreen-overlay {
   position: fixed;
@@ -1882,6 +1866,43 @@
 .conference-control-btn:disabled:hover {
   transform: none;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Ensure proper text and emoji alignment for all conference buttons */
+.conference-share-btn *,
+.conference-close-btn *,
+.conference-join-btn *,
+.conference-cancel-btn *,
+.conference-control-btn *,
+.conference-share-whatsapp *,
+.conference-share-email *,
+.conference-share-close * {
+  vertical-align: middle;
+  line-height: 1;
+}
+
+.conference-share-btn,
+.conference-close-btn,
+.conference-join-btn,
+.conference-cancel-btn,
+.conference-control-btn,
+.conference-share-whatsapp,
+.conference-share-email,
+.conference-share-close {
+  white-space: nowrap;
+}
+
+/* Special handling for emoji and icon alignment in buttons */
+.conference-share-btn:before,
+.conference-close-btn:before,
+.conference-join-btn:before,
+.conference-cancel-btn:before,
+.conference-control-btn:before,
+.conference-share-whatsapp:before,
+.conference-share-email:before,
+.conference-share-close:before {
+  line-height: 1;
+  vertical-align: middle;
 }
 
 /* Conference Focused View Styles */

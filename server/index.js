@@ -167,11 +167,23 @@ app.get('/api/emojis', async (req, res) => {
         const imageFiles = files.filter(file => {
             const extension = path.extname(file).toLowerCase();
             return ['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes(extension);
-        });        
-        res.json(imageFiles);
+        });          res.json(imageFiles);
     } catch (error) {
         //
         res.status(500).json({ error: 'Failed to load emojis', details: error.message });
+    }
+});
+
+// Add endpoint to get feature flags and configuration
+app.get('/api/config', (req, res) => {
+    try {
+        const config = {
+            enableStream: process.env.EnableStream === 'true' || process.env.EnableStream === '1',
+            version: '1.0.0'
+        };
+        res.json(config);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to get configuration' });
     }
 });
 

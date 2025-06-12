@@ -5,10 +5,10 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vyb Chat</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Vyb Chat</title>    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="login.css">
-    <link rel="stylesheet" href="custom.css">    
+    <link rel="stylesheet" href="custom.css">
+    <link rel="stylesheet" href="conference-button-fixes.css">
     <style>
         /* ...existing code... */
         .private-conversation-preview {
@@ -916,22 +916,57 @@
             // Expose for debugging
             window._livekitVoiceCall = { startVoiceCall, endVoiceCall };
         })();
-    </script>
-    <script>      // Attach click handler to open LiveKit conference popup
+    </script>    <script>      // Attach click handler to open LiveKit conference popup
       // Also auto-join conference for the current user
       (function() {
-        document.addEventListener('DOMContentLoaded', function() {
+        // Function to check if stream feature is enabled
+        async function checkStreamFeature() {
+          try {
+            const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+              ? `http://${window.location.hostname}:3500`
+              : window.location.origin;
+              
+            const response = await fetch(`${API_BASE_URL}/api/config`);
+            const config = await response.json();
+            return config.enableStream === true;
+          } catch (error) {
+            console.error('Failed to check stream feature:', error);
+            return false; // Default to disabled if can't check
+          }
+        }
+        
+        document.addEventListener('DOMContentLoaded', async function() {
           var streamBtn = document.getElementById('stream-btn-global');
-          if (streamBtn && typeof window.openConferencePopup === 'function') {
-            streamBtn.addEventListener('click', function(e) {
-              e.preventDefault();
-              window.openConferencePopup({
-                autoJoin: true,
-                defaultMicMuted: true,
-                defaultVideoMuted: true,
-                isHostStarting: true  // Flag to indicate this is a fresh host start
+          
+          if (streamBtn) {
+            // Check if stream feature is enabled
+            const isStreamEnabled = await checkStreamFeature();
+            
+            if (!isStreamEnabled) {
+              // Disable the stream button and update its appearance
+              streamBtn.disabled = true;
+              streamBtn.style.opacity = '0.5';
+              streamBtn.style.cursor = 'not-allowed';
+              streamBtn.title = 'Stream feature is currently disabled';
+              streamBtn.innerHTML = '<span class="stream-btn-fancy-glow">🚫</span> <span class="stream-btn-fancy-label">Stream Disabled</span>';
+              
+              // Add click handler to show disabled message
+              streamBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                alert('The streaming feature is currently disabled. Please contact the administrator.');
               });
-            });
+            } else if (typeof window.openConferencePopup === 'function') {
+              // Stream is enabled, add normal functionality
+              streamBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                window.openConferencePopup({
+                  autoJoin: true,
+                  defaultMicMuted: true,
+                  defaultVideoMuted: true,
+                  isHostStarting: true  // Flag to indicate this is a fresh host start
+                });
+              });
+            }
           }
           // Removed autoJoinConference();
         });

@@ -1,0 +1,80 @@
+/* Conference Button Text Alignment Fixes */
+/* This file contains fixes for text alignment issues in conference buttons */
+
+/* Ensure all conference buttons have proper text and emoji alignment */
+.conference-share-btn,
+.conference-close-btn,
+.conference-join-btn,
+.conference-cancel-btn,
+.conference-control-btn,
+.conference-share-whatsapp,
+.conference-share-email,
+.conference-share-close {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+  white-space: nowrap !important;
+  line-height: 1 !important;
+}
+
+/* Ensure any child elements also have proper alignment */
+.conference-share-btn *,
+.conference-close-btn *,
+.conference-join-btn *,
+.conference-cancel-btn *,
+.conference-control-btn *,
+.conference-share-whatsapp *,
+.conference-share-email *,
+.conference-share-close * {
+  vertical-align: middle !important;
+  line-height: 1 !important;
+}
+
+/* Fix gap between emoji and text for buttons with icons */
+.conference-share-btn {
+  gap: 0.3rem !important;
+}
+
+.conference-close-btn {
+  gap: 0.3rem !important;
+}
+
+.conference-join-btn {
+  gap: 0.3rem !important;
+}
+
+.conference-cancel-btn {
+  gap: 0.3rem !important;
+}
+
+.conference-share-whatsapp {
+  gap: 0.3rem !important;
+}
+
+.conference-share-email {
+  gap: 0.3rem !important;
+}
+
+.conference-share-close {
+  gap: 0.3rem !important;
+}
+
+/* Ensure proper alignment for control buttons (round buttons) */
+.conference-control-btn {
+  line-height: 1 !important;
+}
+
+/* Additional fixes for potential emoji rendering issues */
+.conference-share-btn::before,
+.conference-close-btn::before,
+.conference-join-btn::before,
+.conference-cancel-btn::before,
+.conference-control-btn::before,
+.conference-share-whatsapp::before,
+.conference-share-email::before,
+.conference-share-close::before {
+  line-height: 1 !important;
+  vertical-align: middle !important;
+}
