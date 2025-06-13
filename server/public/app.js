@@ -531,17 +531,16 @@ function renderMessage(data) {
         const firstValue = processedMessages.values().next().value;
         processedMessages.delete(firstValue);
     }
-    activity.textContent = "";
-    const { name, text, time, image, voice } = data;
-    const li = document.createElement('li');
+    activity.textContent = "";    const { name, text, time, image, voice } = data;    const li = document.createElement('li');
     li.className = 'post';
     if (name === nameInput.value) {
         li.className = 'post post--left';
     } else if (name !== 'System') {
         li.className = 'post post--right';
+        // Removed special styling for AI bots
     } else {
         li.className = 'post post--admin';
-    }    if (name !== 'System') {
+    }if (name !== 'System') {
         // Use server timestamp and convert to local time safely
         let localTime = data.time;
         if (data.time) {
@@ -551,8 +550,11 @@ function renderMessage(data) {
             } else {
                 localTime = data.time;
             }
-        }
-            let contentHtml = `<div class="post__header ${name === nameInput.value ? 'post__header--user' : 'post__header--reply'}" ${name !== nameInput.value ? 'tabindex="0" role="button" aria-label="Reply to this user"' : ''}>
+        }        // Removed special AI bot avatar handling 
+        let avatarHtml = '';
+
+        let contentHtml = `<div class="post__header ${name === nameInput.value ? 'post__header--user' : 'post__header--reply'}" ${name !== nameInput.value ? 'tabindex="0" role="button" aria-label="Reply to this user"' : ''}>
+            ${avatarHtml}
             <span class="post__header--name${name === nameInput.value ? ' current-user' : ''}">
                 ${name} <span class="verified-icon" title="Registered User">✔️</span>
             </span>
