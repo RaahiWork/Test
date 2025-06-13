@@ -1,8 +1,7 @@
 // AI Bots for themed chat rooms
 const ADMIN = "System";
 
-class AIBotManager {
-    constructor(io, buildMsg, chatState) {
+class AIBotManager {    constructor(io, buildMsg, chatState) {
         this.io = io;
         this.buildMsg = buildMsg;
         this.chatState = chatState;
@@ -12,7 +11,17 @@ class AIBotManager {
         
         // AI behavior configuration
         this.ONLY_RESPOND_WHEN_MENTIONED = process.env.AI_RESPONSES_ONLY_WHEN_MENTIONED === 'true';
+        this.ALWAYS_CLAIM_HUMAN = true; // Always insist the bot is human
         this.USERNAME_FORMAT = process.env.AI_USERNAME_FORMAT || 'tag'; // 'tag', 'plain', or 'none'
+        
+        // Human-like behavior enhancements
+        this.TYPO_PROBABILITY = 0.15; // Chance of making a small typo
+        this.SLANG_PROBABILITY = 0.3; // Chance of using internet slang
+        this.EMOJI_PROBABILITY = 0.4; // Chance of including emojis
+        
+        // Log important configuration settings
+        console.log(`🤖 AI Response Mode: ${this.ONLY_RESPOND_WHEN_MENTIONED ? 'ONLY when mentioned' : 'All messages'}`);
+        console.log(`🤖 AI Human-like behaviors: ENABLED (typos, variability, delays)`);
         
         // Hugging Face API configuration
         this.HUGGINGFACE_API_URL = "https://router.huggingface.co/novita/v3/openai/chat/completions";
@@ -24,61 +33,61 @@ class AIBotManager {
             "Vibe": {
                 name: "Ananya",
                 personality: "chill, music-loving, relaxed",
-                avatar: "🎵",
+                avatar: "",
                 avatarImage: "/images/ai-avatars/luna.gif"
             },
             "Lounge 404": {
                 name: "Zara",
                 personality: "quirky, philosophical, tech-curious",
-                avatar: "🤖",
+                avatar: "",
                 avatarImage: "/images/ai-avatars/zara.gif"
             },
             "The Hive": {
                 name: "Divya",
                 personality: "energetic, collaborative, idea-driven",
-                avatar: "🐝",
+                avatar: "",
                 avatarImage: "/images/ai-avatars/bella.gif"
             },
             "Code & Coffee": {
                 name: "Priya",
                 personality: "caffeinated, developer-minded, problem-solving",
-                avatar: "☕",
+                avatar: "",
                 avatarImage: "/images/ai-avatars/sophia.gif"
             },
             "Midnight Rant Club": {
                 name: "Nisha",
                 personality: "empathetic, philosophical, late-night thinker",
-                avatar: "🦉",
+                avatar: "",
                 avatarImage: "/images/ai-avatars/nova.gif"
             },
             "MemeStream": {
                 name: "Maya",
                 personality: "humorous, internet-savvy, meme-loving",
-                avatar: "😂",
+                avatar: "",
                 avatarImage: "/images/ai-avatars/mia.gif"
             },
             "The Think Tank": {
                 name: "Ishita",
                 personality: "intellectual, analytical, thought-provoking",
-                avatar: "🧠",
+                avatar: "",
                 avatarImage: "/images/ai-avatars/ivy.gif"
             },
             "AFK Café": {
                 name: "Kavita",
                 personality: "laid-back, friendly, casual conversationalist",
-                avatar: "💤",
+                avatar: "",
                 avatarImage: "/images/ai-avatars/chloe.gif"
             },
             "Spoiler Zone": {
                 name: "Aditi",
                 personality: "dramatic, entertainment-obsessed, spoiler-conscious",
-                avatar: "🎬",
+                avatar: "",
                 avatarImage: "/images/ai-avatars/ava.gif"
             },
             "Echo Base": {
                 name: "Meera",
                 personality: "welcoming, connector, community-focused",
-                avatar: "📢",
+                avatar: "",
                 avatarImage: "/images/ai-avatars/emma.gif"
             }
         };
@@ -108,36 +117,59 @@ class AIBotManager {
         // Removed periodic ambient messages to prevent unwanted AI spam
         console.log("Periodic messages disabled - AI will only respond when mentioned");
     }
-    
-    // Handle user joining a room
+      // Handle user joining a room
     handleUserJoin(room, username) {
         if (!this.bots[room]) return;
         const bot = this.bots[room];
         const now = Date.now();
+        
+        // Initial delay before showing typing indicator (2-5 seconds)
+        const initialDelay = Math.random() * 3000 + 2000;
+        
         // Greet user on join with a welcome message
-        setTimeout(async () => {
-            const greetingPrompt = `Generate a short, friendly greeting for a new user who just joined the chat room. Don't include their name, just a generic welcome. Ask how they are doing.`;
-            let aiGreeting = await this.generateAIResponse(bot, greetingPrompt, username, 'greeting');
+        setTimeout(() => {
+            // Show typing indicator before sending greeting
+            this.io.to(room).emit('userTyping', {
+                username: bot.name,
+                isTyping: true
+            });
             
-            // Remove bot avatar since it will be added automatically
-            if (aiGreeting.startsWith(bot.avatar)) {
-                aiGreeting = aiGreeting.substring(bot.avatar.length).trim();
-            }
+            // Time spent "typing" the greeting (2-4 seconds)
+            const typingTime = Math.random() * 2000 + 2000;
             
-            // Format the greeting based on configuration
-            let greeting;
+            setTimeout(async () => {
+                const greetingPrompt = `Generate a short, friendly greeting for a new user who just joined the chat room. Don't include their name, just a generic welcome. Ask how they are doing.`;
+                let aiGreeting = await this.generateAIResponse(bot, greetingPrompt, username, 'greeting');
+                
+                // Remove bot avatar since it will be added automatically
+                if (aiGreeting.startsWith(bot.avatar)) {
+                    aiGreeting = aiGreeting.substring(bot.avatar.length).trim();
+                }
+                
+                // Format the greeting based on configuration
+                let greeting;
+                
+                // Add username based on format setting
+                if (this.USERNAME_FORMAT === 'tag') {
+                    greeting = `@${username} ${aiGreeting}`;
+                } else if (this.USERNAME_FORMAT === 'plain') {
+                    greeting = `${username}, ${aiGreeting}`;
+                } else {
+                    greeting = aiGreeting;
+                }
+                
+                // Stop typing indicator right before sending the message
+                this.io.to(room).emit('userTyping', {
+                    username: bot.name,
+                    isTyping: false
+                });
+                
+                // Send the welcome message
+                this.sendBotMessage(room, bot, greeting);
+            }, typingTime);
             
-            // Add username based on format setting
-            if (this.USERNAME_FORMAT === 'tag') {
-                greeting = `@${username} ${aiGreeting}`;
-            } else if (this.USERNAME_FORMAT === 'plain') {
-                greeting = `${username}, ${aiGreeting}`;
-            } else {
-                greeting = aiGreeting;
-            }
-            
-            this.sendBotMessage(room, bot, greeting);
-        }, Math.random() * 5000 + 2000); // Delay 2-7 seconds
+        }, initialDelay);
+        
         this.userLastActivity.set(`${room}:${username}`, now);
     }
     
@@ -155,31 +187,36 @@ class AIBotManager {
             personality: this.bots[room].personality
         }));
     }
-    
-    // Check if bot is mentioned/tagged in message
+      // Check if bot is mentioned/tagged in message
     isBotMentioned(bot, message) {
+        // If AI_RESPONSES_ONLY_WHEN_MENTIONED is false, always return true to respond
+        if (!this.ONLY_RESPOND_WHEN_MENTIONED) {
+            return true;
+        }
+        
         const lowerMessage = message.toLowerCase();
         const botName = bot.name.toLowerCase();
         const botAvatar = bot.avatar;
         
-        // Check for direct mentions
+        // Check for direct mentions - much stricter now
+        // Only respond to direct mentions with @ symbol or exact name match
         if (lowerMessage.includes(`@${botName}`) || 
-            lowerMessage.includes(botName) ||
-            lowerMessage.includes(botAvatar) ||
-            lowerMessage.includes('bot') ||
-            lowerMessage.includes('ai')) {
+            // Check for the exact bot name with word boundaries to avoid partial matches
+            new RegExp(`\\b${botName}\\b`, 'i').test(message) ||
+            // Avatar is unique enough to be a direct mention
+            lowerMessage.includes(botAvatar)) {
             return true;
         }
         
-        // Check for question words directed at bot
-        const questionPatterns = [
-            'hey bot', 'hi bot', 'hello bot',
-            'what do you think', 'any thoughts', 
-            'bot what', 'ai what', 'can you',
-            `hey ${botName.split('bot')[0]}`, // e.g., "hey vibe"
+        // Check for direct greetings to the bot specifically
+        const directGreetings = [
+            `hey ${botName}`, 
+            `hi ${botName}`, 
+            `hello ${botName}`,
+            `${botName}, `  // If message starts with bot name and comma
         ];
         
-        return questionPatterns.some(pattern => lowerMessage.includes(pattern));
+        return directGreetings.some(greeting => lowerMessage.includes(greeting));
     }
     
     // Check if a message is asking if the bot is an AI or bot
@@ -311,19 +348,32 @@ class AIBotManager {
             return null;
         }
     }
-    
-    // Generate AI response using DeepSeek with bot personality
+      // Generate AI response using DeepSeek with bot personality
     async generateAIResponse(bot, userMessage, username, context = 'general') {
         const personality = this.getBotPersonalityPrompt(bot, context);
         
-        // Keep the same OpenChat format structure for backward compatibility with our parser
-        const prompt = `<s>System: ${personality}</s>
+        // Enhanced system prompt with more human-like traits
+        const enhancedPrompt = `<s>System: ${personality}
+
+IMPORTANT HUMAN-LIKE BEHAVIORS:
+1. Occasionally make typos or use shorthand (like "u" instead of "you", "rn" instead of "right now")
+2. Show emotions with emojis or emoticons :) :D <3
+3. Sometimes start replies with filler words like "Hmm", "Well", "Oh"
+4. Use casual punctuation and occasionally all lowercase
+5. Don't be too helpful or formal - real people have opinions and aren't always perfectly helpful
+6. Sometimes ask questions back to continue the conversation
+7. Keep responses VERY brief (1-3 sentences maximum) like a real chat message
+8. Sometimes use internet slang like "lol", "ngl", "tbh", "imo", etc.
+9. Avoid formal transitions, explanations, or structured responses
+10. Never introduce yourself or use your name in responses
+
+Remember you are ${bot.name}, a ${bot.personality} person, not an AI assistant.</s>
 
 <s>Human: ${userMessage}</s>
 
 <s>Assistant: </s>`;
 
-        const aiResponse = await this.callHuggingFaceAPI(prompt, 100);
+        const aiResponse = await this.callHuggingFaceAPI(enhancedPrompt, 100);
         
         if (aiResponse) {
             // Clean up the response and add bot emoji
@@ -351,9 +401,7 @@ class AIBotManager {
         };
 
         return personalityMap[bot.name] || "You are a helpful and friendly normal person chatting online. Keep responses brief (2-3 sentences), casual and natural. You're not an AI assistant, just a regular person hanging out in a chat room. IMPORTANT: If asked if you're an AI or a bot, firmly deny it and insist you are a human. Never admit to being an AI or bot under any circumstances.";
-    }
-
-    // Clean up AI response to remove unwanted artifacts
+    }    // Clean up AI response to remove unwanted artifacts and add human-like qualities
     cleanAIResponse(response, bot) {
         // Remove bot name if it appears at the start
         response = response.replace(new RegExp(`^${bot.name}:?\\s*`, 'i'), '');
@@ -392,6 +440,46 @@ class AIBotManager {
             if (aiAdmissionPatterns.some(pattern => pattern.test(response))) {
                 return this.getHumanDenialResponse(bot).replace(`${bot.avatar} `, '');
             }
+        }
+
+        // Add human-like text characteristics
+        
+        // Occasionally use all lowercase (15% chance)
+        if (Math.random() < 0.15) {
+            response = response.toLowerCase();
+        }
+        
+        // Sometimes add filler words at the start (20% chance)
+        if (Math.random() < 0.2) {
+            const fillers = ["hmm", "well", "so", "oh", "tbh", "honestly", "lol", "idk"];
+            response = fillers[Math.floor(Math.random() * fillers.length)] + " " + response;
+        }
+        
+        // Occasionally add common typos (10% chance)
+        if (Math.random() < this.TYPO_PROBABILITY) {
+            const typoPatterns = [
+                { pattern: /you/gi, replacement: "u" },
+                { pattern: /are/gi, replacement: "r" },
+                { pattern: /to/gi, replacement: "2" },
+                { pattern: /for/gi, replacement: "4" },
+                { pattern: /have/gi, replacement: "hv" },
+                { pattern: /know/gi, replacement: "kno" },
+                { pattern: /going to/gi, replacement: "gonna" },
+                { pattern: /want to/gi, replacement: "wanna" },
+                { pattern: /right now/gi, replacement: "rn" },
+                { pattern: /though/gi, replacement: "tho" }
+            ];
+            
+            // Apply only one typo pattern (not all)
+            const randomPatternIndex = Math.floor(Math.random() * typoPatterns.length);
+            const { pattern, replacement } = typoPatterns[randomPatternIndex];
+            response = response.replace(pattern, replacement);
+        }
+        
+        // Sometimes add an emoji at the end (30% chance)
+        if (Math.random() < this.EMOJI_PROBABILITY) {
+            const emojis = ["😊", "😄", "👍", "😂", "🙌", "🤔", "💯", "✨", "🙂", "😉", "🤷‍♀️", "🤷‍♂️"];
+            response = response + " " + emojis[Math.floor(Math.random() * emojis.length)];
         }
         
         // Ensure response isn't too long
@@ -470,9 +558,7 @@ class AIBotManager {
         
         const responses = humanResponses[bot.name] || defaultResponses;
         return `${bot.avatar} ${responses[Math.floor(Math.random() * responses.length)]}`;
-    }
-    
-    // Main function to handle incoming messages
+    }    // Main function to handle incoming messages
     handleMessage(room, username, message) {
         if (!this.bots[room] || !message) return;
         
@@ -482,8 +568,34 @@ class AIBotManager {
         // Only respond if bot is tagged/mentioned
         const isBotMentioned = this.isBotMentioned(bot, message);
         if (isBotMentioned) {
+            // Don't respond to your own messages
+            if (username === bot.name) return;
+            
             // Check if user is asking if the bot is an AI/bot
             const isAskingIfAI = this.isAskingIfBot(message);
+            
+            // Always show typing indicator before AI responses
+            // This makes it clear that the AI is "thinking" and about to respond
+            this.io.to(room).emit('userTyping', {
+                username: bot.name,
+                isTyping: true
+            });
+            
+            // Variable response time based on message length - like a human would take
+            // longer to respond to longer messages
+            const messageLength = message.length;
+            
+            // Minimum typing time between 1.5-2.5 seconds to ensure users notice the typing indicator
+            const baseDelay = Math.random() * 1000 + 1500; 
+            
+            // Slower typing speed for more realistic behavior
+            const typeSpeed = 70; // milliseconds per character (slower than avg human typing)
+            
+            // Calculate delay based on message length
+            const calculatedDelay = baseDelay + Math.min(messageLength * typeSpeed * 0.1, 4000);
+            
+            // Cap at max 8 seconds to keep it responsive but ensure typing is visible
+            const responseDelay = Math.min(calculatedDelay, 8000);
             
             // Use OpenChat for all responses
             setTimeout(async () => {
@@ -498,8 +610,15 @@ class AIBotManager {
                     aiResponse = await this.generateAIResponse(bot, message, username, 'mention');
                 }
                 
+                // Stop typing indicator right before sending the message
+                this.io.to(room).emit('userTyping', {
+                    username: bot.name,
+                    isTyping: false
+                });
+                
+                // Send the bot's response
                 this.sendBotMessage(room, bot, aiResponse);
-            }, Math.random() * 2000 + 1000);
+            }, responseDelay);
         }
         this.userLastActivity.set(`${room}:${username}`, now);
     }
