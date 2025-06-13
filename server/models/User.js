@@ -21,10 +21,9 @@ const userSchema = new mongoose.Schema({
         // Remove the default function - we'll handle this in the server code
     },    avatarId: {
         type: String,
-        unique: true,
         sparse: true, // Allow null values but require uniqueness when present
         default: null
-    },    avatarFormat: {
+    },avatarFormat: {
         type: String,
         enum: {
             values: [null, 'png', 'jpg', 'jpeg', 'gif'],
@@ -32,10 +31,14 @@ const userSchema = new mongoose.Schema({
         },
         default: null,
         required: false
-    },
-    avatarFilename: {
+    },    avatarFilename: {
         type: String,
         default: null // Stores complete filename like "uuid.jpg"
+    },
+    userType: {
+        type: String,
+        enum: ['user', 'ai'],
+        default: 'user'
     },
     password: {
         type: String,

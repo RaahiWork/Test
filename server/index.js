@@ -15,6 +15,8 @@ import { fromInstanceMetadata, fromEnv } from '@aws-sdk/credential-providers'
 import chatState from './chatState.js'
 import jwt from 'jsonwebtoken'
 import { AccessToken } from 'livekit-server-sdk';
+// --- AI Bot Manager ---
+import AIBotManager from './ai-bots.js';
 
 // Load environment variables
 dotenv.config()
@@ -196,6 +198,15 @@ app.post('/api/register', async (req, res) => {
         if (!username || !password) {
             return res.status(400).json({ 
                 error: 'Username and password are required' 
+            });
+        }
+        
+        // Check if username is reserved for AI bots
+        const { default: AIBotManager } = await import('./ai-bots.js');
+        const isAIReserved = await AIBotManager.isAIReservedName(username);
+        if (isAIReserved) {
+            return res.status(400).json({ 
+                error: 'This username is reserved. Please choose a different one.' 
             });
         }
         
@@ -700,6 +711,9 @@ const privateMessageSchema = new mongoose.Schema({
 
 const PrivateMessage = mongoose.models.PrivateMessage || mongoose.model('PrivateMessage', privateMessageSchema);
 
+// --- Initialize AI Bot Manager ---
+const aiBots = new AIBotManager(io, buildMsg, chatState);
+
 io.on('connection', socket => {
     // Upon connection - only to user 
     socket.emit('message', buildMsg(ADMIN, "Welcome to Vyb Chat!"))
@@ -844,27 +858,30 @@ io.on('connection', socket => {
             //
             socket.emit('recentPrivateChats', { chats: [] });
         }
-    });
-
-    // Add handler for getting online users for private messaging
+    });    // Add handler for getting online users for private messaging
     socket.on('getOnlineUsers', () => {
         const currentUser = getUser(socket.id);
         if (currentUser) {
             // Get all online users except the current user
-            const onlineUsers = UsersState.users
+            const realUsers = UsersState.users
                 .filter(user => user.name !== currentUser.name)
                 .map(user => ({ name: user.name, room: user.room }));
             
+            // Get AI bots for all active rooms
+            const aiBotUsers = aiBots.getAllAIBotsAsUsers()
+                .map(bot => ({ name: bot.name, room: bot.room, isAIBot: true }));
+            
+            // Combine real users and AI bots
+            const onlineUsers = [...realUsers, ...aiBotUsers];
+            
             socket.emit('onlineUsers', onlineUsers);
-        }    });
-
-    // Add handler for getting user list for specific room
+        }    });    // Add handler for getting user list for specific room
     socket.on('getUserList', ({ room }) => {
         const currentUser = getUser(socket.id);
         if (currentUser && room) {
-            // Send updated user list for the specified room
+            // Send updated user list for the specified room including AI bots
             socket.emit('userList', {
-                users: getUsersInRoom(room)
+                users: getUsersInRoomWithAI(room)
             });
         }
     });
@@ -878,12 +895,10 @@ io.on('connection', socket => {
             io.to(prevRoom).emit('message', buildMsg(ADMIN, `${name} has left the room`))
         }
 
-        const user = activateUser(socket.id, name, room)
-
-        // Cannot update previous room users list until after the state update in activate user 
+        const user = activateUser(socket.id, name, room)        // Cannot update previous room users list until after the state update in activate user
         if (prevRoom) {
             io.to(prevRoom).emit('userList', {
-                users: getUsersInRoom(prevRoom)
+                users: getUsersInRoomWithAI(prevRoom)
             })
         }
 
@@ -899,33 +914,33 @@ io.on('connection', socket => {
             lastMsgs.forEach(msg => {
                 socket.emit('message', msg);
             });
-        }
-
-        // To everyone else 
+        }        // To everyone else 
         socket.broadcast.to(user.room).emit('message', buildMsg(ADMIN, `${user.name} has joined the room`))
 
         // Update user list for room 
         io.to(user.room).emit('userList', {
-            users: getUsersInRoom(user.room)
+            users: getUsersInRoomWithAI(user.room)
         })
-
+        
         // Update rooms list for everyone 
         io.emit('roomList', {
             rooms: getAllActiveRooms()
-        })
-    });    // When user disconnects - to all others 
+        })        // AI Bot: Handle user joining a room
+        aiBots.handleUserJoin(user.room, user.name);
+    });
+
+    // When user disconnects - to all others 
     socket.on('disconnect', () => {
         const user = getUser(socket.id)
         userLeavesApp(socket.id)
 
-        if (user) {
-            // Remove from streaming users when they disconnect
+        if (user) {            // Remove from streaming users when they disconnect
             StreamingState.removeStreamer(user.name);
             
             io.to(user.room).emit('message', buildMsg(ADMIN, `${user.name} has left the room`))
-
+            
             io.to(user.room).emit('userList', {
-                users: getUsersInRoom(user.room)
+                users: getUsersInRoomWithAI(user.room)
             })
 
             io.emit('roomList', {
@@ -936,15 +951,17 @@ io.on('connection', socket => {
             io.emit('streamingUsersUpdate', {
                 streamingUsers: StreamingState.getAllStreamers()
             });
-        }
-    });// Listening for a message event 
+        }    });// Listening for a message event 
     socket.on('message', ({ name, text }) => {
         const room = getUser(socket.id)?.room
         if (room) {
             const msg = buildMsg(name, text);
             // Store in room history using chatState
             chatState.addMessage(room, msg);
-            io.to(room).emit('message', msg)
+            io.to(room).emit('message', msg);
+            
+            // AI Bot: Handle incoming message
+            aiBots.handleMessage(room, name, text);
         }
     });
 
@@ -1112,6 +1129,13 @@ function getUsersInRoom(room) {
     })
     
     return Array.from(uniqueUsers.values())
+}
+
+// Helper function to get users in room including AI bots
+function getUsersInRoomWithAI(room) {
+    const realUsers = getUsersInRoom(room);
+    const aiBot = aiBots.getAIBotForRoom(room);
+    return aiBot ? [...realUsers, aiBot] : realUsers;
 }
 
 function getAllActiveRooms() {

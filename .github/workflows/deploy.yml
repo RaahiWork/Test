@@ -59,6 +59,9 @@ jobs:
             echo "LIVEKIT_SECRET_KEY=${{ secrets.LIVEKIT_SECRET_KEY }}" >> .env
             echo "LIVEKIT_WS_URL=${{ secrets.LIVEKIT_WS_URL }}" >> .env
             echo "EnableStream=${{ secrets.EnableStream }}" >> .env
+            echo "AI_RESPONSES_ONLY_WHEN_MENTIONED=${{ secrets.AI_RESPONSES_ONLY_WHEN_MENTIONED }}" >> .env
+            echo "AI_USERNAME_FORMAT=${{ secrets.AI_USERNAME_FORMAT }}" >> .env
+            echo "HUGGINGFACE_TOKEN=${{ secrets.HUGGINGFACE_TOKEN }}" >> .env
             npm install
             rm -rf dist build .next .cache tmp
             

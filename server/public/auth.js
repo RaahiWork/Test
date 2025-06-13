@@ -228,9 +228,15 @@ function handleLoginSubmit(e) {
         showLoginMessage('Username cannot exceed 20 characters');
         return;
     }
-    
-    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      if (!/^[a-zA-Z0-9_]+$/.test(username)) {
         showLoginMessage('Username can only contain letters, numbers, and underscores');
+        return;
+    }
+    
+    // Check if username is reserved for AI bots
+    const reservedAINames = ['luna', 'zara', 'bella', 'sophia', 'nova', 'mia', 'ivy', 'chloe', 'ava', 'emma'];
+    if (reservedAINames.includes(username.toLowerCase())) {
+        showLoginMessage('This username is reserved for AI assistants. Please choose a different one.');
         return;
     }
     
