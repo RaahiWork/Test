@@ -554,6 +554,19 @@ async function initializeConferenceRoom({
         const videoEl = track.attach();
         videoEl.autoplay = true;
         videoEl.muted = true; // Prevent echo
+        videoEl.playsInline = true; // Better mobile compatibility
+        
+        // Set max width/height to ensure stream is visible
+        videoEl.style.maxWidth = '100%';
+        videoEl.style.maxHeight = '100%';
+        
+        // Force play the video to ensure visibility (especially important for Safari)
+        videoEl.play().catch(err => {
+          console.warn('[LiveKit] Error auto-playing video, trying again with user interaction:', err);
+          // For browsers that require user interaction, we'll handle this in addVideoToGrid
+        });
+        
+        // Add to the grid with participant's identity
         addVideoToGrid(videoEl, participant.identity);
         //console.log('[LiveKit] 📹 Video track from', participant.identity);
         
@@ -692,6 +705,9 @@ async function initializeConferenceRoom({
         // Use the correct local display name
         const localDisplayName = joinerIdentity ? `${joinerIdentity} (You)` : `${hostUsername} (You)`;
         
+        // Set mirroring for self-view to make it more natural
+        videoEl.style.transform = 'scaleX(-1)';
+        
         // Always ensure the local video is visible in the grid
         addVideoToGrid(videoEl, localDisplayName);
         //console.log('[LiveKit] 📹 Local video track added to grid');
@@ -710,14 +726,26 @@ async function initializeConferenceRoom({
     // Step 6: Publish mic if enabled (only for new room connections, not joiners)
     if (!options || !options.room) {
       if (!defaultMicMuted) {
-        const micTrack = await window.LiveKit.LocalAudioTrack.create();
+        // Create high-quality audio track with enhanced settings
+        const micTrack = await window.LiveKit.LocalAudioTrack.create({
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 48000,  // Higher sample rate for better quality
+          channelCount: 2,    // Stereo audio for better quality
+          latency: 0.01,      // Low latency for real-time communication
+          sampleSize: 16      // 16-bit audio for better quality
+        });
         await room.localParticipant.publishTrack(micTrack);
-        //console.log('[LiveKit] 🎙️ Mic published');
+        //console.log('[LiveKit] 🎙️ High-quality mic published');
       }
 
       // Step 7: Publish camera if enabled (only for new room connections, not joiners)
       if (!defaultVideoMuted) {
-        const camTrack = await window.LiveKit.LocalVideoTrack.create();
+        const camTrack = await window.LiveKit.LocalVideoTrack.create({
+          resolution: { width: 640, height: 480 }, // Balanced resolution for stability
+          frameRate: 30 // Smooth frame rate
+        });
         await room.localParticipant.publishTrack(camTrack);
         //console.log('[LiveKit] 📷 Camera published');
       }
@@ -1130,9 +1158,20 @@ function addVideoToGrid(videoElement, participantId) {
   const container = document.createElement('div');
   container.id = `video-${participantId}`;
   container.className = 'conference-video-container';
-    // Style the video element
+  
+  // Style the video element
   videoElement.className = 'conference-video-element';
-    // Add click handler for focused view
+  
+  // Set object-fit to cover for better video filling
+  videoElement.style.objectFit = 'cover';
+  
+  // Better handling for local participant's video
+  if (participantId.includes('(You)')) {
+    // Mirror local video for natural self-view
+    videoElement.style.transform = 'scaleX(-1)';
+  }
+  
+  // Add click handler for focused view
   videoElement.addEventListener('click', () => {
     toggleFocusedView(participantId);
   });
@@ -1148,10 +1187,15 @@ function addVideoToGrid(videoElement, participantId) {
   
   videoElement.addEventListener('canplay', () => {
     //console.log(`[LiveKit] 📹 Video can play for ${participantId}`);
+    // Make sure the video is visible when it's ready to play
+    videoElement.style.display = 'block';
+    
+    // Remove any existing placeholder once video is ready
+    removeParticipantPlaceholder(participantId);
   });
   
   videoElement.addEventListener('ended', () => {
-    //console.log(`[LiveKit] 📹 Video ended for ${participantId} - replacing with placeholder`);
+    //console.log(`[LiveKit] 📹 Video ended for participant: ${participantId} - replacing with placeholder`);
     removeVideoFromGrid(participantId);
     setTimeout(() => {
       addParticipantPlaceholder(participantId);
@@ -1767,6 +1811,7 @@ function makeVideoFullScreen(videoElement, participantId) {
   participantLabel.textContent = participantId;
   
   // Add elements to overlay
+ 
   fullscreenOverlay.appendChild(fullscreenVideo);
   fullscreenOverlay.appendChild(closeButton);
   fullscreenOverlay.appendChild(participantLabel);
