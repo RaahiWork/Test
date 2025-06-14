@@ -1317,7 +1317,7 @@ if (typeof socket !== 'undefined' && socket) {
   });
 }
 
-// Function to show join request notification to the host
+// Function to manage join requests in a list for the host
 function showJoinRequest(joinerName, hostName, roomName) {
   console.log(`[LiveKit Lobby] 🚪 Received join request from ${joinerName}`);
   
@@ -1327,92 +1327,294 @@ function showJoinRequest(joinerName, hostName, roomName) {
     console.log('[LiveKit Lobby] Not the host, ignoring join request');
     return;
   }
+    // Create or get the lobby panel
+  let lobbyPanel = document.getElementById('conference-lobby-panel');
   
-  // Create notification UI
-  let requestNotification = document.getElementById('join-request-notification');
-  if (!requestNotification) {
-    requestNotification = document.createElement('div');
-    requestNotification.id = 'join-request-notification';
-    requestNotification.className = 'join-request-notification';
-    document.body.appendChild(requestNotification);
+  // If the lobby panel doesn't exist, create it
+  if (!lobbyPanel) {
+    // Remove any existing notification dot if present
+    const existingDot = document.getElementById('conference-lobby-notification');
+    if (existingDot) {
+      existingDot.remove();
+    }
+    
+    // Create the lobby panel container
+    lobbyPanel = document.createElement('div');
+    lobbyPanel.id = 'conference-lobby-panel';
+    lobbyPanel.className = 'conference-lobby-panel';
+    document.body.appendChild(lobbyPanel);
+    
+    // Style the lobby panel
+    lobbyPanel.style.position = 'fixed';
+    lobbyPanel.style.top = '20px';
+    lobbyPanel.style.right = '20px';
+    lobbyPanel.style.backgroundColor = '#1a1a2e';
+    lobbyPanel.style.color = 'white';
+    lobbyPanel.style.padding = '15px';
+    lobbyPanel.style.borderRadius = '8px';
+    lobbyPanel.style.boxShadow = '0 4px 8px rgba(0,0,0,0.5)';
+    lobbyPanel.style.zIndex = '10001';
+    lobbyPanel.style.width = '350px';
+    lobbyPanel.style.maxHeight = '80vh';
+    lobbyPanel.style.overflowY = 'auto';
+    lobbyPanel.style.animation = 'slideIn 0.3s forwards';
+    
+    // Add the header and container for requests
+    lobbyPanel.innerHTML = `
+      <style>
+        @keyframes slideIn {
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes pulse {
+          0% { background-color: rgba(108, 99, 255, 0.2); }
+          50% { background-color: rgba(108, 99, 255, 0.4); }
+          100% { background-color: rgba(108, 99, 255, 0.2); }
+        }
+        .join-request-btn {
+          padding: 6px 10px;
+          border-radius: 4px;
+          border: none;
+          cursor: pointer;
+          font-size: 12px;
+          margin-right: 5px;
+        }
+        .join-request-approve {
+          background-color: #4CAF50;
+          color: white;
+        }
+        .join-request-reject {
+          background-color: #f44336;
+          color: white;
+        }
+        .lobby-request-item {
+          padding: 10px;
+          border-bottom: 1px solid rgba(255,255,255,0.1);
+          margin-bottom: 10px;
+          border-radius: 4px;
+          animation: pulse 2s infinite;
+        }
+        .lobby-request-controls {
+          display: flex;
+          justify-content: flex-end;
+          margin-top: 8px;
+        }
+        .lobby-empty {
+          text-align: center;
+          padding: 15px;
+          color: #999;
+        }
+        .lobby-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 15px;
+          padding-bottom: 10px;
+          border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        .lobby-close-btn {
+          background: none;
+          border: none;
+          color: white;
+          font-size: 20px;
+          cursor: pointer;
+          opacity: 0.7;
+          transition: opacity 0.3s;
+        }
+        .lobby-close-btn:hover {
+          opacity: 1;
+        }
+        .lobby-badge {
+          display: inline-block;
+          background-color: #6c63ff;
+          color: white;
+          border-radius: 50%;
+          width: 18px;
+          height: 18px;
+          text-align: center;
+          font-size: 12px;
+          line-height: 18px;
+          margin-left: 5px;
+        }
+      </style>      <div class="lobby-header">
+        <div>
+          <span style="font-weight: bold;">Conference Lobby</span>
+          <span class="lobby-badge" id="lobby-count">0</span>
+        </div>
+        <button class="lobby-close-btn" id="lobby-close-btn" title="Close">✕</button>
+      </div>
+      <div id="lobby-requests-container">
+        <div class="lobby-empty">No pending requests</div>
+      </div>
+    `;
+      // Add event listener for close button
+    document.getElementById('lobby-close-btn').addEventListener('click', () => {
+      // Close the panel completely
+      const lobbyPanel = document.getElementById('conference-lobby-panel');
+      if (lobbyPanel) {
+        // Remove the panel from the DOM
+        lobbyPanel.remove();
+        
+        // Create a small notification dot that can be clicked to reopen the lobby if needed
+        // but only if there are pending requests
+        const requestCount = document.querySelectorAll('.lobby-request-item').length;
+        if (requestCount > 0) {
+          const notificationDot = document.createElement('div');
+          notificationDot.id = 'conference-lobby-notification';
+          notificationDot.className = 'conference-lobby-notification';
+          notificationDot.style.position = 'fixed';
+          notificationDot.style.top = '20px';
+          notificationDot.style.right = '20px';
+          notificationDot.style.backgroundColor = '#6c63ff';
+          notificationDot.style.color = 'white';
+          notificationDot.style.width = '25px';
+          notificationDot.style.height = '25px';
+          notificationDot.style.borderRadius = '50%';
+          notificationDot.style.zIndex = '10001';
+          notificationDot.style.textAlign = 'center';
+          notificationDot.style.lineHeight = '25px';
+          notificationDot.style.fontSize = '12px';
+          notificationDot.style.cursor = 'pointer';
+          notificationDot.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)';
+          notificationDot.textContent = requestCount.toString();
+          notificationDot.title = 'Click to show conference lobby';
+          
+          // Add click handler to reopen the lobby
+          notificationDot.onclick = () => {
+            document.body.removeChild(notificationDot);
+            showJoinRequest('', '', ''); // This will recreate the lobby panel
+            updateLobbyRequests(); // Update with current requests
+          };
+          
+          document.body.appendChild(notificationDot);
+        }
+      }
+    });
+    
+    // Make notification audible to get host's attention
+    const notificationSound = new Audio('/assets/ringtone.mp3');
+    notificationSound.volume = 0.5;
+    notificationSound.play().catch(e => console.warn('Could not play notification sound:', e));
   }
   
-  // Style the notification
-  requestNotification.style.position = 'fixed';
-  requestNotification.style.top = '20px';
-  requestNotification.style.right = '20px';
-  requestNotification.style.backgroundColor = '#1a1a2e';
-  requestNotification.style.color = 'white';
-  requestNotification.style.padding = '15px';
-  requestNotification.style.borderRadius = '8px';
-  requestNotification.style.boxShadow = '0 4px 8px rgba(0,0,0,0.5)';
-  requestNotification.style.zIndex = '10001';
-  requestNotification.style.width = '300px';
-  requestNotification.style.animation = 'slideIn 0.3s forwards';
+  // Update or create the requests container
+  const requestsContainer = document.getElementById('lobby-requests-container');
+  if (!requestsContainer) return;
   
-  // Add content to notification
-  requestNotification.innerHTML = `
-    <style>
-      @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-      }
-      .join-request-btn {
-        padding: 8px 12px;
-        border-radius: 4px;
-        border: none;
-        cursor: pointer;
-        margin-right: 10px;
-      }
-      .join-request-approve {
-        background-color: #4CAF50;
-        color: white;
-      }
-      .join-request-reject {
-        background-color: #f44336;
-        color: white;
-      }
-    </style>
-    <div style="margin-bottom: 10px; font-weight: bold;">Join Request</div>
-    <div style="margin-bottom: 15px;">${joinerName} is requesting to join your conference.</div>
-    <div>
-      <button class="join-request-btn join-request-approve" id="approve-join-${joinerName}">Approve</button>
-      <button class="join-request-btn join-request-reject" id="reject-join-${joinerName}">Reject</button>
+  // Remove the "no requests" message if it exists
+  const emptyMessage = requestsContainer.querySelector('.lobby-empty');
+  if (emptyMessage) {
+    emptyMessage.remove();
+  }
+  
+  // Create a new request item with a unique ID
+  const requestId = `join-request-${joinerName}-${Date.now()}`;
+  const requestItem = document.createElement('div');
+  requestItem.id = requestId;
+  requestItem.className = 'lobby-request-item';
+  requestItem.dataset.joiner = joinerName;
+  requestItem.dataset.host = hostName;
+  requestItem.dataset.room = roomName;
+  
+  requestItem.innerHTML = `
+    <div style="font-weight: bold;">${joinerName}</div>
+    <div style="font-size: 12px; margin: 5px 0;">wants to join your conference.</div>
+    <div class="lobby-request-controls">
+      <button class="join-request-btn join-request-approve" data-action="approve">Approve</button>
+      <button class="join-request-btn join-request-reject" data-action="reject">Reject</button>
+    </div>
+    <div style="font-size: 10px; color: #aaa; margin-top: 5px;" class="request-timer">
+      Request will auto-expire in 60 seconds
     </div>
   `;
   
-  // Make notification audible to get host's attention
-  const notificationSound = new Audio('/assets/ringtone.mp3');
-  notificationSound.volume = 0.5;
-  notificationSound.play().catch(e => console.warn('Could not play notification sound:', e));
+  // Add the new request to the container
+  requestsContainer.prepend(requestItem);
+  
+  // Update the badge count
+  updateLobbyCount();
   
   // Add event listeners for approve/reject buttons
-  document.getElementById(`approve-join-${joinerName}`).onclick = () => {
+  requestItem.querySelector('[data-action="approve"]').addEventListener('click', () => {
     if (typeof socket !== 'undefined' && socket) {
       console.log(`[LiveKit Lobby] ✅ Host approved join request from ${joinerName}`);
       socket.emit('approveJoinRequest', { joinerName, hostName, roomName });
-      requestNotification.remove();
+      requestItem.remove();
+      updateLobbyCount();
+      checkEmptyLobby();
     }
-  };
+  });
   
-  document.getElementById(`reject-join-${joinerName}`).onclick = () => {
+  requestItem.querySelector('[data-action="reject"]').addEventListener('click', () => {
     if (typeof socket !== 'undefined' && socket) {
       console.log(`[LiveKit Lobby] ❌ Host rejected join request from ${joinerName}`);
       socket.emit('rejectJoinRequest', { joinerName, hostName, roomName });
-      requestNotification.remove();
+      requestItem.remove();
+      updateLobbyCount();
+      checkEmptyLobby();
     }
-  };
+  });
   
-  // Auto-hide after 30 seconds if no action is taken (treats as rejection)
-  setTimeout(() => {
-    if (document.body.contains(requestNotification)) {
-      if (typeof socket !== 'undefined' && socket) {
-        console.log(`[LiveKit Lobby] ⏱️ Join request from ${joinerName} timed out (auto-rejected)`);
-        socket.emit('rejectJoinRequest', { joinerName, hostName, roomName });
-      }
-      requestNotification.remove();
+  // Auto-expire after 60 seconds if no action is taken
+  let countdown = 60;
+  const timerElement = requestItem.querySelector('.request-timer');
+  const countdownInterval = setInterval(() => {
+    countdown--;
+    if (timerElement) {
+      timerElement.textContent = `Request will auto-expire in ${countdown} seconds`;
     }
-  }, 30000);
+    if (countdown <= 0 || !document.getElementById(requestId)) {
+      clearInterval(countdownInterval);
+      if (document.getElementById(requestId)) {
+        if (typeof socket !== 'undefined' && socket) {
+          console.log(`[LiveKit Lobby] ⏱️ Join request from ${joinerName} timed out (auto-rejected)`);
+          socket.emit('rejectJoinRequest', { joinerName, hostName, roomName });
+        }
+        requestItem.remove();
+        updateLobbyCount();
+        checkEmptyLobby();
+      }
+    }
+  }, 1000);
+}
+
+// Helper function to update the lobby request count badge
+function updateLobbyCount() {
+  const lobbyCountBadge = document.getElementById('lobby-count');
+  const requestsCount = document.querySelectorAll('.lobby-request-item').length;
+  
+  if (lobbyCountBadge) {
+    lobbyCountBadge.textContent = requestsCount.toString();
+  }
+    // Update the notification dot if it exists
+  const notificationDot = document.getElementById('conference-lobby-notification');
+  if (notificationDot && requestsCount > 0) {
+    notificationDot.textContent = requestsCount.toString();
+  } else if (notificationDot && requestsCount === 0) {
+    notificationDot.remove();
+  }
+}
+
+// Helper function to check if the lobby is empty
+function checkEmptyLobby() {
+  const requestsContainer = document.getElementById('lobby-requests-container');
+  if (requestsContainer && requestsContainer.children.length === 0) {
+    requestsContainer.innerHTML = '<div class="lobby-empty">No pending requests</div>';
+  }
+}
+
+// Function to update the lobby with current pending requests
+function updateLobbyRequests() {
+  // This function would ideally fetch current pending requests from a server
+  // For now, we'll just update the empty state and count
+  const requestsContainer = document.getElementById('lobby-requests-container');
+  if (requestsContainer) {
+    const pendingRequests = document.querySelectorAll('.lobby-request-item');
+    if (pendingRequests.length === 0) {
+      checkEmptyLobby();
+    }
+    updateLobbyCount();
+  }
 }
 
 // Helper functions for UI updates

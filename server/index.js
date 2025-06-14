@@ -782,6 +782,15 @@ const ConferenceLobbyState = {
                 this.pendingRequests.delete(key);
             }
         }
+    },
+    getRequestsForHost: function(hostName) {
+        const hostRequests = [];
+        for (const [_, request] of this.pendingRequests.entries()) {
+            if (request.hostName === hostName) {
+                hostRequests.push(request);
+            }
+        }
+        return hostRequests;
     }
 };
 
@@ -1302,6 +1311,23 @@ io.on('connection', socket => {
         } else {
             console.log(`[LiveKit Lobby] ⚠️ No pending request found to cancel for ${joinerName}`);
         }
+    });
+    
+    // Socket event for host to get all pending join requests
+    socket.on('getPendingJoinRequests', ({ hostName }) => {
+        if (!hostName) return;
+        
+        console.log(`[LiveKit Lobby] 📋 ${hostName} requested their pending join requests`);
+        
+        // Get all pending requests for this host
+        const pendingRequests = ConferenceLobbyState.getRequestsForHost(hostName);
+        
+        // Send the list back to the host
+        socket.emit('pendingJoinRequests', {
+            requests: pendingRequests
+        });
+        
+        console.log(`[LiveKit Lobby] 📋 Sent ${pendingRequests.length} pending requests to ${hostName}`);
     });
 });
 

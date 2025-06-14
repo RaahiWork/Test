@@ -530,10 +530,30 @@ socket.on('joinRequestRejected', (data) => {
 socket.on('joinRequestCancelled', (data) => {
     console.log('[LiveKit Lobby] Join request was cancelled:', data);
     
-    // Remove the notification if it exists
-    const requestNotification = document.getElementById('join-request-notification');
-    if (requestNotification) {
-        requestNotification.remove();
+    // Find and remove this specific request from the lobby panel
+    const lobbyPanel = document.getElementById('conference-lobby-panel');
+    if (lobbyPanel) {
+        // Find all request items
+        const requestItems = document.querySelectorAll('.lobby-request-item');
+        requestItems.forEach(item => {
+            // Check if this is the request that was cancelled
+            if (item.dataset.joiner === data.joinerName && 
+                item.dataset.host === data.hostName && 
+                item.dataset.room === data.roomName) {
+                // Remove this request
+                item.remove();
+                
+                // Update the count badge
+                if (typeof updateLobbyCount === 'function') {
+                    updateLobbyCount();
+                }
+                
+                // Check if the lobby is now empty
+                if (typeof checkEmptyLobby === 'function') {
+                    checkEmptyLobby();
+                }
+            }
+        });
     }
 });
 
