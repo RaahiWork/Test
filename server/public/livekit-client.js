@@ -232,37 +232,63 @@ window.openConferencePopup = function(options = {}) {  // options: { autoJoin, d
       modal.id = 'conference-popup-modal';
       modal.className = 'conference-modal-overlay';
       document.body.appendChild(modal);
-    } else {
-      modal.style.display = 'flex';
     }
+    
+    // Ensure the modal is properly styled and visible
+    modal.style.display = 'flex';
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.width = '100%';
+    modal.style.height = '100%';
+    modal.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    modal.style.zIndex = '10000';
+    modal.style.justifyContent = 'center';
+    modal.style.alignItems = 'center';
+    
     modal.innerHTML = `
-      <div class="conference-modal-content">
-        <h2 class="conference-modal-title">Join Stream</h2>
-        <div class="conference-modal-text">You are joining <b>${hostUsername}</b>'s stream.</div>
-        <button id="conference-join-btn" class="conference-join-btn">Join Stream</button>
-        <button id="conference-cancel-btn" class="conference-cancel-btn">Cancel</button>
+      <div class="conference-modal-content" style="background-color: #1a1a2e; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px; box-shadow: 0 4px 8px rgba(0,0,0,0.5);">
+        <h2 class="conference-modal-title" style="color: #a084ee; margin-top: 0;">Join Stream</h2>
+        <div class="conference-modal-text" style="color: white; margin-bottom: 20px;">You are joining <b>${hostUsername}</b>'s stream.</div>
+        <div style="display: flex; gap: 10px;">
+          <button id="conference-join-btn" class="conference-join-btn" style="flex: 1; padding: 10px; background-color: #6c63ff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Join</button>
+          <button id="conference-cancel-btn" class="conference-cancel-btn" style="flex: 1; padding: 10px; background-color: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
+        </div>
       </div>
     `;
+    
+    // Log that the modal was created and shown
+    //console.log("Join Stream modal shown for:", hostUsername, "room:", room);
+    
     // Cancel button closes the popup
     modal.querySelector('#conference-cancel-btn').onclick = () => {
       modal.style.display = 'none';
-    };    
+      //("Join Stream modal cancelled");
+    };
+    
     // Join button connects the user to the host's stream
     modal.querySelector('#conference-join-btn').onclick = async () => {
       try {
+        //console.log("Join Stream button clicked");
         const joiner = localStorage.getItem('vybchat-username') || localStorage.getItem('username') || 'Unknown';
+        //console.log("Joiner identity:", joiner);
         const { token, wsUrl } = await fetchLiveKitToken(joiner, room);
+        //console.log("Token received for joiner");
         const wsURL = wsUrl;
         if (!wsURL) throw new Error('No LiveKit WebSocket URL provided');
         const roomObj = new window.LiveKit.Room();
         await roomObj.connect(wsURL, token);
+        //console.log("Connected to LiveKit room");
+        
         // Mute mic and video by default for joiners
         if (modalOptions.defaultMicMuted !== false) {
           await roomObj.localParticipant.setMicrophoneEnabled(false);
         }
         if (modalOptions.defaultVideoMuted !== false && roomObj.localParticipant.setCameraEnabled) {
           await roomObj.localParticipant.setCameraEnabled(false);
-        }        // Close modal and show conference room as a joiner
+        }
+        
+        // Close modal and show conference room as a joiner
         modal.style.display = 'none';
         showConferenceRoom(hostUsername, room, { 
           ...modalOptions, 
@@ -958,13 +984,14 @@ function checkForConferenceJoinLink() {
     setTimeout(() => {
       if (window.openConferencePopup) {
         window.openConferencePopup({ 
-          autoJoin: false, 
+          autoJoin: false, // Always show popup/modal
           hostUsername: joinUser, 
           roomName: roomName,
           defaultMicMuted: true,
           defaultVideoMuted: true
         });
-      }    }, 1000);
+      }
+    }, 1000);
   }
 }
 

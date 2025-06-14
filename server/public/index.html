@@ -5,10 +5,15 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vyb Chat</title>    <link rel="stylesheet" href="style.css">
+    <title>Vyb Chat</title>
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="login.css">
     <link rel="stylesheet" href="custom.css">
     <link rel="stylesheet" href="conference-button-fixes.css">
+    <!-- First load livekit client library so it's available for everything else -->
+    <script src="https://cdn.jsdelivr.net/npm/livekit-client@1.9.2/dist/livekit-client.umd.min.js"></script>
+    <!-- Then load our conference implementation -->
+    <script src="livekit-client.js"></script>
     <style>
         /* ...existing code... */
         .private-conversation-preview {
@@ -30,13 +35,48 @@
             flex-direction: column;
             justify-content: center;
         }        /* ...existing code... */    </style>
-    <!-- Conference Logger Script - Load first -->
+    <!-- Conference Logger Script - Load after livekit -->
     <script src="conference-logger.js"></script>
     <!-- Conference Debug Helper - Load for troubleshooting -->
     <script src="conference-debug.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/livekit-client@1.9.2/dist/livekit-client.umd.min.js"></script>
-  </head>
-  <body>
+</head>
+
+<body>
+    <!-- Debug helper script to ensure URL parameters are detected -->
+    <script>
+      // Debug script to log URL parameters and check if join parameters are present
+      (function() {
+        //console.log("Debug: URL parameters check running");
+        const urlParams = new URLSearchParams(window.location.search);
+        const joinUser = urlParams.get('join');
+        const roomName = urlParams.get('room');
+        
+        if (joinUser && roomName) {
+          //console.log(`Debug: Found join parameters - User: ${joinUser}, Room: ${roomName}`);
+          // Alert will show on page load if parameters are detected
+          setTimeout(() => {
+            if (typeof window.openConferencePopup === 'function') {
+              //console.log("Debug: window.openConferencePopup is available");
+              //alert(`Debug: Join parameters detected!\nUser: ${joinUser}\nRoom: ${roomName}\nWill attempt to open popup...`);
+              // Try to open the popup directly
+              window.openConferencePopup({ 
+                autoJoin: false,
+                hostUsername: joinUser, 
+                roomName: roomName,
+                defaultMicMuted: true,
+                defaultVideoMuted: true
+              });
+            } else {
+              //console.error("ERROR: window.openConferencePopup is not defined!");
+              //alert("ERROR: Join function not available - check console");
+            }
+          }, 1500);
+        } else {
+          //console.log("Debug: No join parameters found in URL");
+        }
+      })();
+    </script>
+    
     <script>
       if (!window.LivekitClient) {
         console.error('⚠️ LivekitClient not found – check the <script> load!');
@@ -378,12 +418,12 @@
     <script src="app.js"></script>
     <script src="emoji-handler.js"></script>
     <script src="touch-handler.js"></script>
-    <script src="mobile-sidepane.js"></script> <!-- Add this line -->
+    <script src="mobile-sidepane.js"></script>
     <script src="auth.js"></script>
     <script src="private-messaging.js"></script>
     <script src="radio-player.js"></script>
     <script src="voice-message.js"></script>
-    <script src="livekit-client.js"></script>
+    
     <script>
         // Remove any JS that does: msgInput.focus(); after sending a message
         // Add this utility to conditionally set autofocus (optional, for clarity)
@@ -956,6 +996,7 @@
                 alert('The streaming feature is currently disabled. Please contact the administrator.');
               });
             } else if (typeof window.openConferencePopup === 'function') {
+              //("Debug: Stream button handler attached");
               // Stream is enabled, add normal functionality
               streamBtn.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -966,9 +1007,31 @@
                   isHostStarting: true  // Flag to indicate this is a fresh host start
                 });
               });
+            } else {
+              console.error("ERROR: window.openConferencePopup not available for stream button");
+              streamBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                alert("Conference popup function is not available. Please refresh the page.");
+              });
             }
           }
-          // Removed autoJoinConference();
+          
+          // Run URL parameter check again after DOM is loaded
+          // This serves as a backup to the earlier check
+          const urlParams = new URLSearchParams(window.location.search);
+          const joinUser = urlParams.get('join');
+          const roomName = urlParams.get('room');
+          
+          if (joinUser && roomName && typeof window.openConferencePopup === 'function') {
+            //console.log("DOMContentLoaded: Opening conference popup for", joinUser, roomName);
+            window.openConferencePopup({ 
+              autoJoin: false,
+              hostUsername: joinUser, 
+              roomName: roomName,
+              defaultMicMuted: true,
+              defaultVideoMuted: true
+            });
+          }
         });
       })();
     </script>
