@@ -346,6 +346,7 @@ async function initializeConferenceRoom({
       // Step 1: Fetch the token from your backend
       const { token, wsUrl } = await fetchLiveKitToken(hostUsername, roomName);
       //console.log('[LiveKit] Full token:', token);
+
       if (!token) throw new Error('Received empty token from server');
       //console.log('[LiveKit] ✅ Token received:', token.substring(0, 12) + '...');
 
@@ -680,10 +681,12 @@ async function initializeConferenceRoom({
       if (publication.kind === 'video' && publication.track) {
         const videoEl = publication.track.attach();
         videoEl.autoplay = true;
-        videoEl.muted = true;
+        videoEl.muted = true; // Always mute local video to avoid echo
         
         // Use the correct local display name
         const localDisplayName = joinerIdentity ? `${joinerIdentity} (You)` : `${hostUsername} (You)`;
+        
+        // Always ensure the local video is visible in the grid
         addVideoToGrid(videoEl, localDisplayName);
         //console.log('[LiveKit] 📹 Local video track added to grid');
       }
@@ -696,7 +699,9 @@ async function initializeConferenceRoom({
         addParticipantPlaceholder(localDisplayName);
         //console.log('[LiveKit] 📹 Local video track removed from grid');
       }
-    });    // Step 6: Publish mic if enabled (only for new room connections, not joiners)
+    });
+
+    // Step 6: Publish mic if enabled (only for new room connections, not joiners)
     if (!options || !options.room) {
       if (!defaultMicMuted) {
         const micTrack = await window.LiveKit.LocalAudioTrack.create();
@@ -721,6 +726,19 @@ async function initializeConferenceRoom({
     // Add placeholder for local participant if video is not enabled by default
     if (defaultVideoMuted !== false) {
       addParticipantPlaceholder(localDisplayName);
+    } else {
+      // Force the local video to be visible immediately
+      // This ensures the host can see themselves right away
+      setTimeout(async () => {
+        if (room.localParticipant.isCameraEnabled === false) {
+          try {
+            await room.localParticipant.setCameraEnabled(true);
+            console.log('[LiveKit] 📹 Local camera enabled automatically to ensure visibility');
+          } catch (err) {
+            console.warn('[LiveKit] ⚠️ Failed to enable local camera automatically:', err);
+          }
+        }
+      }, 1000);
     }    // Step 10: Expose room globally if needed
     window.currentConferenceRoom = room;
     

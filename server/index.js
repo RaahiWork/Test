@@ -1154,7 +1154,7 @@ io.on('connection', socket => {
         roomMessages[room] = [];
         io.to(room).emit('clearRoom');
     });    // Handle streaming status updates
-    socket.on('streamingStatusUpdate', ({ username, isStreaming }) => {
+    socket.on('streamingStatusUpdate', ({ username, isStreaming, videoEnabled = true }) => {
         if (isStreaming) {
             StreamingState.addStreamer(username);
         } else {
@@ -1163,7 +1163,8 @@ io.on('connection', socket => {
         
         // Broadcast updated streaming status to all users
         io.emit('streamingUsersUpdate', {
-            streamingUsers: StreamingState.getAllStreamers()
+            streamingUsers: StreamingState.getAllStreamers(),
+            videoEnabled
         });
     });
 
