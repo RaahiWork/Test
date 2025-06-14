@@ -326,35 +326,22 @@ async function initializeConferenceRoom({
   joinerIdentity
 }) {
   try {
-    // console.log('[LiveKit] Conference room initialization started', {
-    //   hostUsername,
-    //   roomName,
-    //   options,
-    //   defaultMicMuted,
-    //   defaultVideoMuted,
-    //   joinerIdentity
-    // });
-
     let room;
     
     // Check if a room is already provided (for joiners)
     if (options && options.room) {
-      //console.log('[LiveKit] Using existing room connection for joiner');
-      room = options.room;    } else {
-      //console.log('[LiveKit] Creating new room connection for host');
-      
+      room = options.room;
+    } else {
       // Step 1: Fetch the token from your backend
-      const { token, wsUrl } = await fetchLiveKitToken(hostUsername, roomName);
-      //console.log('[LiveKit] Full token:', token);
+      const { token, wsUrl, corsEnabled } = await fetchLiveKitToken(hostUsername, roomName);
 
       if (!token) throw new Error('Received empty token from server');
-      //console.log('[LiveKit] ✅ Token received:', token.substring(0, 12) + '...');
 
       // Step 2: Get the LiveKit WebSocket URL
       const wsURL = wsUrl || window.LIVEKIT_WS_URL;
       if (!wsURL) throw new Error('No LiveKit WebSocket URL provided');
-      //console.log('[LiveKit] ✅ Using WebSocket URL:', wsURL);
-        // Step 3: Create a new LiveKit Room instance with improved connection settings
+      
+      // Step 3: Create a new LiveKit Room instance with enhanced connection settings
       room = new window.LiveKit.Room({
         autoManageVideo: true,
         // Improve connection stability
@@ -362,34 +349,53 @@ async function initializeConferenceRoom({
         dynacast: true,
         // Enhanced video quality settings for screen sharing
         videoCaptureDefaults: {
-          resolution: { width: 1920, height: 1080 },
+          resolution: { width: 1280, height: 720 }, // Reduced from 1080p for better stability
           frameRate: 30
         },
         // Screen share specific settings
         screenShareCaptureDefaults: {
-          resolution: { width: 1920, height: 1080 },
-          frameRate: 30
+          resolution: { width: 1280, height: 720 }, // Reduced from 1080p for better stability
+          frameRate: 24                            // Reduced for better stability
         },
         // Increase timeouts for better stability with self-hosted servers
         reconnectPolicy: {
           nextRetryDelayInMs: (context) => {
-            return Math.min(context.retryCount * 1000, 10000); // Exponential backoff, max 10s
+            return Math.min(context.retryCount * 1500, 15000); // Increased max backoff to 15s
           },
-          maxRetryCount: 5
+          maxRetryCount: 8  // Increased retry count
         }
       });
       
-      // Step 5: Connect to the room
-      //console.log('[LiveKit] 🔄 Connecting to room...');
-      await room.connect(wsURL, token);
-      //console.log('[LiveKit] 🎉 Connected successfully to room:', roomName);
+      // Step 5: Connect to the room with additional CORS handling
+      try {
+        await room.connect(wsURL, token, {
+          // The LiveKit JS SDK automatically adds these headers to WebSocket connections
+          extraHeaders: {
+            'Origin': window.location.origin,
+            'Access-Control-Request-Headers': 'authorization',
+            'X-CORS-Proxy-Requested': 'true'
+          }
+        });
+      } catch (connectError) {
+        // If connection fails, check if it's a CORS error and provide helpful message
+        if (connectError.message && (
+            connectError.message.includes('CORS') || 
+            connectError.message.includes('cross-origin') ||
+            connectError.message.includes('Refused to connect')
+        )) {
+          console.error('[LiveKit] CORS error detected:', connectError);
+          throw new Error(`CORS policy error connecting to LiveKit server. Please check your browser's console or try using Chrome/Firefox.`);
+        }
+        throw connectError;
+      }
       
       // For fresh host starts, ensure room is clean
       if (options && options.isHostStarting) {
-        //console.log('[LiveKit] 🧹 Fresh host start - room should be clean');
         // The new timestamp-based room name ensures this is a fresh room
       }
-    }// Step 4: Enhanced debug listeners with error handling
+    }
+
+    // Step 4: Enhanced debug listeners with error handling
     room.on('connected', () => {
       //console.log('[LiveKit] ✅ Connected to room');
       updateConnectionStatus('connected');

@@ -1,5 +1,13 @@
 // AI Bots for themed chat rooms
 const ADMIN = "System";
+// Import node-fetch and https with proper ES module syntax
+import fetch from 'node-fetch';
+import https from 'node:https'; // Use node: prefix for built-in modules
+
+// Create a custom agent that ignores SSL certificate errors
+const httpsAgent = new https.Agent({
+    rejectUnauthorized: false // This disables SSL certificate verification
+});
 
 class AIBotManager {    constructor(io, buildMsg, chatState) {
         this.io = io;
@@ -343,7 +351,8 @@ class AIBotManager {    constructor(io, buildMsg, chatState) {
                     top_p: 0.95,
                     frequency_penalty: 0.0,
                     presence_penalty: 0.0
-                })
+                }),
+                agent: httpsAgent // Use the custom agent with SSL verification disabled
             });
 
             if (!response.ok) {

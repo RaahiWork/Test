@@ -627,10 +627,8 @@ app.get('/api/health', (req, res) => {
 
 // --- LiveKit Token Endpoint for Private Messaging ---
 app.get('/api/livekit-token', async (req, res) => {
-    //console.log('✅ AccessToken loaded:', typeof AccessToken);  // should print: function
   const { identity, room } = req.query;
   if (!identity || !room) {
-    //console.log('[LiveKit] Missing identity or room in request:', req.query);
     return res.status(400).json({ error: 'identity and room are required' });
   }
 
@@ -639,29 +637,16 @@ app.get('/api/livekit-token', async (req, res) => {
   const apiSecret = process.env.LIVEKIT_SECRET_KEY;
   const wsUrl = process.env.LIVEKIT_WS_URL;
 
-  //console.log('[LiveKit] Token generation request:');
-  //console.log('  - Identity:', identity);
-  //console.log('  - Room:', room);
-  //console.log('  - API Key:', apiKey ? `${apiKey.substring(0, 8)}...` : 'NOT SET');
-  //console.log('  - API Secret:', apiSecret ? `${apiSecret.substring(0, 8)}...` : 'NOT SET');
-  //console.log('  - WS URL:', wsUrl);
-
   if (!apiKey || !apiSecret) {
-    //console.log('[LiveKit] API key or secret not configured');
     return res.status(500).json({ error: 'LiveKit API key/secret not configured' });
   }
 
   try {
-    //console.log('[LiveKit] Creating AccessToken...');
-    
     // Create the AccessToken with detailed logging
     const at = new AccessToken(apiKey, apiSecret, {
       identity: identity,
       ttl: 600, // 10 minutes
     });
-    
-    //console.log('[LiveKit] AccessToken created successfully');
-    //console.log('[LiveKit] Adding grants...');
     
     at.addGrant({
       room: room,
@@ -670,75 +655,43 @@ app.get('/api/livekit-token', async (req, res) => {
       canSubscribe: true,
       canPublishData: true,
     });
-      //console.log('[LiveKit] Grants added successfully');
-    //console.log('[LiveKit] Generating JWT token...');
     
     // Handle both Promise and direct string return from toJwt()
     let token = at.toJwt();
     
     // Check if toJwt() returned a Promise (newer SDK versions)
     if (token && typeof token === 'object' && typeof token.then === 'function') {
-      //console.log('[LiveKit] toJwt() returned a Promise, awaiting...');
       token = await token;
     }
     
-    //console.log('[LiveKit] JWT generation result:');
-    //console.log('  - Token type:', typeof token);
-    //console.log('  - Token length:', token ? token.length : 0);
-    //console.log('  - Token preview:', token && token.length > 50 ? `${token.substring(0, 50)}...` : token || 'EMPTY/NULL');
-    
     // Now token should be a string
     const tokenString = token || '';
-    const tokenLength = tokenString.length;
-    const tokenPreview = tokenLength > 50 ? `${tokenString.substring(0, 50)}...` : tokenString;
-      //console.log('  - Token length:', tokenLength);
-    //console.log('  - Token preview:', tokenPreview);
     
     if (!tokenString || typeof tokenString !== 'string' || tokenString.length < 10) {
-      //console.error('[LiveKit] Generated token is empty or invalid:', token);
-    //   console.error('[LiveKit] AccessToken object state:', {
-    //     apiKey: apiKey ? 'SET' : 'NOT SET',
-    //     apiSecret: apiSecret ? 'SET' : 'NOT SET',
-    //     identity: identity,
-    //     ttl: 600
-    //   });
       return res.status(500).json({ 
         error: 'Failed to generate LiveKit token', 
-        details: 'Token is empty or invalid',
-        debug: {
-          tokenType: typeof token,
-          tokenLength: token ? token.length : 0,
-          hasApiKey: !!apiKey,
-          hasApiSecret: !!apiSecret,
-          identity: identity,
-          room: room
-        }
+        details: 'Token is empty or invalid'
       });
     }
-      //console.log(`[LiveKit] ✅ Token generated successfully for identity=${identity}, room=${room}`);
-    return res.json({ token: tokenString, wsUrl });
+    
+    // Add CORS headers specifically for this endpoint to help with rtc.vybchat.com connections
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    
+    // Add debug information to help client connection
+    return res.json({ 
+      token: tokenString, 
+      wsUrl: wsUrl,
+      // Include these values to help the client handle CORS issues
+      corsEnabled: true,
+      timestamp: Date.now()
+    });
     
   } catch (err) {
-    //console.error('[LiveKit] Error generating token:', err);
-    //console.error('[LiveKit] Error stack:', err.stack);
-    // console.error('[LiveKit] Error details:', {
-    //   name: err.name,
-    //   message: err.message,
-    //   apiKey: apiKey ? 'SET' : 'NOT SET',
-    //   apiSecret: apiSecret ? 'SET' : 'NOT SET',
-    //   identity: identity,
-    //   room: room
-    // });
     return res.status(500).json({ 
       error: 'Error generating LiveKit token', 
-      details: err.message,
-      errorName: err.name,
-      debug: {
-        hasApiKey: !!apiKey,
-        hasApiSecret: !!apiSecret,
-        identity: identity,
-        room: room
-      }
+      details: err.message
     });
   }
 });
