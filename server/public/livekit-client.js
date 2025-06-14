@@ -300,7 +300,6 @@ async function initializeConferenceRoom({
   joinerIdentity
 }) {
   try {
-    debugger;
     // console.log('[LiveKit] Conference room initialization started', {
     //   hostUsername,
     //   roomName,
