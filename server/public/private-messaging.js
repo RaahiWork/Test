@@ -206,14 +206,6 @@ class PrivateMessaging {
                     this.closePrivateMessage();
                 }
             });
-        }        // Voice call button in private message modal
-        const voiceCallBtn = document.getElementById('private-voice-call-btn');
-        if (voiceCallBtn) {
-            voiceCallBtn.addEventListener('click', () => {
-                if (this.currentPrivateChat) {
-                    this.startVoiceCall(this.currentPrivateChat);
-                }
-            });
         }
 
         // Add click handler for private message header avatar to open profile
