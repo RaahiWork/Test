@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema({
         // Remove the default function - we'll handle this in the server code
     },    avatarId: {
         type: String,
-        sparse: true, // Allow null values but require uniqueness when present
+        index: true, // Use regular index, not unique
         default: null
     },avatarFormat: {
         type: String,

@@ -17,6 +17,8 @@ import jwt from 'jsonwebtoken'
 import { AccessToken } from 'livekit-server-sdk';
 // --- AI Bot Manager ---
 import AIBotManager from './ai-bots.js';
+// --- Import logger ---
+import logger from './utils/logger.js'
 
 // Load environment variables
 dotenv.config()
@@ -57,26 +59,30 @@ const s3Client = new S3Client({
 })
 
 // Utility to list and log S3 bucket files
-async function logS3BucketFiles() {
-    const bucket = process.env.AWS_S3_BUCKET || 'vybchat-media';
-    if (!bucket) {
-        return;
-    }
-    try {
-        const command = new ListObjectsV2Command({ Bucket: bucket });
-        const data = await s3Client.send(command);
-    } catch (err) {
-        //
-    }
-}
+// async function logS3BucketFiles() {
+//     const bucket = process.env.AWS_S3_BUCKET || 'vybchat-media';
+//     if (!bucket) {
+//         logger.warn('No S3 bucket configured for listing files');
+//         return;
+//     }
+//     try {
+//         const command = new ListObjectsV2Command({ Bucket: bucket });
+//         const data = await s3Client.send(command);
+//         logger.info(`S3 bucket ${bucket} contains ${data.Contents?.length || 0} files`);
+//     } catch (err) {
+//         logger.error('Failed to list S3 bucket files', err, { bucket });
+//     }
+// }
 
 // Utility to log a user's avatar PNG file in S3 (avatars/{username}/{username}.png)
 async function logUserAvatar(username) {
     const bucket = process.env.AWS_S3_BUCKET || 'vybchat-media';
     if (!bucket) {
+        logger.warn('No S3 bucket configured for avatar check');
         return;
     }
     if (!username) {
+        logger.warn('No username provided for avatar check');
         return;
     }
     const key = `avatars/${username}/${username}.png`;
@@ -86,8 +92,48 @@ async function logUserAvatar(username) {
             Prefix: key
         });
         const data = await s3Client.send(command);
+        if (data.Contents?.length > 0) {
+            logger.info(`Avatar found for user ${username}`);
+        } else {
+            logger.info(`No avatar found for user ${username}`);
+        }
     } catch (err) {
-        //
+        logger.error(`Failed to check avatar for user ${username}`, err, { bucket, key });
+    }
+}
+
+// Replace the generic logS3BucketFiles function with a more focused one
+// that only checks the avatars directory we know we have access to
+async function logAvatarsDirectory() {
+    const bucket = process.env.AWS_S3_BUCKET || 'vybchat-media';
+    if (!bucket) {
+        logger.warn('No S3 bucket configured for checking avatars directory');
+        return;
+    }
+    
+    try {
+        // Only list avatars directory with a limited number of objects
+        const command = new ListObjectsV2Command({ 
+            Bucket: bucket,
+            Prefix: 'avatars/',
+            MaxKeys: 20 // Limit to 20 objects for efficiency
+        });
+        
+        const data = await s3Client.send(command);
+        
+        if (data.Contents && data.Contents.length > 0) {
+            logger.info(`S3 avatars directory contains ${data.Contents.length} files`);
+            
+            // Only log the first few items if there are many
+            if (data.Contents.length > 0) {
+                const sampleKeys = data.Contents.slice(0, 3).map(item => item.Key);
+                logger.debug('Sample avatar paths:', { sampleKeys });
+            }
+        } else {
+            logger.warn('S3 avatars directory appears to be empty');
+        }
+    } catch (err) {
+        logger.error('Failed to list avatars directory', err, { bucket, prefix: 'avatars/' });
     }
 }
 
@@ -146,7 +192,7 @@ app.use(express.static(publicPath));
 
 
 // --- Log S3 files on server startup ---
-logS3BucketFiles();
+// logS3BucketFiles();
 
 // --- Log only admin user's avatar on server startup ---
 logUserAvatar('admin');
@@ -192,10 +238,12 @@ app.get('/api/config', (req, res) => {
 // User authentication endpoints
 app.post('/api/register', async (req, res) => {
     try {
+        logger.info('Registration attempt', { ip: req.ip });
         const { username, password } = req.body;
         
         // Validate input
         if (!username || !password) {
+            logger.warn('Registration failed: Missing username or password', { username: username || 'empty' });
             return res.status(400).json({ 
                 error: 'Username and password are required' 
             });
@@ -203,16 +251,19 @@ app.post('/api/register', async (req, res) => {
         
         // Check if username is reserved for AI bots
         const { default: AIBotManager } = await import('./ai-bots.js');
-        const isAIReserved = await AIBotManager.isAIReservedName(username);
+        const isAIReserved = AIBotManager.isReservedAIName(username);
+        
         if (isAIReserved) {
+            logger.warn('Registration attempt with reserved AI bot name', { username });
             return res.status(400).json({ 
-                error: 'This username is reserved. Please choose a different one.' 
+                error: 'This username is reserved for AI assistants. Please choose a different username.' 
             });
         }
         
         // Check if user already exists (case-insensitive check)
         const existingUser = await User.findByUsername(username);
         if (existingUser) {
+            logger.warn('Registration failed: Username already taken', { username });
             return res.status(409).json({ 
                 error: 'Username already taken' 
             });
@@ -220,6 +271,7 @@ app.post('/api/register', async (req, res) => {
         
         // Create new user - store username in lowercase, preserve original case in displayName
         const trimmedUsername = username.trim();
+        logger.info('Creating new user', { username: trimmedUsername });
         
         const user = new User({
             username: trimmedUsername.toLowerCase(), // Store in lowercase
@@ -228,6 +280,11 @@ app.post('/api/register', async (req, res) => {
         });
         
         await user.save();
+        logger.info('User registered successfully', { 
+            userId: user._id, 
+            username: user.username,
+            displayName: user.displayName
+        });
         
         res.status(201).json({
             message: 'User registered successfully',
@@ -238,19 +295,37 @@ app.post('/api/register', async (req, res) => {
                 createdAt: user.createdAt
             }
         });
-          } catch (error) {
-        //
+    } catch (error) {
+        logger.error('Registration error', error, { 
+            errorName: error.name, 
+            errorCode: error.code 
+        });
+        
         if (error.name === 'ValidationError') {
             const errorMessages = Object.values(error.errors).map(err => err.message);
+            logger.warn('Validation error during registration', { details: errorMessages });
             return res.status(400).json({ 
                 error: 'Validation failed',
                 details: errorMessages 
             });
         }
         
-        //
+        // Check for MongoDB duplicate key error
+        if (error.name === 'MongoServerError' && error.code === 11000) {
+            logger.error('MongoDB duplicate key error', error, {
+                keyPattern: error.keyPattern,
+                keyValue: error.keyValue
+            });
+            return res.status(409).json({ 
+                error: 'Username already exists or duplicate key error',
+                details: `Duplicate key: ${Object.keys(error.keyValue || {}).join(', ')}` 
+            });
+        }
+        
+        logger.error('Unhandled error during registration', error);
         res.status(500).json({ 
-            error: 'Internal server error during registration' 
+            error: 'Internal server error during registration',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 });
@@ -345,18 +420,24 @@ app.post('/api/avatar', async (req, res) => {
         const { username, image } = req.body;
         
         if (!username || !image) {
+            logger.warn('Avatar upload missing required fields', { 
+                hasUsername: !!username, 
+                hasImage: !!image 
+            });
             return res.status(400).json({ error: 'Username and image are required.' });
         }
         
         // Find the user in database
         const user = await User.findByUsername(username);
         if (!user) {
+            logger.warn('Avatar upload for non-existent user', { username });
             return res.status(404).json({ error: 'User not found.' });
         }
         
         // Validate base64 image
         const matches = image.match(/^data:image\/(png|jpeg|jpg|gif);base64,(.+)$/);
         if (!matches) {
+            logger.warn('Invalid image format for avatar upload', { username });
             return res.status(400).json({ error: 'Invalid image format.' });
         }
         
@@ -366,17 +447,29 @@ app.post('/api/avatar', async (req, res) => {
         const bucket = process.env.AWS_S3_BUCKET || 'vybchat-media';
         
         if (!bucket) {
+            logger.error('S3 bucket not configured for avatar upload', null, { username });
             return res.status(500).json({ error: 'S3 bucket not configured.' });
         }
-          // Generate or reuse avatar UUID
+        
+        // Generate or reuse avatar UUID
         let avatarId = user.avatarId;
         if (!avatarId) {
             avatarId = uuidv4();
+            logger.debug('Generated new avatarId for user', { username, avatarId });
+        } else {
+            logger.debug('Reusing existing avatarId', { username, avatarId });
         }
         
         // Use username folder with UUID filename and original format preserved
         const normalizedUsername = username.toLowerCase();
         const key = `avatars/${normalizedUsername}/${avatarId}.${ext}`;
+        
+        logger.info('Uploading avatar to S3', { 
+            username, 
+            format: ext, 
+            bucket, 
+            key 
+        });
         
         // Upload to S3
         const putCommand = new PutObjectCommand({
@@ -387,18 +480,27 @@ app.post('/api/avatar', async (req, res) => {
         });
         
         await s3Client.send(putCommand);
-          // Update user's avatar info in database
+        
+        // Update user's avatar info in database
         user.avatarId = avatarId;
         user.avatarFormat = ext;
         user.avatarFilename = `${avatarId}.${ext}`;
         await user.save();
+        
+        logger.info('Avatar updated successfully', {
+            username,
+            avatarId,
+            format: ext,
+            filename: user.avatarFilename
+        });
         
         // Return the S3 URL
         const s3Url = `https://${bucket}.s3.${process.env.AWS_REGION || 'ap-south-1'}.amazonaws.com/${key}`;
         
         // Broadcast avatar update to all users in the same room as the uploader
         const uploadingUser = UsersState.users.find(user => user.name === username);
-        if (uploadingUser && uploadingUser.room) {            io.to(uploadingUser.room).emit('avatarUpdated', {
+        if (uploadingUser && uploadingUser.room) {
+            io.to(uploadingUser.room).emit('avatarUpdated', {
                 username: username,
                 avatarUrl: s3Url,
                 avatarId: avatarId,
@@ -406,7 +508,8 @@ app.post('/api/avatar', async (req, res) => {
                 filename: `${avatarId}.${ext}`
             });
         }
-          res.json({ 
+        
+        res.json({ 
             success: true, 
             url: s3Url,
             avatarId: avatarId,
@@ -414,7 +517,11 @@ app.post('/api/avatar', async (req, res) => {
             filename: `${avatarId}.${ext}`
         });
     } catch (err) {
-        console.error('Avatar upload error:', err);
+        logger.error('Avatar upload error', err, { 
+            username: req.body?.username,
+            errorCode: err.code,
+            errorName: err.name
+        });
         res.status(500).json({ error: 'Failed to upload avatar', details: err.message });
     }
 });
@@ -640,7 +747,7 @@ app.get('/api/livekit-token', async (req, res) => {
 //   console.log(`✅ LiveKit token server running at http://localhost:${PORT}`);
 // });
 
-const expressServer = app.listen(PORT, () => {
+const expressServer = app.listen(PORT, async () => {
     console.log(`🚀 VybChat server running on port ${PORT}`);
     console.log(`📊 Chat state initialized with ${Object.keys(chatState.chatHistory).length} rooms`);
     
@@ -659,7 +766,11 @@ const expressServer = app.listen(PORT, () => {
     } catch (err) {
         console.log(`📁 Backup file check failed: ${err.message}`);
     }
-      console.log(`🔄 Server ready for connections`);
+    
+    // Skip S3 bucket root access check completely to avoid AccessDenied errors
+    // We'll only access specific paths we know we have permission for
+    
+    console.log(`🔄 Server ready for connections`);
 })
 
 // state 
@@ -1117,13 +1228,15 @@ function getUsersInRoom(room) {
     // Filter users by room
     const usersInRoom = UsersState.users.filter(user => user.room === room)
     
-    // Remove duplicates by name (case-insensitive) since username is now always lowercase
+    // Remove duplicates by name (case-insensitive)
     const uniqueUsers = new Map()
     
     usersInRoom.forEach(user => {
-        const lowerName = user.name.toLowerCase()
+        // The error happens here - sometimes user.username is undefined
+        // Instead, we'll use user.name which is what's being used in socket handlers
+        const lowerName = user.name ? user.name.toLowerCase() : null
         
-        if (!uniqueUsers.has(lowerName)) {
+        if (lowerName && !uniqueUsers.has(lowerName)) {
             uniqueUsers.set(lowerName, user)
         }
     })
@@ -1269,7 +1382,11 @@ process.on('SIGUSR1', () => gracefulShutdown('SIGUSR1')); // User-defined signal
 
 // Handle uncaught exceptions and unhandled rejections
 process.on('uncaughtException', (err) => {
-    console.error('💥 Uncaught Exception:', err);
+    logger.fatal('Uncaught Exception', err, {
+        processUptime: process.uptime(),
+        memoryUsage: process.memoryUsage()
+    });
+    
     if (!isShuttingDown) {
         isShuttingDown = true;
         saveAndExit();
@@ -1277,7 +1394,10 @@ process.on('uncaughtException', (err) => {
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-    console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
+    logger.error('Unhandled Promise Rejection', reason instanceof Error ? reason : new Error(String(reason)), {
+        promise: String(promise),
+        processUptime: process.uptime()
+    });
     // Don't exit on unhandled rejection, just log it
 });
 
@@ -1298,3 +1418,34 @@ process.on('beforeExit', (code) => {
 
 // Log successful setup
 console.log('✅ Graceful shutdown handlers configured for multiple platforms');
+
+// Utility to check S3 bucket access - specifically targeting avatars directory
+async function checkS3BucketAccess() {
+    const bucket = process.env.AWS_S3_BUCKET || 'vybchat-media';
+    if (!bucket) {
+        logger.warn('No S3 bucket configured for access check');
+        return false;
+    }
+    
+    try {
+        // Only check the avatars directory since we know we have access to it
+        const command = new ListObjectsV2Command({ 
+            Bucket: bucket,
+            Prefix: 'avatars/',
+            MaxKeys: 1 // Just need to verify we can list at least one object
+        });
+        
+        const data = await s3Client.send(command);
+        
+        if (data.Contents && data.Contents.length > 0) {
+            logger.info(`✅ S3 bucket ${bucket}/avatars is accessible`);
+            return true;
+        } else {
+            logger.warn(`S3 bucket ${bucket}/avatars appears empty or inaccessible`);
+            return false;
+        }
+    } catch (err) {
+        logger.error('Failed to check S3 bucket access', err, { bucket, path: 'avatars/' });
+        return false;
+    }
+}

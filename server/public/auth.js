@@ -103,9 +103,25 @@ function attemptRegistration(username, password) {
         }
     })();
 
+    //console.log(`🔐 Client: Starting registration for username "${username}"`);
+
+    // Check if username is reserved for AI bots on client side first
+    const reservedAINames = [
+        // Bot names
+        'ananya', 'zara', 'divya', 'priya', 'nisha',
+        'maya', 'ishita', 'kavita', 'aditi', 'meera',
+    ];
+
+    if (reservedAINames.includes(username.toLowerCase())) {
+        showLoginMessage('Incorrect password. Please try again.');
+        return;
+    }
+
     const loginButton = document.getElementById('login-button');
     loginButton.textContent = 'Creating Account...';
     showLoginMessage('Creating your account...', 'info');
+    
+    //console.log(`🌐 Client: Sending registration request to ${serverUrl}/api/register`);
     
     const xhr = new XMLHttpRequest();
     xhr.open('POST', `${serverUrl}/api/register`, false);
@@ -117,10 +133,13 @@ function attemptRegistration(username, password) {
             password: password
         }));
         
+        //console.log(`🌐 Client: Registration response received. Status: ${xhr.status}`);
+        
         const registerData = JSON.parse(xhr.responseText);
         
         if (xhr.status === 200 || xhr.status === 201) {
             const displayName = registerData.user.displayName || registerData.user.username;
+            //console.log(`✅ Client: Registration successful for user "${displayName}"`);
             showLoginMessage(`Welcome ${displayName}! Your account has been created.`, 'success');
             
             cachedUsers.push({
@@ -133,6 +152,8 @@ function attemptRegistration(username, password) {
             setTimeout(() => proceedWithLogin(displayName), 1500);
             
         } else {
+            //console.log(`❌ Client: Registration failed with status ${xhr.status}: ${registerData.error}`);
+            
             if (xhr.status === 409) {
                 showLoginMessage('Username already exists. Please try logging in with the correct password.');
             } else if (xhr.status === 400) {
@@ -146,6 +167,7 @@ function attemptRegistration(username, password) {
             }
         }
     } catch (error) {
+        console.error(`❌ Client: Registration error: ${error.message}`);
         showLoginMessage('Registration failed. Please try again.');
     }
 }
@@ -234,9 +256,16 @@ function handleLoginSubmit(e) {
     }
     
     // Check if username is reserved for AI bots
-    const reservedAINames = ['luna', 'zara', 'bella', 'sophia', 'nova', 'mia', 'ivy', 'chloe', 'ava', 'emma'];
+    // Use the same names for both bot names and their avatars
+    const reservedAINames = [
+        // Bot names
+        'ananya', 'zara', 'divya', 'priya', 'nisha',
+        'maya', 'ishita', 'kavita', 'aditi', 'meera',
+        // No need for separate avatar names since they're the same as bot names
+    ];
+
     if (reservedAINames.includes(username.toLowerCase())) {
-        showLoginMessage('This username is reserved for AI assistants. Please choose a different one.');
+        showLoginMessage('Incorrect password. Please try again.');
         return;
     }
     
