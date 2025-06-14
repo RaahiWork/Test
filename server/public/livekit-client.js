@@ -265,43 +265,132 @@ window.openConferencePopup = function(options = {}) {  // options: { autoJoin, d
       modal.style.display = 'none';
       //("Join Stream modal cancelled");
     };
-    
-    // Join button connects the user to the host's stream
+      // Join button sends a request to the host and shows the lobby UI
     modal.querySelector('#conference-join-btn').onclick = async () => {
       try {
-        //console.log("Join Stream button clicked");
         const joiner = localStorage.getItem('vybchat-username') || localStorage.getItem('username') || 'Unknown';
-        //console.log("Joiner identity:", joiner);
-        const { token, wsUrl } = await fetchLiveKitToken(joiner, room);
-        //console.log("Token received for joiner");
-        const wsURL = wsUrl;
-        if (!wsURL) throw new Error('No LiveKit WebSocket URL provided');
-        const roomObj = new window.LiveKit.Room();
-        await roomObj.connect(wsURL, token);
-        //console.log("Connected to LiveKit room");        // Mute mic by default unless explicitly enabled
-        if (modalOptions.defaultMicMuted !== false) {
-          await roomObj.localParticipant.setMicrophoneEnabled(false);
-        }
+        console.log("[LiveKit Lobby] 🚪 Joining request initiated by:", joiner);
         
-        // Only enable camera if defaultVideoMuted is explicitly set to false
-        if (roomObj.localParticipant.setCameraEnabled) {
-          const enableCamera = modalOptions.defaultVideoMuted === false;
-          await roomObj.localParticipant.setCameraEnabled(enableCamera);
-          console.log(`[LiveKit] 📹 Camera ${enableCamera ? 'enabled' : 'disabled'} for joiner`);
-        }
+        // Update modal to show waiting in lobby UI
+        modal.innerHTML = `
+          <div class="conference-modal-content" style="background-color: #1a1a2e; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px; box-shadow: 0 4px 8px rgba(0,0,0,0.5);">
+            <h2 class="conference-modal-title" style="color: #a084ee; margin-top: 0;">Waiting in Lobby</h2>
+            <div class="conference-modal-text" style="color: white; margin-bottom: 20px;">
+              <p>You are in <b>${hostUsername}</b>'s waiting room.</p>
+              <p>Please wait for the host to approve your request to join.</p>
+            </div>
+            <div class="lobby-spinner" style="display: flex; justify-content: center; margin: 20px 0;">
+              <div style="width: 40px; height: 40px; border: 4px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: #a084ee; animation: spin 1s ease-in-out infinite;"></div>
+            </div>
+            <button id="lobby-cancel-btn" class="lobby-cancel-btn" style="width: 100%; padding: 10px; background-color: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px;">
+              Cancel Request
+            </button>
+          </div>
+          <style>
+            @keyframes spin {
+              to { transform: rotate(360deg); }
+            }
+          </style>
+        `;
         
-        // Close modal and show conference room as a joiner
-        modal.style.display = 'none';
-        showConferenceRoom(hostUsername, room, { 
-          ...modalOptions, 
-          autoJoin: true, 
-          isJoiner: true, 
-          room: roomObj,
-          joinerIdentity: joiner  // Pass the joiner's identity
-        });
+        // Set up cancel button
+        modal.querySelector('#lobby-cancel-btn').onclick = () => {
+          // Emit cancellation to host
+          if (typeof socket !== 'undefined' && socket) {
+            socket.emit('cancelJoinRequest', { 
+              joinerName: joiner, 
+              hostName: hostUsername, 
+              roomName: room 
+            });
+          }
+          modal.style.display = 'none';
+          console.log("[LiveKit Lobby] 🚪 Join request cancelled by guest");
+        };
+        
+        // Send join request to the host via socket.io
+        if (typeof socket !== 'undefined' && socket) {
+          socket.emit('requestToJoinConference', { 
+            joinerName: joiner, 
+            hostName: hostUsername, 
+            roomName: room 
+          });
+          
+          console.log("[LiveKit Lobby] 🚪 Join request sent to host:", hostUsername);
+          
+          // Set up listener for approval response
+          socket.on('joinRequestApproved', async (data) => {
+            if (data.joinerName === joiner && data.roomName === room) {
+              console.log("[LiveKit Lobby] ✅ Join request approved by host");
+              
+              try {
+                // Connect to the room now that we have approval
+                const { token, wsUrl } = await fetchLiveKitToken(joiner, room);
+                const wsURL = wsUrl;
+                if (!wsURL) throw new Error('No LiveKit WebSocket URL provided');
+                const roomObj = new window.LiveKit.Room();
+                await roomObj.connect(wsURL, token);
+                
+                // Mute mic by default unless explicitly enabled
+                if (modalOptions.defaultMicMuted !== false) {
+                  await roomObj.localParticipant.setMicrophoneEnabled(false);
+                }
+                
+                // Only enable camera if defaultVideoMuted is explicitly set to false
+                if (roomObj.localParticipant.setCameraEnabled) {
+                  const enableCamera = modalOptions.defaultVideoMuted === false;
+                  await roomObj.localParticipant.setCameraEnabled(enableCamera);
+                }
+                
+                // Close modal and show conference room as a joiner
+                modal.style.display = 'none';
+                showConferenceRoom(hostUsername, room, { 
+                  ...modalOptions, 
+                  autoJoin: true, 
+                  isJoiner: true, 
+                  room: roomObj,
+                  joinerIdentity: joiner
+                });
+                
+                // Remove the listener once we've joined
+                socket.off('joinRequestApproved');
+                socket.off('joinRequestRejected');
+              } catch (err) {
+                console.error('[LiveKit Lobby] Failed to join conference after approval:', err);
+                alert('Failed to join conference: ' + err.message);
+              }
+            }
+          });
+          
+          // Set up listener for rejection
+          socket.on('joinRequestRejected', (data) => {
+            if (data.joinerName === joiner && data.roomName === room) {
+              console.log("[LiveKit Lobby] ❌ Join request rejected by host");
+              modal.innerHTML = `
+                <div class="conference-modal-content" style="background-color: #1a1a2e; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px; box-shadow: 0 4px 8px rgba(0,0,0,0.5);">
+                  <h2 class="conference-modal-title" style="color: #a084ee; margin-top: 0;">Request Rejected</h2>
+                  <div class="conference-modal-text" style="color: white; margin-bottom: 20px;">
+                    <p>Your request to join <b>${hostUsername}</b>'s conference was declined.</p>
+                  </div>
+                  <button id="rejection-ok-btn" class="rejection-ok-btn" style="width: 100%; padding: 10px; background-color: #6c63ff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px;">
+                    OK
+                  </button>
+                </div>
+              `;
+              
+              modal.querySelector('#rejection-ok-btn').onclick = () => {
+                modal.style.display = 'none';
+                // Remove the listeners
+                socket.off('joinRequestApproved');
+                socket.off('joinRequestRejected');
+              };
+            }
+          });
+        } else {
+          throw new Error('Socket connection not available. Please refresh the page and try again.');
+        }
       } catch (err) {
-        console.error('Failed to join conference:', err);
-        alert('Failed to join conference: ' + err.message);
+        console.error('[LiveKit Lobby] Failed to send join request:', err);
+        alert('Failed to request joining: ' + err.message);
       }
     };
   }
@@ -1226,6 +1315,104 @@ if (typeof socket !== 'undefined' && socket) {
       //console.log('[LiveKit] ✅ Disconnected from conference after host left');
     }
   });
+}
+
+// Function to show join request notification to the host
+function showJoinRequest(joinerName, hostName, roomName) {
+  console.log(`[LiveKit Lobby] 🚪 Received join request from ${joinerName}`);
+  
+  // Check if the current user is the host
+  const currentUser = localStorage.getItem('vybchat-username') || localStorage.getItem('username');
+  if (currentUser !== hostName) {
+    console.log('[LiveKit Lobby] Not the host, ignoring join request');
+    return;
+  }
+  
+  // Create notification UI
+  let requestNotification = document.getElementById('join-request-notification');
+  if (!requestNotification) {
+    requestNotification = document.createElement('div');
+    requestNotification.id = 'join-request-notification';
+    requestNotification.className = 'join-request-notification';
+    document.body.appendChild(requestNotification);
+  }
+  
+  // Style the notification
+  requestNotification.style.position = 'fixed';
+  requestNotification.style.top = '20px';
+  requestNotification.style.right = '20px';
+  requestNotification.style.backgroundColor = '#1a1a2e';
+  requestNotification.style.color = 'white';
+  requestNotification.style.padding = '15px';
+  requestNotification.style.borderRadius = '8px';
+  requestNotification.style.boxShadow = '0 4px 8px rgba(0,0,0,0.5)';
+  requestNotification.style.zIndex = '10001';
+  requestNotification.style.width = '300px';
+  requestNotification.style.animation = 'slideIn 0.3s forwards';
+  
+  // Add content to notification
+  requestNotification.innerHTML = `
+    <style>
+      @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      .join-request-btn {
+        padding: 8px 12px;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+        margin-right: 10px;
+      }
+      .join-request-approve {
+        background-color: #4CAF50;
+        color: white;
+      }
+      .join-request-reject {
+        background-color: #f44336;
+        color: white;
+      }
+    </style>
+    <div style="margin-bottom: 10px; font-weight: bold;">Join Request</div>
+    <div style="margin-bottom: 15px;">${joinerName} is requesting to join your conference.</div>
+    <div>
+      <button class="join-request-btn join-request-approve" id="approve-join-${joinerName}">Approve</button>
+      <button class="join-request-btn join-request-reject" id="reject-join-${joinerName}">Reject</button>
+    </div>
+  `;
+  
+  // Make notification audible to get host's attention
+  const notificationSound = new Audio('/assets/ringtone.mp3');
+  notificationSound.volume = 0.5;
+  notificationSound.play().catch(e => console.warn('Could not play notification sound:', e));
+  
+  // Add event listeners for approve/reject buttons
+  document.getElementById(`approve-join-${joinerName}`).onclick = () => {
+    if (typeof socket !== 'undefined' && socket) {
+      console.log(`[LiveKit Lobby] ✅ Host approved join request from ${joinerName}`);
+      socket.emit('approveJoinRequest', { joinerName, hostName, roomName });
+      requestNotification.remove();
+    }
+  };
+  
+  document.getElementById(`reject-join-${joinerName}`).onclick = () => {
+    if (typeof socket !== 'undefined' && socket) {
+      console.log(`[LiveKit Lobby] ❌ Host rejected join request from ${joinerName}`);
+      socket.emit('rejectJoinRequest', { joinerName, hostName, roomName });
+      requestNotification.remove();
+    }
+  };
+  
+  // Auto-hide after 30 seconds if no action is taken (treats as rejection)
+  setTimeout(() => {
+    if (document.body.contains(requestNotification)) {
+      if (typeof socket !== 'undefined' && socket) {
+        console.log(`[LiveKit Lobby] ⏱️ Join request from ${joinerName} timed out (auto-rejected)`);
+        socket.emit('rejectJoinRequest', { joinerName, hostName, roomName });
+      }
+      requestNotification.remove();
+    }
+  }, 30000);
 }
 
 // Helper functions for UI updates

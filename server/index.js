@@ -751,6 +751,40 @@ const StreamingState = {
     }
 }
 
+// Conference lobby system state management
+const ConferenceLobbyState = {
+    pendingRequests: new Map(),
+    addPendingRequest: function(joinerName, hostName, roomName, socketId) {
+        const requestKey = `${joinerName}:${hostName}:${roomName}`;
+        this.pendingRequests.set(requestKey, {
+            joinerName,
+            hostName,
+            roomName,
+            joinerSocketId: socketId,
+            requestedAt: Date.now()
+        });
+        return requestKey;
+    },
+    removePendingRequest: function(joinerName, hostName, roomName) {
+        const requestKey = `${joinerName}:${hostName}:${roomName}`;
+        return this.pendingRequests.delete(requestKey);
+    },
+    getPendingRequest: function(joinerName, hostName, roomName) {
+        const requestKey = `${joinerName}:${hostName}:${roomName}`;
+        return this.pendingRequests.get(requestKey);
+    },
+    cleanupOldRequests: function() {
+        const now = Date.now();
+        const TIMEOUT = 5 * 60 * 1000; // 5 minutes
+        
+        for (const [key, request] of this.pendingRequests.entries()) {
+            if (now - request.requestedAt > TIMEOUT) {
+                this.pendingRequests.delete(key);
+            }
+        }
+    }
+};
+
 // --- Room message history ---
 const roomMessages = chatState.chatHistory;
 const MAX_ROOM_HISTORY = 50;
@@ -1145,6 +1179,130 @@ io.on('connection', socket => {
             streamingUsers: StreamingState.getAllStreamers()
         });
     });
+
+    // Conference lobby system handlers
+    socket.on('requestToJoinConference', ({ joinerName, hostName, roomName }) => {
+        console.log(`[LiveKit Lobby] 🚪 ${joinerName} requested to join ${hostName}'s conference in room ${roomName}`);
+        
+        // Store the request with the joiner's socket ID for later notifications
+        ConferenceLobbyState.addPendingRequest(joinerName, hostName, roomName, socket.id);
+        
+        // Find the host's socket to send them the notification
+        const hostUser = UsersState.users.find(user => user.name === hostName);
+        if (hostUser && hostUser.id) {
+            io.to(hostUser.id).emit('pendingJoinRequest', {
+                joinerName,
+                hostName,
+                roomName
+            });
+            console.log(`[LiveKit Lobby] 📩 Sent join request notification to host ${hostName}`);
+        } else {
+            console.log(`[LiveKit Lobby] ⚠️ Host ${hostName} not found or not connected`);
+            // Notify the joiner that the host is not available
+            socket.emit('joinRequestRejected', {
+                joinerName,
+                hostName,
+                roomName,
+                reason: 'Host not available'
+            });
+        }
+        
+        // Set a timeout to auto-reject if host doesn't respond in 60 seconds
+        setTimeout(() => {
+            const pendingRequest = ConferenceLobbyState.getPendingRequest(joinerName, hostName, roomName);
+            if (pendingRequest) {
+                console.log(`[LiveKit Lobby] ⏱️ Join request timed out for ${joinerName}`);
+                // Find the joiner's socket to send rejection
+                const joinerSocket = io.sockets.sockets.get(pendingRequest.joinerSocketId);
+                if (joinerSocket) {
+                    joinerSocket.emit('joinRequestRejected', {
+                        joinerName,
+                        hostName,
+                        roomName,
+                        reason: 'Request timed out'
+                    });
+                }
+                // Remove the pending request
+                ConferenceLobbyState.removePendingRequest(joinerName, hostName, roomName);
+            }
+        }, 60000); // 60 seconds timeout
+    });
+    
+    socket.on('approveJoinRequest', ({ joinerName, hostName, roomName }) => {
+        console.log(`[LiveKit Lobby] ✅ Host ${hostName} approved ${joinerName}'s join request`);
+        
+        // Get the pending request to find the joiner's socket ID
+        const pendingRequest = ConferenceLobbyState.getPendingRequest(joinerName, hostName, roomName);
+        if (pendingRequest) {
+            // Find the joiner's socket to send approval
+            const joinerSocket = io.sockets.sockets.get(pendingRequest.joinerSocketId);
+            if (joinerSocket) {
+                joinerSocket.emit('joinRequestApproved', {
+                    joinerName,
+                    hostName,
+                    roomName
+                });
+                console.log(`[LiveKit Lobby] 📩 Sent join approval to ${joinerName}`);
+            } else {
+                console.log(`[LiveKit Lobby] ⚠️ Joiner ${joinerName} not connected anymore`);
+            }
+            
+            // Remove the pending request
+            ConferenceLobbyState.removePendingRequest(joinerName, hostName, roomName);
+        } else {
+            console.log(`[LiveKit Lobby] ⚠️ No pending request found for ${joinerName} to join ${hostName}'s room`);
+        }
+    });
+    
+    socket.on('rejectJoinRequest', ({ joinerName, hostName, roomName }) => {
+        console.log(`[LiveKit Lobby] ❌ Host ${hostName} rejected ${joinerName}'s join request`);
+        
+        // Get the pending request to find the joiner's socket ID
+        const pendingRequest = ConferenceLobbyState.getPendingRequest(joinerName, hostName, roomName);
+        if (pendingRequest) {
+            // Find the joiner's socket to send rejection
+            const joinerSocket = io.sockets.sockets.get(pendingRequest.joinerSocketId);
+            if (joinerSocket) {
+                joinerSocket.emit('joinRequestRejected', {
+                    joinerName,
+                    hostName,
+                    roomName
+                });
+                console.log(`[LiveKit Lobby] 📩 Sent join rejection to ${joinerName}`);
+            } else {
+                console.log(`[LiveKit Lobby] ⚠️ Joiner ${joinerName} not connected anymore`);
+            }
+            
+            // Remove the pending request
+            ConferenceLobbyState.removePendingRequest(joinerName, hostName, roomName);
+        } else {
+            console.log(`[LiveKit Lobby] ⚠️ No pending request found for ${joinerName} to join ${hostName}'s room`);
+        }
+    });
+    
+    socket.on('cancelJoinRequest', ({ joinerName, hostName, roomName }) => {
+        console.log(`[LiveKit Lobby] 🚫 ${joinerName} cancelled request to join ${hostName}'s conference`);
+        
+        // Get the pending request
+        const pendingRequest = ConferenceLobbyState.getPendingRequest(joinerName, hostName, roomName);
+        if (pendingRequest) {
+            // Notify the host that the request was cancelled
+            const hostUser = UsersState.users.find(user => user.name === hostName);
+            if (hostUser && hostUser.id) {
+                io.to(hostUser.id).emit('joinRequestCancelled', {
+                    joinerName,
+                    hostName,
+                    roomName
+                });
+                console.log(`[LiveKit Lobby] 📩 Notified host ${hostName} about cancelled request`);
+            }
+            
+            // Remove the pending request
+            ConferenceLobbyState.removePendingRequest(joinerName, hostName, roomName);
+        } else {
+            console.log(`[LiveKit Lobby] ⚠️ No pending request found to cancel for ${joinerName}`);
+        }
+    });
 });
 
 function buildMsg(name, text, image = null, voice = null) {
@@ -1182,7 +1340,7 @@ function getUsersInRoom(room) {
     // Filter users by room
     const usersInRoom = UsersState.users.filter(user => user.room === room)
     
-    // Remove duplicates by name (case-insensitive)
+    // Remove duplicates by username (case-insensitive)
     const uniqueUsers = new Map()
     
     usersInRoom.forEach(user => {
@@ -1403,3 +1561,8 @@ async function checkS3BucketAccess() {
         return false;
     }
 }
+
+// Set up periodic cleanup of old lobby requests
+setInterval(() => {
+    ConferenceLobbyState.cleanupOldRequests();
+}, 5 * 60 * 1000); // Run every 5 minutes

@@ -505,6 +505,38 @@ socket.on('userList', ({ users }) => {
     showUsers(users);
 });
 
+
+
+// Conference lobby system - socket event listeners
+socket.on('pendingJoinRequest', (data) => {
+    // Show the join request notification to the host
+    if (typeof showJoinRequest === 'function') {
+        showJoinRequest(data.joinerName, data.hostName, data.roomName);
+    } else {
+        console.error('[LiveKit Lobby] showJoinRequest function not available');
+    }
+});
+
+socket.on('joinRequestApproved', (data) => {
+    console.log('[LiveKit Lobby] Join request was approved:', data);
+    // The handler in livekit-client.js will process this event
+});
+
+socket.on('joinRequestRejected', (data) => {
+    console.log('[LiveKit Lobby] Join request was rejected:', data);
+    // The handler in livekit-client.js will process this event
+});
+
+socket.on('joinRequestCancelled', (data) => {
+    console.log('[LiveKit Lobby] Join request was cancelled:', data);
+    
+    // Remove the notification if it exists
+    const requestNotification = document.getElementById('join-request-notification');
+    if (requestNotification) {
+        requestNotification.remove();
+    }
+});
+
 // Create a message tracking system to prevent duplicates
 const processedMessages = new Set();
 
