@@ -786,53 +786,69 @@ function showShareModal(hostUsername, conferenceUrl) {
   let modal = document.getElementById('conference-share-modal');
   if (!modal) {
     modal = document.createElement('div');
-    modal.id = 'conference-share-modal';      modal.className = 'conference-share-modal-overlay';
+    modal.id = 'conference-share-modal';
+    modal.className = 'conference-share-modal-overlay';
     document.body.appendChild(modal);
-  } else {
-    modal.style.display = 'flex';
   }
+  
+  // Always ensure the display style is properly set
+  modal.style.display = 'flex';
+  modal.style.position = 'fixed';
+  modal.style.top = '0';
+  modal.style.left = '0';
+  modal.style.width = '100%';
+  modal.style.height = '100%';
+  modal.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+  modal.style.zIndex = '10000';
+  modal.style.justifyContent = 'center';
+  modal.style.alignItems = 'center';
+  
   modal.innerHTML = `
-    <div class="conference-share-modal-content">
-      <h2 class="conference-share-title">Share Conference</h2>
-      <div class="conference-share-description">
+    <div class="conference-share-modal-content" style="background-color: #fff; padding: 20px; border-radius: 8px; width: 90%; max-width: 500px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+      <h2 class="conference-share-title" style="margin-top: 0; color: #333;">Share Conference</h2>
+      <div class="conference-share-description" style="margin-bottom: 15px;">
         Invite others to join <strong>${hostUsername}'s</strong> conference room
       </div>
       
-      <div class="conference-link-section">
-        <label class="conference-link-label">Conference Link:</label>
-        <div class="conference-link-input-container">
+      <div class="conference-link-section" style="margin-bottom: 20px;">
+        <label class="conference-link-label" style="display: block; margin-bottom: 5px; font-weight: bold;">Conference Link:</label>
+        <div class="conference-link-input-container" style="display: flex;">
           <input 
             id="conference-link-input" 
             class="conference-link-input"
             type="text" 
             value="${conferenceUrl}" 
             readonly 
+            style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px 0 0 4px;"
           />
           <button 
             id="copy-link-btn" 
             class="conference-copy-btn"
             title="Copy link to clipboard"
+            style="padding: 8px 12px; background-color: #4CAF50; color: white; border: none; border-radius: 0 4px 4px 0; cursor: pointer;"
           >
             📋 Copy
           </button>
         </div>
       </div>
 
-      <div class="conference-share-info">
-        <div class="conference-share-info-item">🔗 Anyone with this link can join your conference</div>
+      <div class="conference-share-info" style="margin-bottom: 20px; background-color: #f9f9f9; padding: 10px; border-radius: 4px;">
+        <div class="conference-share-info-item" style="margin-bottom: 5px;">🔗 Anyone with this link can join your conference</div>
         <div>📱 Works on desktop and mobile browsers</div>
       </div>
 
-      <div class="conference-share-buttons">
+      <div class="conference-share-buttons" style="display: flex; gap: 10px; margin-bottom: 15px;">
         <button 
           id="share-whatsapp-btn" 
           class="conference-share-whatsapp"
+          style="flex: 1; padding: 8px; background-color: #25D366; color: white; border: none; border-radius: 4px; cursor: pointer;"
         >
           📱 WhatsApp
         </button>
         <button 
           id="share-email-btn" 
           class="conference-share-email"
+          style="flex: 1; padding: 8px; background-color: #4285F4; color: white; border: none; border-radius: 4px; cursor: pointer;"
         >
           ✉️ Email
         </button>
@@ -841,6 +857,7 @@ function showShareModal(hostUsername, conferenceUrl) {
       <button 
         id="share-modal-close-btn" 
         class="conference-share-close"
+        style="width: 100%; padding: 8px; background-color: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;"
       >
         Close
       </button>
@@ -853,16 +870,31 @@ function showShareModal(hostUsername, conferenceUrl) {
   const whatsappBtn = modal.querySelector('#share-whatsapp-btn');
   const emailBtn = modal.querySelector('#share-email-btn');
   const closeBtn = modal.querySelector('#share-modal-close-btn');
+  
   // Copy link functionality
   copyBtn.onclick = async () => {
     try {
-      await navigator.clipboard.writeText(conferenceUrl);
-      copyBtn.innerHTML = '✅ Copied!';
-      copyBtn.classList.add('copied');
-      setTimeout(() => {
-        copyBtn.innerHTML = '📋 Copy';
-        copyBtn.classList.remove('copied');
-      }, 2000);
+      // Use the copy-to-clipboard function available in app.js
+      if (typeof copyToClipboard === 'function') {
+        const success = await copyToClipboard(conferenceUrl);
+        if (success) {
+          copyBtn.innerHTML = '✅ Copied!';
+          copyBtn.classList.add('copied');
+          setTimeout(() => {
+            copyBtn.innerHTML = '📋 Copy';
+            copyBtn.classList.remove('copied');
+          }, 2000);
+        }
+      } else {
+        // Fallback to older clipboard API
+        await navigator.clipboard.writeText(conferenceUrl);
+        copyBtn.innerHTML = '✅ Copied!';
+        copyBtn.classList.add('copied');
+        setTimeout(() => {
+          copyBtn.innerHTML = '📋 Copy';
+          copyBtn.classList.remove('copied');
+        }, 2000);
+      }
     } catch (err) {
       // Fallback for older browsers
       linkInput.select();
@@ -901,7 +933,8 @@ function showShareModal(hostUsername, conferenceUrl) {
   modal.onclick = (e) => {
     if (e.target === modal) {
       modal.style.display = 'none';
-    }  };
+    }
+  };
 
   // Auto-select the link input for easy copying
   setTimeout(() => {
