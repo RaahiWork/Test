@@ -278,14 +278,16 @@ window.openConferencePopup = function(options = {}) {  // options: { autoJoin, d
         if (!wsURL) throw new Error('No LiveKit WebSocket URL provided');
         const roomObj = new window.LiveKit.Room();
         await roomObj.connect(wsURL, token);
-        //console.log("Connected to LiveKit room");
-        
-        // Mute mic and video by default for joiners
+        //console.log("Connected to LiveKit room");        // Mute mic by default unless explicitly enabled
         if (modalOptions.defaultMicMuted !== false) {
           await roomObj.localParticipant.setMicrophoneEnabled(false);
         }
-        if (modalOptions.defaultVideoMuted !== false && roomObj.localParticipant.setCameraEnabled) {
-          await roomObj.localParticipant.setCameraEnabled(false);
+        
+        // Only enable camera if defaultVideoMuted is explicitly set to false
+        if (roomObj.localParticipant.setCameraEnabled) {
+          const enableCamera = modalOptions.defaultVideoMuted === false;
+          await roomObj.localParticipant.setCameraEnabled(enableCamera);
+          console.log(`[LiveKit] 📹 Camera ${enableCamera ? 'enabled' : 'disabled'} for joiner`);
         }
         
         // Close modal and show conference room as a joiner
@@ -304,11 +306,17 @@ window.openConferencePopup = function(options = {}) {  // options: { autoJoin, d
     };
   }
   // If autoJoin, join the room as host and show conference room UI
-  if (options.autoJoin) {
-    // If this is a fresh stream start (host starting), clear any existing room state
+  if (options.autoJoin) {    // If this is a fresh stream start (host starting), clear any existing room state
     if (options.isHostStarting) {
       clearExistingConferenceState();
     }
+    
+    // Allow video to be muted by default based on options
+    // If not specified, default to muted (defaultVideoMuted=true)
+    if (options.defaultVideoMuted === undefined) {
+      options.defaultVideoMuted = true;
+    }
+    
     showConferenceRoom(hostUsername, roomName, options);
   } else {
     // If not autoJoin, show a popup for other users to join the host's stream
@@ -452,8 +460,8 @@ async function initializeConferenceRoom({
       
       // Update participant count when connection state changes
       updateParticipantCount(room);
-    });room.on('participantConnected', (participant) => {
-      //console.log('[LiveKit] 👤 Participant joined:', participant.identity);
+    });    room.on('participantConnected', (participant) => {
+      console.log('[LiveKit] 👤 Participant joined:', participant.identity);
       updateParticipantCount(room);
       
       // Ensure connection status shows connected for everyone
@@ -462,31 +470,52 @@ async function initializeConferenceRoom({
       // Add participant name to the grid even if they don't have video yet
       addParticipantPlaceholder(participant.identity);
       
+      // Set up track subscription listeners for this participant
+      participant.on('trackPublished', async (publication) => {
+        console.log('[LiveKit] New track published by connected participant:', participant.identity, publication.kind);
+        try {
+          await publication.setSubscribed(true);
+          console.log('[LiveKit] Successfully subscribed to track from', participant.identity);
+        } catch (err) {
+          console.warn('[LiveKit] Failed to subscribe to track:', err);
+        }
+      });
+      
       // Subscribe to any tracks this participant might already have published
       participant.videoTracks.forEach(async (publication) => {
-        if (publication.track && !publication.isSubscribed) {
-          try {
-            await publication.setSubscribed(true);
-            //console.log('[LiveKit] 📹 Auto-subscribed to video track from new participant:', participant.identity);
-          } catch (err) {
-            //console.warn('[LiveKit] ⚠️ Failed to auto-subscribe to video track:', err);
+        console.log('[LiveKit] Processing existing video track from new participant:', participant.identity);
+        // Always try to subscribe regardless of current state
+        try {
+          await publication.setSubscribed(true);
+          console.log('[LiveKit] 📹 Auto-subscribed to video track from new participant:', participant.identity);
+          
+          // If the track is already available, display it
+          if (publication.track) {
+            const videoEl = publication.track.attach();
+            videoEl.autoplay = true;
+            videoEl.muted = true;
+            videoEl.playsInline = true;
+            
+            // Add to the grid immediately
+            addVideoToGrid(videoEl, participant.identity);
+            console.log('[LiveKit] 📹 Added existing video track to grid for new participant:', participant.identity);
           }
+        } catch (err) {
+          console.warn('[LiveKit] ⚠️ Failed to subscribe to video track:', err);
         }
       });
       
       participant.audioTracks.forEach(async (publication) => {
-        if (publication.track && !publication.isSubscribed) {
-          try {
-            await publication.setSubscribed(true);
-            //console.log('[LiveKit] 🔊 Auto-subscribed to audio track from new participant:', participant.identity);
-          } catch (err) {
-            //console.warn('[LiveKit] ⚠️ Failed to auto-subscribe to audio track:', err);
-          }
+        // Always try to subscribe to audio tracks
+        try {
+          await publication.setSubscribed(true);
+          console.log('[LiveKit] 🔊 Auto-subscribed to audio track from new participant:', participant.identity);
+        } catch (err) {
+          console.warn('[LiveKit] ⚠️ Failed to subscribe to audio track:', err);
         }
       });
       
-      // Broadcast to all participants that someone joined (visual feedback)
-      //console.log(`[LiveKit] 📢 ${participant.identity} joined the conference`);
+      console.log(`[LiveKit] 📢 ${participant.identity} joined the conference`);
     });
       room.on('participantDisconnected', (participant) => {
       //console.log('[LiveKit] 👤 Participant left:', participant.identity);
@@ -503,22 +532,32 @@ async function initializeConferenceRoom({
       
       // Broadcast to remaining participants that someone left
       //console.log(`[LiveKit] 📢 ${participant.identity} left the conference`);
-    });
-
-    room.on('trackPublished', async (publication, participant) => {
-      //console.log('[LiveKit] 📤 Track published by', participant.identity, ':', publication.kind, publication.source);
+    });    room.on('trackPublished', async (publication, participant) => {
+      console.log('[LiveKit] 📤 Track published by', participant.identity, ':', publication.kind, publication.source);
       
-      // Auto-subscribe to newly published tracks from other participants
+      // Always auto-subscribe to newly published tracks from other participants
       if (participant !== room.localParticipant) {
         try {
+          // Force subscription to ensure we get all remote tracks
           await publication.setSubscribed(true);
-          //console.log('[LiveKit] ✅ Auto-subscribed to new track from', participant.identity);
+          console.log('[LiveKit] ✅ Auto-subscribed to new track from', participant.identity);
+          
+          // If this is a video track, make sure to show it immediately
+          if (publication.kind === 'video' && publication.track) {
+            const videoEl = publication.track.attach();
+            videoEl.autoplay = true;
+            videoEl.muted = true;
+            videoEl.playsInline = true;
+            addVideoToGrid(videoEl, participant.identity);
+            console.log('[LiveKit] 📹 Video from published track added to grid for', participant.identity);
+          }
         } catch (err) {
-          //console.warn('[LiveKit] ⚠️ Failed to auto-subscribe to new track from', participant.identity, ':', err);
+          console.warn('[LiveKit] ⚠️ Failed to auto-subscribe to new track from', participant.identity, ':', err);
         }
       }
     });    room.on('trackSubscribed', (track, publication, participant) => {
-      //console.log('[LiveKit] 📺 Track subscribed:', track.kind, 'from', participant.identity);
+      console.log('[LiveKit] 📺 Track subscribed:', track.kind, 'from', participant.identity, 'source:', publication.source);
+      
       if (track.kind === 'audio') {
         const audioEl = track.attach();
         audioEl.autoplay = true;
@@ -528,19 +567,19 @@ async function initializeConferenceRoom({
         if (!isConferenceSpeakerEnabled) {
           audioEl.muted = true;
           audioEl.volume = 0;
-          //console.log('[LiveKit] 🔇 Audio element muted because speaker is disabled');
+          console.log('[LiveKit] 🔇 Audio element muted because speaker is disabled');
         } else {
           audioEl.muted = false;
           audioEl.volume = 1;
-          //console.log('[LiveKit] 🔊 Audio element enabled because speaker is enabled');
+          console.log('[LiveKit] 🔊 Audio element enabled because speaker is enabled');
         }
         
         document.body.appendChild(audioEl);
-        //console.log('[LiveKit] 🔊 Audio track from', participant.identity, 'added to speaker control');
+        console.log('[LiveKit] 🔊 Audio track from', participant.identity, 'added to speaker control');
         
         // Add event listener for when the audio track ends
         track.on('ended', () => {
-          //console.log('[LiveKit] 🔊 Audio track ended for participant:', participant.identity);
+          console.log('[LiveKit] 🔊 Audio track ended for participant:', participant.identity);
           // Remove from audioElements array
           const index = conferenceAudioElements.indexOf(audioEl);
           if (index > -1) {
@@ -551,6 +590,13 @@ async function initializeConferenceRoom({
           }
         });
       } else if (track.kind === 'video') {
+        // Remove any existing placeholder or video for this participant first
+        removeVideoFromGrid(participant.identity);
+        removeParticipantPlaceholder(participant.identity);
+        
+        console.log('[LiveKit] 📹 Creating video element for', participant.identity);
+        
+        // For video tracks, make sure we correctly display them
         const videoEl = track.attach();
         videoEl.autoplay = true;
         videoEl.muted = true; // Prevent echo
@@ -560,19 +606,30 @@ async function initializeConferenceRoom({
         videoEl.style.maxWidth = '100%';
         videoEl.style.maxHeight = '100%';
         
+        // Make sure we have an ID on the element for debugging
+        videoEl.id = `video-element-${participant.identity}`;
+        
         // Force play the video to ensure visibility (especially important for Safari)
         videoEl.play().catch(err => {
           console.warn('[LiveKit] Error auto-playing video, trying again with user interaction:', err);
-          // For browsers that require user interaction, we'll handle this in addVideoToGrid
+          // Add a button to manually play if needed
+          const playBtn = document.createElement('button');
+          playBtn.innerHTML = '▶️ Play Video';
+          playBtn.className = 'video-play-button';
+          playBtn.onclick = () => {
+            videoEl.play();
+            playBtn.remove();
+          };
+          videoEl.parentElement?.appendChild(playBtn);
         });
         
         // Add to the grid with participant's identity
         addVideoToGrid(videoEl, participant.identity);
-        //console.log('[LiveKit] 📹 Video track from', participant.identity);
+        console.log('[LiveKit] 📹 Video track from', participant.identity, 'added to grid successfully');
         
         // Add event listener for when the video track ends (camera turned off)
         track.on('ended', () => {
-          //console.log('[LiveKit] 📹 Video track ended for participant:', participant.identity);
+          console.log('[LiveKit] 📹 Video track ended for participant:', participant.identity);
           removeVideoFromGrid(participant.identity);
           setTimeout(() => {
             addParticipantPlaceholder(participant.identity);
@@ -594,55 +651,83 @@ async function initializeConferenceRoom({
         
         //console.log('[LiveKit] 📹 Video stopped for participant:', participant.identity, '- showing placeholder');
       }
-    });// Handle existing participants and their tracks (crucial for joiners)
-    //console.log('[LiveKit] 👥 Processing existing participants...');
+    });    // Handle existing participants and their tracks (crucial for joiners)
+    console.log('[LiveKit] 👥 Processing existing participants...', room.participants.size);
     room.participants.forEach((participant) => {
-      //console.log('[LiveKit] 👤 Found existing participant:', participant.identity);
+      console.log('[LiveKit] 👤 Found existing participant:', participant.identity);
       
       // Add placeholder for existing participants (they'll be replaced by video if available)
       addParticipantPlaceholder(participant.identity);
-        // Check for existing video tracks and subscribe if not already subscribed
+      
+      // Setup track published listener for the participant
+      participant.on('trackPublished', async (publication) => {
+        console.log('[LiveKit] Track published by existing participant:', publication.kind, participant.identity);
+        try {
+          await publication.setSubscribed(true);
+        } catch (err) {
+          console.warn('[LiveKit] Failed to subscribe to track from existing participant:', err);
+        }
+      });
+      
+      // Check for existing video tracks and always resubscribe to ensure they're working
       participant.videoTracks.forEach(async (publication) => {
-        if (publication.track) {
-          if (publication.isSubscribed) {
-            //console.log('[LiveKit] 📹 Already subscribed to video track from:', participant.identity);
+        console.log('[LiveKit] Processing video track for', participant.identity, 
+                  'isSubscribed:', publication.isSubscribed,
+                  'hasTrack:', !!publication.track,
+                  'source:', publication.source);
+        
+        try {
+          // Force subscription to ensure we get all video tracks
+          await publication.setSubscribed(true);
+          console.log('[LiveKit] Subscription successful for', participant.identity);
+          
+          if (publication.track) {
+            console.log('[LiveKit] Track available, attaching video for', participant.identity);
+            
+            // Remove existing elements first
+            removeVideoFromGrid(participant.identity);
+            removeParticipantPlaceholder(participant.identity);
+            
             const videoEl = publication.track.attach();
+            videoEl.id = `video-element-existing-${participant.identity}`;
             videoEl.autoplay = true;
             videoEl.muted = true;
+            videoEl.playsInline = true;
             
-            // Check if the video track is actually active
-            if (publication.track.mediaStreamTrack && publication.track.mediaStreamTrack.readyState === 'live') {
-              addVideoToGrid(videoEl, participant.identity);
-            } else {
-              //console.log('[LiveKit] 📹 Video track from', participant.identity, 'is not active - showing placeholder');
-              addParticipantPlaceholder(participant.identity);
-            }
-          } else {
-            //console.log('[LiveKit] 📹 Subscribing to existing video track from:', participant.identity);
-            try {
-              // Subscribe to the track if not already subscribed
-              await publication.setSubscribed(true);
-              if (publication.track) {
-                const videoEl = publication.track.attach();
-                videoEl.autoplay = true;
-                videoEl.muted = true;
-                
-                // Check if the video track is actually active
-                if (publication.track.mediaStreamTrack && publication.track.mediaStreamTrack.readyState === 'live') {
-                  addVideoToGrid(videoEl, participant.identity);
-                } else {
-                  //console.log('[LiveKit] 📹 Subscribed video track from', participant.identity, 'is not active - showing placeholder');
-                  addParticipantPlaceholder(participant.identity);
-                }
+            // Make sure video loads properly
+            videoEl.style.maxWidth = '100%';
+            videoEl.style.maxHeight = '100%';
+            
+            videoEl.play().catch(err => {
+              console.warn('[LiveKit] Error playing video for existing participant:', err);
+            });
+            
+            // Add to grid
+            addVideoToGrid(videoEl, participant.identity);
+            console.log('[LiveKit] Successfully added video for existing participant:', participant.identity);
+            
+            // Check actual video state after a short delay
+            setTimeout(() => {
+              if (videoEl.videoWidth === 0 || videoEl.videoHeight === 0) {
+                console.warn('[LiveKit] Video element has no dimensions for', participant.identity);
+                // Try to fix by reattaching
+                const newVideoEl = publication.track.attach();
+                newVideoEl.autoplay = true;
+                newVideoEl.muted = true;
+                newVideoEl.playsInline = true;
+                removeVideoFromGrid(participant.identity);
+                addVideoToGrid(newVideoEl, participant.identity);
+              } else {
+                console.log('[LiveKit] Video dimensions:', videoEl.videoWidth, 'x', videoEl.videoHeight, 'for', participant.identity);
               }
-            } catch (err) {
-              //console.warn('[LiveKit] ⚠️ Failed to subscribe to video track from', participant.identity, ':', err);
-              // Show placeholder if subscription fails
-              addParticipantPlaceholder(participant.identity);
-            }
+            }, 1000);
+          } else {
+            console.log('[LiveKit] No video track available yet for', participant.identity);
+            addParticipantPlaceholder(participant.identity);
           }
-        } else {
-          //console.log('[LiveKit] 📹 No video track available from:', participant.identity, '- showing placeholder');
+        } catch (err) {
+          console.warn('[LiveKit] ⚠️ Failed to process video track from', participant.identity, ':', err);
+          // Show placeholder if subscription fails
           addParticipantPlaceholder(participant.identity);
         }
       });
@@ -693,14 +778,13 @@ async function initializeConferenceRoom({
           }
         }
       });
-    });
-
-    // Listen for local participant track publications to show own video
+    });    // Listen for local participant track publications to show own video
     room.localParticipant.on('trackPublished', (publication) => {
       if (publication.kind === 'video' && publication.track) {
         const videoEl = publication.track.attach();
         videoEl.autoplay = true;
         videoEl.muted = true; // Always mute local video to avoid echo
+        videoEl.playsInline = true; // Better mobile compatibility
         
         // Use the correct local display name
         const localDisplayName = joinerIdentity ? `${joinerIdentity} (You)` : `${hostUsername} (You)`;
@@ -708,11 +792,24 @@ async function initializeConferenceRoom({
         // Set mirroring for self-view to make it more natural
         videoEl.style.transform = 'scaleX(-1)';
         
+        // Attempt forced play for browsers that might block autoplay
+        videoEl.play().catch(err => {
+          console.warn('[LiveKit] Auto-play prevented for local video:', err);
+        });
+        
         // Always ensure the local video is visible in the grid
         addVideoToGrid(videoEl, localDisplayName);
-        //console.log('[LiveKit] 📹 Local video track added to grid');
+        console.log('[LiveKit] 📹 Local video track added to grid');
+        
+        // Update UI to show video is enabled
+        const videoBtn = document.getElementById('conference-video-btn');
+        if (videoBtn) {
+          videoBtn.classList.remove('disabled');
+          videoBtn.classList.add('enabled');
+          videoBtn.title = 'Disable Camera';
+        }
       }
-    });    room.localParticipant.on('trackUnpublished', (publication) => {
+    });room.localParticipant.on('trackUnpublished', (publication) => {
       if (publication.kind === 'video') {
         const localDisplayName = joinerIdentity ? `${joinerIdentity} (You)` : `${hostUsername} (You)`;
         removeVideoFromGrid(localDisplayName);
@@ -738,16 +835,28 @@ async function initializeConferenceRoom({
         });
         await room.localParticipant.publishTrack(micTrack);
         //console.log('[LiveKit] 🎙️ High-quality mic published');
-      }
-
-      // Step 7: Publish camera if enabled (only for new room connections, not joiners)
-      if (!defaultVideoMuted) {
-        const camTrack = await window.LiveKit.LocalVideoTrack.create({
-          resolution: { width: 640, height: 480 }, // Balanced resolution for stability
-          frameRate: 30 // Smooth frame rate
-        });
-        await room.localParticipant.publishTrack(camTrack);
-        //console.log('[LiveKit] 📷 Camera published');
+      }      // Step 7: Initialize camera based on user preference (defaultVideoMuted setting)
+      try {
+        // Use the setCameraEnabled method which is the recommended way to manage camera in LiveKit
+        const enableCamera = defaultVideoMuted === false;
+        await room.localParticipant.setCameraEnabled(enableCamera);
+        console.log(`[LiveKit] 📷 Camera ${enableCamera ? 'enabled' : 'disabled'} based on user preference`);
+        
+        // Update UI to match camera state
+        const videoBtn = document.getElementById('conference-video-btn');
+        if (videoBtn) {
+          if (enableCamera) {
+            videoBtn.classList.remove('disabled');
+            videoBtn.classList.add('enabled');
+            videoBtn.title = 'Disable Camera';
+          } else {
+            videoBtn.classList.remove('enabled');
+            videoBtn.classList.add('disabled');
+            videoBtn.title = 'Enable Camera';
+          }
+        }
+      } catch (err) {
+        console.warn('[LiveKit] ⚠️ Failed to set initial camera state:', err);
       }
     }// Step 8: Set up control button handlers
     setupConferenceControls(room);    // Step 9: Update initial participant count and add local participant placeholder
@@ -755,25 +864,41 @@ async function initializeConferenceRoom({
     
     // Determine the local participant's display name
     const localParticipantName = joinerIdentity || hostUsername;
-    const localDisplayName = joinerIdentity ? `${joinerIdentity} (You)` : `${hostUsername} (You)`;
-    
-    // Add placeholder for local participant if video is not enabled by default
-    if (defaultVideoMuted !== false) {
-      addParticipantPlaceholder(localDisplayName);
-    } else {
-      // Force the local video to be visible immediately
-      // This ensures the host can see themselves right away
-      setTimeout(async () => {
-        if (room.localParticipant.isCameraEnabled === false) {
-          try {
-            await room.localParticipant.setCameraEnabled(true);
-            console.log('[LiveKit] 📹 Local camera enabled automatically to ensure visibility');
-          } catch (err) {
-            console.warn('[LiveKit] ⚠️ Failed to enable local camera automatically:', err);
-          }
+    const localDisplayName = joinerIdentity ? `${joinerIdentity} (You)` : `${hostUsername} (You)`;    // Always add placeholder for local participant as a fallback
+    // This will be automatically replaced once the video is published
+    addParticipantPlaceholder(localDisplayName);
+      // Initialize the local video state based on the defaultVideoMuted setting
+    // This ensures consistent behavior with user's preference
+    try {
+      // Set camera enabled state based on defaultVideoMuted
+      const enableCamera = defaultVideoMuted === false;
+      
+      // Add placeholder for local participant since camera might be off by default
+      if (!enableCamera) {
+        // Make sure placeholder is added for local participant if camera is off
+        setTimeout(() => {
+          addParticipantPlaceholder(localDisplayName);
+        }, 100);
+      }
+      
+      // Update UI controls to reflect camera state
+      const videoBtn = document.getElementById('conference-video-btn');
+      if (videoBtn) {
+        if (enableCamera) {
+          videoBtn.classList.remove('disabled');
+          videoBtn.classList.add('enabled');
+          videoBtn.title = 'Disable Camera';
+        } else {
+          videoBtn.classList.remove('enabled');
+          videoBtn.classList.add('disabled');
+          videoBtn.title = 'Enable Camera';
         }
-      }, 1000);
-    }    // Step 10: Expose room globally if needed
+        videoBtn.style.opacity = '1';
+        videoBtn.style.cursor = 'pointer';
+      }
+    } catch (err) {
+      console.warn('[LiveKit] ⚠️ Failed to initialize local camera state:', err);
+    }// Step 10: Expose room globally if needed
     window.currentConferenceRoom = room;
     
     // Add periodic status check to keep UI synchronized
@@ -1143,7 +1268,12 @@ function updateParticipantCount(room) {
 
 function addVideoToGrid(videoElement, participantId) {
   const grid = document.getElementById('conference-video-grid');
-  if (!grid) return;
+  if (!grid) {
+    console.error('[LiveKit] Cannot add video to grid - grid element not found');
+    return;
+  }
+  
+  console.log(`[LiveKit] 📹 Adding video for participant: ${participantId}`);
   
   // Remove any existing placeholder for this participant
   removeParticipantPlaceholder(participantId);
@@ -1151,6 +1281,7 @@ function addVideoToGrid(videoElement, participantId) {
   // Remove any existing video container for this participant
   const existingContainer = document.getElementById(`video-${participantId}`);
   if (existingContainer) {
+    console.log(`[LiveKit] Removing existing video container for: ${participantId}`);
     existingContainer.remove();
   }
   
@@ -1164,6 +1295,9 @@ function addVideoToGrid(videoElement, participantId) {
   
   // Set object-fit to cover for better video filling
   videoElement.style.objectFit = 'cover';
+  
+  // Set important display property to make sure video is visible
+  videoElement.style.display = 'block';
   
   // Better handling for local participant's video
   if (participantId.includes('(You)')) {
@@ -1180,13 +1314,16 @@ function addVideoToGrid(videoElement, participantId) {
   videoElement.style.cursor = 'pointer';
   videoElement.title = 'Click to focus on this participant';
   
+  // Add important debugging data attributes
+  videoElement.dataset.participant = participantId;
+  
   // Add event listeners to detect when video stops
   videoElement.addEventListener('loadstart', () => {
-    //console.log(`[LiveKit] 📹 Video loading started for ${participantId}`);
+    console.log(`[LiveKit] 📹 Video loading started for ${participantId}`);
   });
   
   videoElement.addEventListener('canplay', () => {
-    //console.log(`[LiveKit] 📹 Video can play for ${participantId}`);
+    console.log(`[LiveKit] 📹 Video can play for ${participantId}, dimensions: ${videoElement.videoWidth}x${videoElement.videoHeight}`);
     // Make sure the video is visible when it's ready to play
     videoElement.style.display = 'block';
     
@@ -1195,7 +1332,7 @@ function addVideoToGrid(videoElement, participantId) {
   });
   
   videoElement.addEventListener('ended', () => {
-    //console.log(`[LiveKit] 📹 Video ended for participant: ${participantId} - replacing with placeholder`);
+    console.log(`[LiveKit] 📹 Video ended for participant: ${participantId} - replacing with placeholder`);
     removeVideoFromGrid(participantId);
     setTimeout(() => {
       addParticipantPlaceholder(participantId);
@@ -1203,7 +1340,7 @@ function addVideoToGrid(videoElement, participantId) {
   });
   
   videoElement.addEventListener('emptied', () => {
-    //console.log(`[LiveKit] 📹 Video emptied for ${participantId} - replacing with placeholder`);
+    console.log(`[LiveKit] 📹 Video emptied for ${participantId} - replacing with placeholder`);
     removeVideoFromGrid(participantId);
     setTimeout(() => {
       addParticipantPlaceholder(participantId);
@@ -1215,6 +1352,11 @@ function addVideoToGrid(videoElement, participantId) {
   label.className = 'conference-participant-label';
   label.textContent = participantId;
   
+  // Add debugging info to label
+  if (videoElement.videoWidth && videoElement.videoHeight) {
+    label.title = `Video: ${videoElement.videoWidth}x${videoElement.videoHeight}`;
+  }
+  
   container.appendChild(videoElement);
   container.appendChild(label);
   grid.appendChild(container);
@@ -1222,7 +1364,16 @@ function addVideoToGrid(videoElement, participantId) {
   // Update grid layout
   updateGridLayout();
   
-  //console.log(`[LiveKit] 📹 Added video for participant: ${participantId}`);
+  console.log(`[LiveKit] 📹 Successfully added video for participant: ${participantId}`);
+  
+  // Set a short timer to check if the video is actually displaying
+  setTimeout(() => {
+    if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
+      console.warn(`[LiveKit] ⚠️ Video element for ${participantId} has no dimensions, may not be displaying properly`);
+    } else {
+      console.log(`[LiveKit] ✅ Confirmed video dimensions for ${participantId}: ${videoElement.videoWidth}x${videoElement.videoHeight}`);
+    }
+  }, 1000);
 }
 
 function addParticipantPlaceholder(participantId) {
@@ -1470,10 +1621,26 @@ function setupConferenceControls(room) {
         alert('Failed to toggle speaker: ' + err.message);
       }
     };
-  }
-
-  // Video toggle
+  }  // Video toggle
   if (videoBtn) {
+    // Initialize video button based on the current camera state
+    const cameraTrackPublications = room.localParticipant.videoTracks;
+    isVideoEnabled = Array.from(cameraTrackPublications.values()).some(
+      publication => publication.track && publication.track.source === 'camera'
+    );
+    
+    if (isVideoEnabled) {
+      videoBtn.classList.remove('disabled');
+      videoBtn.classList.add('enabled');
+      videoBtn.title = 'Disable Camera';
+    } else {
+      videoBtn.classList.remove('enabled');
+      videoBtn.classList.add('disabled');
+      videoBtn.title = 'Enable Camera';
+    }
+    videoBtn.style.opacity = '1';
+    videoBtn.style.cursor = 'pointer';
+    
     videoBtn.onclick = async () => {
       try {
         if (isVideoEnabled) {
@@ -1482,18 +1649,18 @@ function setupConferenceControls(room) {
           videoBtn.classList.remove('enabled');
           videoBtn.classList.add('disabled');
           videoBtn.title = 'Enable Camera';
-          //console.log('[LiveKit] 📹 Camera disabled');
+          console.log('[LiveKit] 📹 Camera disabled');
         } else {
           // Enable video
           await room.localParticipant.setCameraEnabled(true);
           videoBtn.classList.remove('disabled');
           videoBtn.classList.add('enabled');
           videoBtn.title = 'Disable Camera';
-          //console.log('[LiveKit] 📹 Camera enabled');
+          console.log('[LiveKit] 📹 Camera enabled');
         }
         isVideoEnabled = !isVideoEnabled;
       } catch (err) {
-        //console.error('[LiveKit] ❌ Error toggling camera:', err);
+        console.error('[LiveKit] ❌ Error toggling camera:', err);
         alert('Failed to toggle camera: ' + err.message);
       }
     };

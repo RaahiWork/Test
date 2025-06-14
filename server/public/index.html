@@ -64,7 +64,7 @@
                 hostUsername: joinUser, 
                 roomName: roomName,
                 defaultMicMuted: true,
-                defaultVideoMuted: true
+                defaultVideoMuted: true // Camera off by default, user can enable
               });
             } else {
               //console.error("ERROR: window.openConferencePopup is not defined!");
@@ -1002,7 +1002,7 @@
                 window.openConferencePopup({
                   autoJoin: true,
                   defaultMicMuted: true,
-                  defaultVideoMuted: true,
+                  defaultVideoMuted: true, // Camera off by default, user can enable
                   isHostStarting: true  // Flag to indicate this is a fresh host start
                 });
               });
@@ -1028,7 +1028,7 @@
               hostUsername: joinUser, 
               roomName: roomName,
               defaultMicMuted: true,
-              defaultVideoMuted: true
+              defaultVideoMuted: true // Camera off by default, user can enable
             });
           }
         });
