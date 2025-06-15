@@ -1617,6 +1617,73 @@ function updateLobbyRequests() {
   }
 }
 
+// Update tooltips for all video elements based on focus state
+function updateVideoTooltips() {
+  const grid = document.getElementById('conference-video-grid');
+  if (!grid) return;
+  
+  grid.querySelectorAll('.conference-video-container').forEach(container => {
+    const participantId = container.id.replace('video-', '').replace('placeholder-', '');
+    const videoElement = container.querySelector('.conference-video-element');
+    const placeholderElement = container.querySelector('.conference-placeholder-content');
+    
+    if (videoElement) {
+      if (focusedParticipant === participantId) {
+        videoElement.title = 'Click to exit focus mode';
+      } else {
+        videoElement.title = 'Click to focus on this participant';
+      }
+    }
+    
+    if (placeholderElement) {
+      if (focusedParticipant === participantId) {
+        placeholderElement.title = 'Click to exit focus mode';
+      } else {
+        placeholderElement.title = 'Click to focus on this participant';
+      }
+    }
+  });
+}
+
+// Handle screen orientation and aspect ratio changes
+function updateLayoutOrientation() {
+  const grid = document.getElementById('conference-video-grid');
+  if (!grid) return;
+  
+  const aspectRatio = window.innerWidth / window.innerHeight;
+  
+  // Add data attribute for CSS targeting
+  if (aspectRatio >= 1.6) {
+    grid.setAttribute('data-orientation', 'landscape');
+  } else {
+    grid.setAttribute('data-orientation', 'portrait');
+  }
+  
+  // Log for debugging
+  console.log('[LiveKit] 📐 Screen aspect ratio:', aspectRatio.toFixed(2), 
+              'Orientation:', aspectRatio >= 1.6 ? 'landscape' : 'portrait');
+}
+
+// Listen for window resize and orientation changes
+window.addEventListener('resize', () => {
+  updateLayoutOrientation();
+  // Also update grid layout when window resizes
+  updateGridLayout();
+});
+
+window.addEventListener('orientationchange', () => {
+  // Small delay to ensure orientation change is complete
+  setTimeout(() => {
+    updateLayoutOrientation();
+    updateGridLayout();
+  }, 100);
+});
+
+// Initialize orientation on page load
+document.addEventListener('DOMContentLoaded', () => {
+  updateLayoutOrientation();
+});
+
 // Helper functions for UI updates
 function updateConnectionStatus(state) {
   const statusIndicator = document.getElementById('conference-connection-status');
@@ -1677,51 +1744,26 @@ function addVideoToGrid(videoElement, participantId) {
   // Create video container
   const container = document.createElement('div');
   container.id = `video-${participantId}`;
-  container.className = 'conference-video-container';
+  container.className = 'conference-video-participant';
   
-  // Style the video element
+  // Ensure video element is properly set up
   videoElement.className = 'conference-video-element';
-  
-  // Set object-fit to cover for better video filling
-  videoElement.style.objectFit = 'cover';
-  
-  // Set important display property to make sure video is visible
   videoElement.style.display = 'block';
-  
-  // Better handling for local participant's video
-  if (participantId.includes('(You)')) {
-    // Mirror local video for natural self-view
-    videoElement.style.transform = 'scaleX(-1)';
-  }
-  
-  // Add click handler for focused view
-  videoElement.addEventListener('click', () => {
-    toggleFocusedView(participantId);
-  });
-  
-  // Add hover effect for clickable indication
-  videoElement.style.cursor = 'pointer';
-  videoElement.title = 'Click to focus on this participant';
-  
-  // Add important debugging data attributes
-  videoElement.dataset.participant = participantId;
-  
-  // Add event listeners to detect when video stops
-  videoElement.addEventListener('loadstart', () => {
-    console.log(`[LiveKit] 📹 Video loading started for ${participantId}`);
-  });
+  videoElement.style.visibility = 'visible';
+  videoElement.muted = participantId === getLocalUsername(); // Mute local video
   
   videoElement.addEventListener('canplay', () => {
     console.log(`[LiveKit] 📹 Video can play for ${participantId}, dimensions: ${videoElement.videoWidth}x${videoElement.videoHeight}`);
     // Make sure the video is visible when it's ready to play
     videoElement.style.display = 'block';
+    videoElement.style.visibility = 'visible';
     
     // Remove any existing placeholder once video is ready
     removeParticipantPlaceholder(participantId);
   });
   
   videoElement.addEventListener('ended', () => {
-    console.log(`[LiveKit] 📹 Video ended for participant: ${participantId} - replacing with placeholder`);
+    console.log('[LiveKit] 📹 Video ended for participant: ', participantId, ' - replacing with placeholder');
     removeVideoFromGrid(participantId);
     setTimeout(() => {
       addParticipantPlaceholder(participantId);
@@ -1729,7 +1771,7 @@ function addVideoToGrid(videoElement, participantId) {
   });
   
   videoElement.addEventListener('emptied', () => {
-    console.log(`[LiveKit] 📹 Video emptied for ${participantId} - replacing with placeholder`);
+    console.log('[LiveKit] 📹 Video emptied for ', participantId, ' - replacing with placeholder');
     removeVideoFromGrid(participantId);
     setTimeout(() => {
       addParticipantPlaceholder(participantId);
@@ -1754,15 +1796,49 @@ function addVideoToGrid(videoElement, participantId) {
   updateGridLayout();
   
   console.log(`[LiveKit] 📹 Successfully added video for participant: ${participantId}`);
-  
-  // Set a short timer to check if the video is actually displaying
+    // Set a short timer to check if the video is actually displaying
   setTimeout(() => {
     if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
-      console.warn(`[LiveKit] ⚠️ Video element for ${participantId} has no dimensions, may not be displaying properly`);
+      console.warn(`[LiveKit] ⚠️ Video element for ${participantId} has no dimensions, attempting to fix...`);
+      ensureVideoPlayback(videoElement, participantId);
+      
+      // Set another check after a delay
+      setTimeout(() => {
+        ensureVideoPlayback(videoElement, participantId);
+        // If still not working, try once more
+        if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
+          setTimeout(() => ensureVideoPlayback(videoElement, participantId), 2000);
+        }
+      }, 1000);
     } else {
       console.log(`[LiveKit] ✅ Confirmed video dimensions for ${participantId}: ${videoElement.videoWidth}x${videoElement.videoHeight}`);
     }
   }, 1000);
+}
+
+// Helper function to ensure video plays correctly
+function ensureVideoPlayback(videoElement, participantId) {
+  if (videoElement.paused) {
+    console.log(`[LiveKit] 📹 Video is paused for ${participantId}, attempting to play...`);
+    videoElement.play().catch(err => {
+      console.warn(`[LiveKit] ⚠️ Could not play video for ${participantId}:`, err);
+    });
+  }
+  
+  // Check if video appears black or has no data
+  if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
+    console.warn(`[LiveKit] ⚠️ Video for ${participantId} has no dimensions, attempting to fix...`);
+    
+    // Try to reload the source
+    if (videoElement.srcObject) {
+      const srcObject = videoElement.srcObject;
+      videoElement.srcObject = null;
+      setTimeout(() => {
+        videoElement.srcObject = srcObject;
+        videoElement.play().catch(console.error);
+      }, 100);
+    }
+  }
 }
 
 function addParticipantPlaceholder(participantId) {
@@ -1788,12 +1864,16 @@ function addParticipantPlaceholder(participantId) {
     <div class="conference-placeholder-avatar">👤</div>
     <div class="conference-placeholder-text">Camera off</div>
   `;
-    // Add click handler for focused view (show participant info for placeholder)
+  // Add click handler for focused view (show participant info for placeholder)
   placeholder.addEventListener('click', () => {
     toggleFocusedView(participantId);
   });
   placeholder.style.cursor = 'pointer';
-  placeholder.title = 'Click to focus on this participant';
+  if (focusedParticipant === participantId) {
+    placeholder.title = 'Click to exit focus mode';
+  } else {
+    placeholder.title = 'Click to focus on this participant';
+  }
   
   // Add participant label
   const label = document.createElement('div');
@@ -1835,14 +1915,16 @@ function updateGridLayout() {
   const grid = document.getElementById('conference-video-grid');
   if (!grid) return;
   
-  const videoCount = grid.children.length;
+  // Count actual video containers (not including unfocused-row)
+  const videoContainers = grid.querySelectorAll('.conference-video-container');
+  const videoCount = videoContainers.length;
   
   if (focusedParticipant) {
-    // Focused layout: one large tile + smaller tiles
-    // Use CSS Grid areas for focused layout
-    grid.style.gridTemplateColumns = '2fr 1fr';
-    grid.style.gridTemplateRows = 'repeat(auto-fit, minmax(150px, 1fr))';
-    grid.style.gap = '10px';
+    // Focused layout is handled by CSS and updateFocusedViewStyles
+    // Reset any inline styles that might interfere
+    grid.style.gridTemplateColumns = '';
+    grid.style.gridTemplateRows = '';
+    grid.style.gap = '';
   } else {
     // Normal grid layout
     let columns = 1;
@@ -1893,10 +1975,20 @@ function updateFocusedViewStyles() {
   const grid = document.getElementById('conference-video-grid');
   if (!grid) return;
   
-  // Remove existing focus classes
+  // Remove existing focus classes and row container
   grid.querySelectorAll('.conference-video-container').forEach(container => {
     container.classList.remove('focused', 'unfocused');
   });
+  
+  // Remove any existing unfocused row container
+  const existingRow = grid.querySelector('.unfocused-row');
+  if (existingRow) {
+    // Move all children back to the main grid before removing the row
+    while (existingRow.firstChild) {
+      grid.appendChild(existingRow.firstChild);
+    }
+    existingRow.remove();
+  }
   
   if (focusedParticipant) {
     // Add focused class to the selected participant
@@ -1906,18 +1998,33 @@ function updateFocusedViewStyles() {
       focusedContainer.classList.add('focused');
     }
     
-    // Add unfocused class to all other participants
+    // Create unfocused row container for other participants
+    const unfocusedRow = document.createElement('div');
+    unfocusedRow.className = 'unfocused-row';
+    
+    // Move all unfocused participants to the row
     grid.querySelectorAll('.conference-video-container').forEach(container => {
       if (container !== focusedContainer) {
         container.classList.add('unfocused');
+        unfocusedRow.appendChild(container);
       }
     });
     
-    // Add focused-layout class to grid for special layout
+    // Add the unfocused row to the grid
+    if (unfocusedRow.children.length > 0) {
+      grid.appendChild(unfocusedRow);
+    }
+      // Add focused-layout class to grid for special layout
     grid.classList.add('focused-layout');
+    
+    // Update tooltips to reflect new focus state
+    updateVideoTooltips();
   } else {
     // Remove focused layout when no participant is focused
     grid.classList.remove('focused-layout');
+    
+    // Update tooltips to reflect new focus state
+    updateVideoTooltips();
   }
 }
 
@@ -2335,10 +2442,29 @@ function enableConferenceControls() {
   const videoBtn = document.getElementById('conference-video-btn');
   const screenBtn = document.getElementById('conference-screen-btn');
   
-  if (micBtn) micBtn.disabled = false;
-  if (speakerBtn) speakerBtn.disabled = false;
-  if (videoBtn) videoBtn.disabled = false;
-  if (screenBtn) screenBtn.disabled = false;
+  if (micBtn) {
+    micBtn.disabled = false;
+    micBtn.style.opacity = '1';
+    micBtn.style.cursor = 'pointer';
+  }
+  
+  if (speakerBtn) {
+    speakerBtn.disabled = false;
+    speakerBtn.style.opacity = '1';
+    speakerBtn.style.cursor = 'pointer';
+  }
+  
+  if (videoBtn) {
+    videoBtn.disabled = false;
+    videoBtn.style.opacity = '1';
+    videoBtn.style.cursor = 'pointer';
+  }
+  
+  if (screenBtn) {
+    screenBtn.disabled = false;
+    screenBtn.style.opacity = '1';
+    screenBtn.style.cursor = 'pointer';
+  }
   
   //console.log('[LiveKit] 🎛️ Conference controls enabled');
 }
@@ -2463,4 +2589,9 @@ function enableConferenceControls() {
   }
   
   //console.log('[LiveKit] 🎛️ Conference controls enabled');
+}
+
+// Helper function to get local username
+function getLocalUsername() {
+  return localStorage.getItem('vybchat-username') || localStorage.getItem('username') || 'Unknown';
 }

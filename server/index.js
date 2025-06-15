@@ -1191,7 +1191,7 @@ io.on('connection', socket => {
 
     // Conference lobby system handlers
     socket.on('requestToJoinConference', ({ joinerName, hostName, roomName }) => {
-        console.log(`[LiveKit Lobby] 🚪 ${joinerName} requested to join ${hostName}'s conference in room ${roomName}`);
+        //console.log(`[LiveKit Lobby] 🚪 ${joinerName} requested to join ${hostName}'s conference in room ${roomName}`);
         
         // Store the request with the joiner's socket ID for later notifications
         ConferenceLobbyState.addPendingRequest(joinerName, hostName, roomName, socket.id);
@@ -1204,9 +1204,9 @@ io.on('connection', socket => {
                 hostName,
                 roomName
             });
-            console.log(`[LiveKit Lobby] 📩 Sent join request notification to host ${hostName}`);
+            //console.log(`[LiveKit Lobby] 📩 Sent join request notification to host ${hostName}`);
         } else {
-            console.log(`[LiveKit Lobby] ⚠️ Host ${hostName} not found or not connected`);
+            //console.log(`[LiveKit Lobby] ⚠️ Host ${hostName} not found or not connected`);
             // Notify the joiner that the host is not available
             socket.emit('joinRequestRejected', {
                 joinerName,
@@ -1220,7 +1220,7 @@ io.on('connection', socket => {
         setTimeout(() => {
             const pendingRequest = ConferenceLobbyState.getPendingRequest(joinerName, hostName, roomName);
             if (pendingRequest) {
-                console.log(`[LiveKit Lobby] ⏱️ Join request timed out for ${joinerName}`);
+                //console.log(`[LiveKit Lobby] ⏱️ Join request timed out for ${joinerName}`);
                 // Find the joiner's socket to send rejection
                 const joinerSocket = io.sockets.sockets.get(pendingRequest.joinerSocketId);
                 if (joinerSocket) {
@@ -1238,7 +1238,7 @@ io.on('connection', socket => {
     });
     
     socket.on('approveJoinRequest', ({ joinerName, hostName, roomName }) => {
-        console.log(`[LiveKit Lobby] ✅ Host ${hostName} approved ${joinerName}'s join request`);
+        //console.log(`[LiveKit Lobby] ✅ Host ${hostName} approved ${joinerName}'s join request`);
         
         // Get the pending request to find the joiner's socket ID
         const pendingRequest = ConferenceLobbyState.getPendingRequest(joinerName, hostName, roomName);
@@ -1251,20 +1251,20 @@ io.on('connection', socket => {
                     hostName,
                     roomName
                 });
-                console.log(`[LiveKit Lobby] 📩 Sent join approval to ${joinerName}`);
+                //console.log(`[LiveKit Lobby] 📩 Sent join approval to ${joinerName}`);
             } else {
-                console.log(`[LiveKit Lobby] ⚠️ Joiner ${joinerName} not connected anymore`);
+                //console.log(`[LiveKit Lobby] ⚠️ Joiner ${joinerName} not connected anymore`);
             }
             
             // Remove the pending request
             ConferenceLobbyState.removePendingRequest(joinerName, hostName, roomName);
         } else {
-            console.log(`[LiveKit Lobby] ⚠️ No pending request found for ${joinerName} to join ${hostName}'s room`);
+            //console.log(`[LiveKit Lobby] ⚠️ No pending request found for ${joinerName} to join ${hostName}'s room`);
         }
     });
     
     socket.on('rejectJoinRequest', ({ joinerName, hostName, roomName }) => {
-        console.log(`[LiveKit Lobby] ❌ Host ${hostName} rejected ${joinerName}'s join request`);
+        //console.log(`[LiveKit Lobby] ❌ Host ${hostName} rejected ${joinerName}'s join request`);
         
         // Get the pending request to find the joiner's socket ID
         const pendingRequest = ConferenceLobbyState.getPendingRequest(joinerName, hostName, roomName);
@@ -1277,20 +1277,20 @@ io.on('connection', socket => {
                     hostName,
                     roomName
                 });
-                console.log(`[LiveKit Lobby] 📩 Sent join rejection to ${joinerName}`);
+                //console.log(`[LiveKit Lobby] 📩 Sent join rejection to ${joinerName}`);
             } else {
-                console.log(`[LiveKit Lobby] ⚠️ Joiner ${joinerName} not connected anymore`);
+                //console.log(`[LiveKit Lobby] ⚠️ Joiner ${joinerName} not connected anymore`);
             }
             
             // Remove the pending request
             ConferenceLobbyState.removePendingRequest(joinerName, hostName, roomName);
         } else {
-            console.log(`[LiveKit Lobby] ⚠️ No pending request found for ${joinerName} to join ${hostName}'s room`);
+            //console.log(`[LiveKit Lobby] ⚠️ No pending request found for ${joinerName} to join ${hostName}'s room`);
         }
     });
     
     socket.on('cancelJoinRequest', ({ joinerName, hostName, roomName }) => {
-        console.log(`[LiveKit Lobby] 🚫 ${joinerName} cancelled request to join ${hostName}'s conference`);
+        //console.log(`[LiveKit Lobby] 🚫 ${joinerName} cancelled request to join ${hostName}'s conference`);
         
         // Get the pending request
         const pendingRequest = ConferenceLobbyState.getPendingRequest(joinerName, hostName, roomName);
@@ -1303,13 +1303,13 @@ io.on('connection', socket => {
                     hostName,
                     roomName
                 });
-                console.log(`[LiveKit Lobby] 📩 Notified host ${hostName} about cancelled request`);
+                //console.log(`[LiveKit Lobby] 📩 Notified host ${hostName} about cancelled request`);
             }
             
             // Remove the pending request
             ConferenceLobbyState.removePendingRequest(joinerName, hostName, roomName);
         } else {
-            console.log(`[LiveKit Lobby] ⚠️ No pending request found to cancel for ${joinerName}`);
+            //console.log(`[LiveKit Lobby] ⚠️ No pending request found to cancel for ${joinerName}`);
         }
     });
     
@@ -1317,7 +1317,7 @@ io.on('connection', socket => {
     socket.on('getPendingJoinRequests', ({ hostName }) => {
         if (!hostName) return;
         
-        console.log(`[LiveKit Lobby] 📋 ${hostName} requested their pending join requests`);
+        //console.log(`[LiveKit Lobby] 📋 ${hostName} requested their pending join requests`);
         
         // Get all pending requests for this host
         const pendingRequests = ConferenceLobbyState.getRequestsForHost(hostName);
@@ -1327,7 +1327,7 @@ io.on('connection', socket => {
             requests: pendingRequests
         });
         
-        console.log(`[LiveKit Lobby] 📋 Sent ${pendingRequests.length} pending requests to ${hostName}`);
+        //console.log(`[LiveKit Lobby] 📋 Sent ${pendingRequests.length} pending requests to ${hostName}`);
     });
 });
 
